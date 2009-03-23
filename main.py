@@ -33,6 +33,9 @@ idx.add_module (mod_monster.Module ())
 import stats
 idx.add_module (stats.Module ())
 
+import mod_terror
+idx.add_module (mod_terror.Module ())
+
 # let's play arkham horror!
 idx.request ("ah")
 

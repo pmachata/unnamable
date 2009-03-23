@@ -4,11 +4,15 @@ import fight
 import fun
 
 class Investigator (arkham.Investigator):
-    def __init__ (self, *args):
+    def __init__ (self, mod_ah, *args):
         arkham.Investigator.__init__ (self, *args)
+        self.mod_ah = mod_ah
 
     def lost_in_time_and_space (self, game, monster):
-        pass
+        # XXX This doesn't work.  We need to be able to lose in time
+        # and space also investigators from other modules, which won't
+        # necessarily depend on "ah".
+        game.move_investigator (self, self.mod_ah.lost_in_time_and_space_place)
 
 class DamageLost (arkham.Damage):
     def deal (self, game, investigator, monster):
@@ -20,19 +24,23 @@ class Module (arkham.Module):
         arkham.Module.__init__ (self, "ah", "Arkham Horror")
         self.mod_ancient = None
         self.mod_statset = None
+        self.mod_terror = None
 
     def consistent (self, mod_index):
         ancient = mod_index.request ("ancient")
         statset = mod_index.request ("statset")
         monster = mod_index.request ("monster")
-        success = ancient and statset and monster
+        terror = mod_index.request ("terror")
+        success = ancient and statset and monster and terror
         if not success:
             ancient = None
             statset = None
             monster = None
+            terror = None
 
         self.mod_ancient = ancient
         self.mod_statset = statset
+        self.mod_terror = terror
         return not not success
 
     def construct (self, game):
@@ -114,7 +122,7 @@ class Module (arkham.Module):
          .to (rivertown).back ())
 
         game.add_investigator (
-            Investigator (
+            Investigator (self,
                 "\"Ashcan\" Pete", 4, 6, 1, 3,
                 self.mod_statset.Statset (4,
                                           3, 6, 5,
@@ -122,7 +130,6 @@ class Module (arkham.Module):
                 river_docks
             )
         )
-
 
         class ElderThing (arkham.SimpleMonster):
             def __init__ (self):
@@ -136,6 +143,20 @@ class Module (arkham.Module):
             choice), if able."""
             fight.deal_combat_damage_hook (game, investigator, monster)
 
+        class Maniac (arkham.BasicMonster):
+            def __init__ (self, mod_terror):
+                terror_at_least_6 = mod_terror.terror_at_least_p (6)
+                arkham.BasicMonster.__init__ \
+                    (self, "Maniac",
+                     arkham.evade_check (-1),
+                     arkham.pass_check, None,
+                     arkham.ConditionalCheck (terror_at_least_6,
+                                              arkham.combat_check (+1, 1),
+                                              arkham.combat_check (-2, 1)),
+                     arkham.ConditionalDamage (terror_at_least_6,
+                                               arkham.DamageStamina (1),
+                                               arkham.DamageStamina (3)),
+                     endless = True) # XXX only if terror_track >= 6!
 
         class MiGo (arkham.SimpleMonster):
             def __init__ (self):
@@ -167,6 +188,14 @@ class Module (arkham.Module):
                      arkham.combat_check (-2, 2), Damage ())
 
 
+        # The rules say: """Before making a Horror check, pass a
+        # Luck(-1) check or be devoured. If you pass, gain 2 Clue
+        # tokens. In either case, return the Black Man to the cup."""
+        # This monster has no horror or combat damange at all.
+        #
+        # I think it means that if I fail to avoid this monster, I
+        # won't get any combat damage.  The combat will then ensue as
+        # described above, by Luck check.
         class TheBlackMan (arkham.Monster):
             def __init__ (self):
                 arkham.Monster.__init__ \
@@ -179,14 +208,15 @@ class Module (arkham.Module):
 
         @fight.fight_hook.match (fun.any, fun.any, fun.matchclass (TheBlackMan))
         def do (game, investigator, monster):
-            """Before making a Horror check, pass a Luck(-1) check or
-            be devoured. If you pass, gain 2 Clue tokens. In either
-            case, return the Black Man to the cup."""
             if not arkham.SkillCheck ("luck", -1).check (game, investigator):
                 investigator.devour (game, monster)
             else:
                 investigator.gain_clues (2)
             raise fight.EndCombat ()
+
+        @fight.deal_combat_damage_hook.match (fun.any, fun.any, fun.matchclass (TheBlackMan))
+        def do (game, investigator, monster):
+            pass
 
 
         class TheBloatedWoman (arkham.SimpleMonster):
@@ -286,22 +316,7 @@ class Module (arkham.Module):
             (2, arkham.SimpleMonster ("Hound Of Tindalos",
                                       -1, (-2, 4), 2, (-1, 3),
                                       physical = "immunity")),
-            (3, arkham.BasicMonster ("Maniac",
-                                     arkham.evade_check (-1),
-                                     arkham.pass_check, None,
-                                     arkham.ConditionalCheck\
-                                         (lambda game, investigator: \
-                                              ### Temporary...
-                                              game.terror_track () >= 6,
-                                          arkham.combat_check (+1, 1),
-                                          arkham.combat_check (-2, 1)),
-                                     arkham.ConditionalDamage\
-                                         (lambda game, investigator, monster: \
-                                              ### Temporary...
-                                              game.terror_track () >= 6,
-                                          arkham.DamageStamina (1),
-                                          arkham.DamageStamina (3)),
-                                     endless = True)), # XXX only if terror_track >= 6!
+            (3, Maniac (self.mod_terror)),
             (3, MiGo ()),
             (2, Nightgaunt ()),
             (2, arkham.SimpleMonster ("Shoggoth",
@@ -375,17 +390,17 @@ class Module (arkham.Module):
 
     def post_construct (self, game):
         def append_special_place (flag):
-            sky = None
+            place = None
             for location in game.all_locations ():
                 if location.attributes.flag (flag):
-                    sky = location
+                    place = location
                     break
 
-            assert sky != None
+            assert place != None
 
             for location in game.all_locations ():
-                if location.attributes.flag ("street") and location != sky:
-                    (maps.draw_from (sky)
+                if location.attributes.flag ("street") and location != place:
+                    (maps.draw_from (place)
                      .to (location,
                           white = True, black = True,
                           no_investigator = True)
@@ -393,8 +408,11 @@ class Module (arkham.Module):
                      #.back (no_investigator = True)
                      )
 
+            return place
+
         append_special_place ("sky")
-        append_special_place ("lost_in_time_and_space")
+        self.lost_in_time_and_space_place \
+            = append_special_place ("lost_in_time_and_space")
 
     def before_turn_0 (self, game):
         for location in game.all_locations ():

@@ -88,9 +88,20 @@ class Location (ObjectWithAttributes):
         assert n >= 0
         self.m_clue_tokens += n
 
-class Investigator:
+class ObjectWithLocation:
+    def __init__ (self, initial_location):
+        self.m_location = initial_location
+
+    def location (self):
+        return self.m_location
+
+    def move_to (self, location):
+        self.m_location = location
+
+class Investigator (ObjectWithLocation):
     def __init__ (self, name, sanity, stamina,
                   initial_money, initial_clues, statset, home):
+        ObjectWithLocation.__init__ (self, home)
         self.m_name = name
         self.m_max_sanity = sanity
         self.m_sanity = sanity
@@ -99,7 +110,6 @@ class Investigator:
         self.m_money = initial_money
         self.m_clues = initial_clues
         self.m_statset = statset
-        self.m_location = home
         self.m_movement_points = 0
 
         # XXX get rid of this
@@ -119,9 +129,6 @@ class Investigator:
     def gain_clues (self, clues):
         assert clues > 0
         self.m_clues += clues
-
-    def location (self):
-        return self.m_location
 
     def reduce_sanity (self, amount):
         print "reduce sanity by %s" % amount,
@@ -240,21 +247,15 @@ def horror_check (rating):
 def combat_check (rating, toughness):
     return SkillCheck ("combat", rating, toughness)
 
-class Monster (ObjectWithAttributes):
+class Monster (ObjectWithAttributes, ObjectWithLocation):
     def __init__ (self, name, **attributes):
         ObjectWithAttributes.__init__ (self)
+        ObjectWithLocation.__init__ (self, None)
         self.m_name = name
-        self.m_location = None
         self.apply_attributes (attributes)
 
     def name (self):
         return self.m_name
-
-    def location (self):
-        return self.m_location
-
-    def move_to (self, location):
-        self.m_location = location
 
     # Override in subclass
     def xxx_combat_check (self, game, investigator):
@@ -416,6 +417,38 @@ class UI:
     def setup_investigator (self, game, investigator):
         raise NotImplementedError ()
 
+class TrackEvent:
+    def event (self, owner, level):
+        pass
+
+class ConditionalEvent (TrackEvent):
+    def __init__ (self, predicate, event_pass, event_fail = TrackEvent ()):
+        self.m_pred = predicate
+        self.m_pass = event_pass
+        self.m_fail = event_fail
+    def event (self, owner, level):
+        if self.m_pred (owner, level):
+            return self.m_pass.event (owner, level)
+        else:
+            return self.m_fail.event (owner, level)
+
+class Track:
+    def __init__ (self, owner):
+        self.m_level = 0
+        self.m_owner = owner
+        self.m_events = []
+
+    def add_event (self, event):
+        self.m_events.append (event)
+
+    def advance (self):
+        self.m_level += 1
+        for event in self.m_events:
+            event.event (self, self.m_owner, self.m_level)
+
+    def level (self):
+        return self.m_level
+
 class Game:
     def __init__ (self, modules, ui):
         self.m_modis = [ModuleInstance (self, mod) for mod in modules]
@@ -495,6 +528,9 @@ class Game:
         self.m_loc_monsters[location].append (monster)
         monster.move_to (location)
 
+    def move_investigator (self, investigator, location):
+        investigator.move_to (location)
+
     def setup_game (self):
         print "-- setting up the game --"
         for modi in self.m_modis:
@@ -519,12 +555,11 @@ class Game:
             self.m_ui.setup_investigator (self, investigator)
 
         brave = self.m_investigators[0]
-        for monster in self.m_monster_cup:
-            self.move_monster (monster, brave.location ())
-            break
+        import random
+        self.move_monster (random.choice (self.m_monster_cup),
+                           brave.location ())
         if self.leave_location (brave, brave.location ()):
             print "you managed to leave the location"
-
 
     # 0: won't fight
     # 1: does't want to fight, but failed awareness check
@@ -577,10 +612,6 @@ class Game:
         # binds environment cards too tightly into the system.  Need
         # to come up with better solution.
         return None
-
-    def terror_track (self):
-        # XXX Same here with the Maniac
-        return 0
 
     def devour (self, investigator):
         # XXX not implemented
