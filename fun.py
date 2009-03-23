@@ -1,3 +1,6 @@
+def any (arg):
+    return True
+
 class Function (object):
     def __init__ (self, *args, **kwargs):
         self.m_prototype = tuple (args)
@@ -18,28 +21,12 @@ class Function (object):
                                 code.co_firstlineno)
 
     def bind (self, key, body, options):
-        if isinstance (key, tuple):
-            key = list (key)
-        else:
-            key = [key]
-
-        if len (key) > 0 and len (key) <= len (self.m_prototype):
-            if Ellipsis in key:
-                idx = key.index (Ellipsis)
-                stuffing_l = len (self.m_prototype) - len (key) + 1
-                stuffing = [slice (None)] * stuffing_l
-                key[idx:idx+1] = stuffing
+        assert isinstance (key, tuple)
         assert len (key) == len (self.m_prototype)
 
-        colon = slice (None)
+        colon = any
         priority = options.get ("priority", -len ([k for k in key if k == colon]))
         trace = options.get ("trace", self.m_trace)
-
-        # Convert [:] notation to functions
-        def f_true (param):
-            return True
-        key = [k if k != colon else f_true
-               for k in key]
 
         class struct:
             def __init__ (self, **kwargs):
@@ -101,13 +88,12 @@ class Function (object):
                                 self.m_name, ", ".join (str (arg)
                                                         for arg in args))
                              + message)
+
+        # Call
         body, options = candidates[0]
         if options.trace:
             print "%s: %s" % (self.m_name, self.fmt_info (body))
         return body (*args, **bindings)
-
-any = slice (None)
-many = Ellipsis
 
 def bind (**kwargs):
     def match (arg):
