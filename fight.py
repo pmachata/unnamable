@@ -6,7 +6,7 @@ class EndCombat (Exception):
 
 # Fight hooks.  Monsters or investigators override these to achieve
 # fine-grained customization or combat process.
-trace = False # whether we want hook traces
+trace = arkham.trace # whether we want hook traces
 fight_args = (arkham.Game, arkham.Investigator, arkham.Monster) # all the fight hooks have this prototype
 fight_hook = fun.Function (name="fight_hook", trace=trace, *fight_args)
 normal_fight_hook = fun.Function (name="normal_fight_hook", trace=trace, *fight_args)

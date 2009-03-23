@@ -3,20 +3,24 @@ import maps
 import fight
 import fun
 
-class Investigator (arkham.Investigator):
-    def __init__ (self, mod_ah, *args):
-        arkham.Investigator.__init__ (self, *args)
-        self.mod_ah = mod_ah
+def find_location (game, flag):
+    for location in game.all_locations ():
+        if location.attributes.flag (flag):
+            return location
+    return None
 
-    def lost_in_time_and_space (self, game, monster):
-        # XXX This doesn't work.  We need to be able to lose in time
-        # and space also investigators from other modules, which won't
-        # necessarily depend on "ah".
-        game.move_investigator (self, self.mod_ah.lost_in_time_and_space_place)
+lose_in_time_and_space = fun.Function (arkham.Game, arkham.Investigator,
+                                       name="lose_in_time_and_space", trace=arkham.trace)
+@lose_in_time_and_space.match (fun.any, fun.any)
+def do (game, investigator):
+    place = find_location (game, "lost_in_time_and_space")
+    if place != None:
+        game.move_investigator (investigator, place)
+    investigator.delay ()
 
 class DamageLost (arkham.Damage):
     def deal (self, game, investigator, monster):
-        investigator.lost_in_time_and_space (game, monster)
+        lose_in_time_and_space (game, investigator)
 damage_lost = DamageLost ()
 
 class Module (arkham.Module):
@@ -136,7 +140,7 @@ class Module (arkham.Module):
          .to (rivertown).back ())
 
         game.add_investigator (
-            Investigator (self,
+            arkham.Investigator (
                 "\"Ashcan\" Pete", 4, 6, 1, 3,
                 self.mod_statset.Statset (4,
                                           3, 6, 5,
@@ -404,12 +408,7 @@ class Module (arkham.Module):
 
     def post_construct (self, game):
         def append_special_place (flag):
-            place = None
-            for location in game.all_locations ():
-                if location.attributes.flag (flag):
-                    place = location
-                    break
-
+            place = find_location (game, flag)
             assert place != None
 
             for location in game.all_locations ():
@@ -425,8 +424,7 @@ class Module (arkham.Module):
             return place
 
         append_special_place ("sky")
-        self.lost_in_time_and_space_place \
-            = append_special_place ("lost_in_time_and_space")
+        append_special_place ("lost_in_time_and_space")
 
     def before_turn_0 (self, game):
         for location in game.all_locations ():

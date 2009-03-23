@@ -1,3 +1,6 @@
+# Whether we want hook traces.
+trace = False
+
 class Attributes:
     def __init__ (self):
         self.m_attributes = {}
@@ -119,6 +122,7 @@ class Investigator (ObjectWithLocation):
                               lore = statset.m_lore,
                               luck = statset.m_luck,
                               will = statset.m_will)
+        self.m_delayed = False
 
     def name (self):
         return self.m_name
@@ -152,6 +156,12 @@ class Investigator (ObjectWithLocation):
 
     def alive (self):
         return self.m_sanity > 0 and self.m_stamina > 0
+
+    def delay (self):
+        self.m_delayed = True
+
+    def delayed (self):
+        return self.m_delayed
 
     # Override in subclass
     def before_turn_0 (self, game):
