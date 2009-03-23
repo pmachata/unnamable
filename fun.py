@@ -42,38 +42,37 @@ class Function (object):
                 % (self.m_name, i, a, p)
 
         # Find matching variants.
+        def match_variant (variant):
+            predicates, _, options = variant
+            for arg, pred, proto in zip (args, predicates, self.m_prototype):
+                if isinstance (arg, proto):
+                    if arg == pred:
+                        continue
+                try:
+                    ret = pred (arg)
+                    if not ret:
+                        return False
+                except TypeError:
+                        return False
+
+                if isinstance (ret, tuple):
+                    ret, bind = ret
+                    if not ret:
+                        return False
+                    bindings.update (bind)
+            return True
+
         candidates = []
         best_priority = None
         bindings = {}
-        for (predicate, body, options) in self.m_variants:
-            priority = options.priority
+        for variant in self.m_variants:
+            priority = variant[2].priority
             if best_priority == None or priority >= best_priority:
-                match = True
-                for arg, pred, proto in zip (args, predicate, self.m_prototype):
-                    if isinstance (arg, proto):
-                        if arg == pred:
-                            continue
-                    try:
-                        ret = pred (arg)
-                        if not ret:
-                            match = False
-                            break
-                    except TypeError:
-                        match = False
-                        break
-
-                    if isinstance (ret, tuple):
-                        ret, bind = ret
-                        if not ret:
-                            match = False
-                            break
-                        bindings.update (bind)
-
-                if match:
+                if match_variant (variant):
                     if best_priority == None or priority > best_priority:
                         candidates = []
                         best_priority = priority
-                    candidates.append ((body, options))
+                    candidates.append (variant)
 
         # Resolve.
         if len (candidates) != 1:
@@ -90,7 +89,7 @@ class Function (object):
                              + message)
 
         # Call
-        body, options = candidates[0]
+        _, body, options = candidates[0]
         if options.trace:
             print "%s: %s" % (self.m_name, self.fmt_info (body))
         return body (*args, **bindings)
