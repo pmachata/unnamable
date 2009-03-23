@@ -30,8 +30,8 @@ idx.add_module (mod_ancient.Module ())
 import mod_monster
 idx.add_module (mod_monster.Module ())
 
-import stats
-idx.add_module (stats.Module ())
+import mod_skills
+idx.add_module (mod_skills.Module ())
 
 import mod_terror
 idx.add_module (mod_terror.Module ())

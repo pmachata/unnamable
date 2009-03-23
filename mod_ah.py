@@ -23,27 +23,42 @@ class DamageLost (arkham.Damage):
         lose_in_time_and_space (game, investigator)
 damage_lost = DamageLost ()
 
+
+def has_token (what):
+    def match (arg):
+        #return arg.has_token (what) XXX
+        return False
+    return match
+
+@arkham.dice_roll_successful_hook.match (fun.any, has_token ("blessing"), fun.any, fun.any)
+def do (game, investigator, skill, roll):
+    return roll >= 4
+
+@arkham.dice_roll_successful_hook.match (fun.any, has_token ("curse"), fun.any, fun.any)
+def do (game, investigator, skill, roll):
+    return roll >= 6
+
 class Module (arkham.Module):
     def __init__ (self):
         arkham.Module.__init__ (self, "ah", "Arkham Horror")
         self.mod_ancient = None
-        self.mod_statset = None
+        self.mod_skills = None
         self.mod_terror = None
 
     def consistent (self, mod_index):
         ancient = mod_index.request ("ancient")
-        statset = mod_index.request ("statset")
         monster = mod_index.request ("monster")
+        skills = mod_index.request ("skills")
         terror = mod_index.request ("terror")
-        success = ancient and statset and monster and terror
+        success = ancient and monster and skills and terror
         if not success:
             ancient = None
-            statset = None
             monster = None
+            skills = None
             terror = None
 
         self.mod_ancient = ancient
-        self.mod_statset = statset
+        self.mod_skills = skills
         self.mod_terror = terror
         return not not success
 
@@ -142,9 +157,9 @@ class Module (arkham.Module):
         game.add_investigator (
             arkham.Investigator (
                 "\"Ashcan\" Pete", 4, 6, 1, 3,
-                self.mod_statset.Statset (4,
-                                          3, 6, 5,
-                                          5, 3, 3),
+                self.mod_skills.Skills (4,
+                                        3, 6, 5,
+                                        5, 3, 3),
                 river_docks
             )
         )
@@ -154,12 +169,14 @@ class Module (arkham.Module):
                 arkham.SimpleMonster.__init__ \
                     (self, "Elder Thing",
                      -2, (-3, 2), 2, (+0, 1))
+
         @fight.combat_check_fail_hook.match (fun.any, fun.any, fun.matchclass (ElderThing))
         def do (game, investigator, monster):
             print """XXX When you fail a Combat check against Elder
             Thing, you must discard 1 of your Weapons or Spells (your
             choice), if able."""
             fight.deal_combat_damage_hook (game, investigator, monster)
+
 
         class Maniac (arkham.BasicMonster):
             def __init__ (self, mod_terror):
@@ -176,6 +193,7 @@ class Module (arkham.Module):
                                                arkham.DamageStamina (3)),
                      endless = True) # XXX only if terror_track >= 6!
 
+
         class MiGo (arkham.SimpleMonster):
             def __init__ (self):
                 arkham.SimpleMonster.__init__ \
@@ -184,6 +202,7 @@ class Module (arkham.Module):
                      endless = True) # Not technically endless, but
                                      # goes to the cup after it's
                                      # killed.
+
         @fight.combat_check_pass_hook.match (fun.any, fun.any, fun.matchclass (MiGo))
         def do (game, investigator, monster):
             print """XXX If you pass a Combat check against Migo,

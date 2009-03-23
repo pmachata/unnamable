@@ -1,3 +1,5 @@
+import fun
+
 # Whether we want hook traces.
 trace = False
 
@@ -101,9 +103,10 @@ class ObjectWithLocation:
     def move_to (self, location):
         self.m_location = location
 
+
 class Investigator (ObjectWithLocation):
     def __init__ (self, name, sanity, stamina,
-                  initial_money, initial_clues, statset, home):
+                  initial_money, initial_clues, skills, home):
         ObjectWithLocation.__init__ (self, home)
         self.m_name = name
         self.m_max_sanity = sanity
@@ -112,16 +115,8 @@ class Investigator (ObjectWithLocation):
         self.m_stamina = stamina
         self.m_money = initial_money
         self.m_clues = initial_clues
-        self.m_statset = statset
+        self.m_skills = skills
         self.m_movement_points = 0
-
-        # XXX get rid of this
-        self.m_skills = dict (evade = statset.m_sneak,
-                              horror = statset.m_will,
-                              combat = statset.m_fight,
-                              lore = statset.m_lore,
-                              luck = statset.m_luck,
-                              will = statset.m_will)
         self.m_delayed = False
 
     def name (self):
@@ -168,14 +163,10 @@ class Investigator (ObjectWithLocation):
         # Pick up fixed & random posessions, whatever else...
         pass
 
-    def roll_dice (self):
-        import random
-        # XXX curses, blesses
-        return random.randint (1, 6) >= 5
-
     def perform_check (self, game, skill_name, modifier, difficulty):
-        die = self.m_skills[skill_name] + modifier
-        successes = sum (self.roll_dice () for _ in xrange (die))
+        die = self.m_skills.check (skill_name) + modifier
+        successes = sum (roll_dice_hook (game, self, skill_name)
+                         for _ in xrange (die))
         # XXX spend clue tokens to gain advantage
         ret = successes >= difficulty
         print "check %s, %s/%s successes on %s die"\
@@ -269,30 +260,12 @@ class Monster (ObjectWithAttributes, ObjectWithLocation):
 
     # Override in subclass
     def xxx_combat_check (self, game, investigator):
-        # Examples from the game:
-        #
-        # - Before you make a Combat check against Child Of Abhoth,
-        #   you must discard 1 Clue token or automatically fail.
-        #
         # - Before making a Combat check against Crawling One, roll a
         #   die. X is equal to the result of the die roll. [X is his
         #   combat rating]
-        #
-        # - If you pass a Combat check against Child Of Abhoth, you
-        #   must discard 1 Spell or Weapon, if able.
-        #
-        # - If you fail a Combat check or Evade check against Child of
-        #   the Goat, you are delayed.
         raise NotImplementedError ()
 
-    def xxx_horror_check (self, game, investigator):
-        # - Before you make a Horror check against Child Of Abhoth,
-        #   you must discard 1 Clue token or automatically fail.
-        return True
-
-    def xxx_move (self, game):
-        # - Instead of moving, roll a die. On a 4-6, all Investigators
-        #   in Arkham lose 1 Sanity.
+    def move (self, game):
         raise NotImplementedError ()
 
 class BasicMonster (Monster):
@@ -626,3 +599,16 @@ class Game:
     def devour (self, investigator):
         # XXX not implemented
         pass
+
+roll_dice_hook = fun.Function (Game, Investigator, object)
+dice_roll_successful_hook = fun.Function (Game, Investigator, object, int)
+
+@roll_dice_hook.match (fun.any, fun.any, fun.any)
+def do (game, investigator, skill):
+    import random
+    return dice_roll_successful_hook (game, investigator, skill,
+                                      random.randint (1, 6))
+
+@dice_roll_successful_hook.match (fun.any, fun.any, fun.any, fun.any)
+def do (game, investigator, skill, roll):
+    return roll >= 5
