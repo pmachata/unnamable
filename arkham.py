@@ -418,7 +418,7 @@ class UI:
         raise NotImplementedError ()
 
 class TrackEvent:
-    def event (self, owner, level):
+    def event (self, game, owner, level):
         pass
 
 class ConditionalEvent (TrackEvent):
@@ -426,11 +426,11 @@ class ConditionalEvent (TrackEvent):
         self.m_pred = predicate
         self.m_pass = event_pass
         self.m_fail = event_fail
-    def event (self, owner, level):
-        if self.m_pred (owner, level):
-            return self.m_pass.event (owner, level)
+    def event (self, game, owner, level):
+        if self.m_pred (game, owner, level):
+            return self.m_pass.event (game, owner, level)
         else:
-            return self.m_fail.event (owner, level)
+            return self.m_fail.event (game, owner, level)
 
 class Track:
     def __init__ (self, owner):
@@ -441,10 +441,10 @@ class Track:
     def add_event (self, event):
         self.m_events.append (event)
 
-    def advance (self):
+    def advance (self, game):
         self.m_level += 1
         for event in self.m_events:
-            event.event (self, self.m_owner, self.m_level)
+            event.event (game, self.m_owner, self.m_level)
 
     def level (self):
         return self.m_level

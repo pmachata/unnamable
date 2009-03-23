@@ -45,6 +45,20 @@ class Module (arkham.Module):
 
     def construct (self, game):
 
+        class TerrorTrack_AHEvents (arkham.TrackEvent):
+            def event (self, game, owner, level):
+                print "drop ally" # XXX
+                if level == 10:
+                    print "relax monster limit" # XXX
+                elif level > 10:
+                    print "add to doom track" # XXX
+
+                for location in game.all_locations ():
+                    if location.attributes.get ("terror_close") == level:
+                        print "close location %s" % location.name () # XXX
+
+        self.mod_terror.track.add_event (TerrorTrack_AHEvents ())
+
         maps.in_neighborhood (maps.neighborhood (game))
         merchant_district = maps.location ("Merchant District", street = True)
         unvisited_isle = maps.location ("Unvisited Isle", unstable = True)
@@ -138,8 +152,8 @@ class Module (arkham.Module):
                      -2, (-3, 2), 2, (+0, 1))
         @fight.combat_check_fail_hook.match (fun.any, fun.any, fun.matchclass (ElderThing))
         def do (game, investigator, monster):
-            print """When you fail a Combat check against Elder Thing,
-            you must discard 1 of your Weapons or Spells (your
+            print """XXX When you fail a Combat check against Elder
+            Thing, you must discard 1 of your Weapons or Spells (your
             choice), if able."""
             fight.deal_combat_damage_hook (game, investigator, monster)
 
@@ -168,8 +182,8 @@ class Module (arkham.Module):
                                      # killed.
         @fight.combat_check_pass_hook.match (fun.any, fun.any, fun.matchclass (MiGo))
         def do (game, investigator, monster):
-            print """If you pass a Combat check against Migo, return it to
-            the box and draw 1 Unique Item."""
+            print """XXX If you pass a Combat check against Migo,
+            return it to the box and draw 1 Unique Item."""
             raise fight.EndCombat ()
 
 
@@ -177,7 +191,7 @@ class Module (arkham.Module):
             def __init__ (self):
                 class Damage (arkham.Damage):
                     def deal (self, game, investigator, monster):
-                        print """you are drawn through the nearest
+                        print """XXX you are drawn through the nearest
                         open gate. If two or more gates are the same
                         distance from you, you choose which gate you
                         are drawn through."""
