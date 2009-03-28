@@ -18,6 +18,25 @@ class TUI (arkham.UI):
                           % (investigator.name (), monster.name ()))\
             in ["Y", "y", ""]
 
+    def select_action (self, game, investigator, actions):
+        while True:
+            print "%s: select an action:" % investigator.name ()
+            id_act = list (enumerate (actions))
+            for i, action in id_act:
+                loc = action.bound_location ()
+                extra = ""
+                if loc:
+                    extra = " (%s)" % loc.attributes.fmt_flags ()
+                    mon = game.monsters_at (loc)
+                    if mon:
+                        extra = extra + " [%s]" % (", ".join (monster.name () for monster in mon))
+                print "%2s: %s%s" % (i, action.name (), extra)
+            id_act = dict (id_act)
+            sel = int (raw_input ())
+            if sel in id_act:
+                print "ok"
+                return [id_act[sel]]
+
 idx = arkham.ModuleIndex ()
 
 # some sort of module discovery would be here instead

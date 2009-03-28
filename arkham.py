@@ -1,5 +1,8 @@
 import fun
 
+class EndGame (Exception):
+    pass
+
 # Whether we want hook traces.
 trace = False
 
@@ -29,6 +32,16 @@ class Attributes:
             return None
         else:
             return self.m_attributes[name]
+
+    def fmt_flags (self):
+        ret = []
+        for attr, val in self.m_attributes.iteritems ():
+            if val != True and val != False:
+                ret.append ("%s=%s" % (attr, val))
+            else:
+                ret.append ("%s%s" % ("" if val else "not ",
+                                      attr))
+        return " ".join (ret)
 
 def match_attribute (**kwargs):
     key, = kwargs.keys ()
@@ -74,6 +87,12 @@ class Connection (ObjectWithAttributes):
     def dest (self):
         return self.m_dest
 
+# Combat context.  Hooks can put there arbitrary info, and it will get
+# preserved throughout the whole combat.
+class Combat:
+    def __init__ (self, game):
+        self.game = game
+
 class Location (ObjectWithAttributes):
     def __init__ (self, name, neighborhood = None):
         ObjectWithAttributes.__init__ (self)
@@ -93,6 +112,9 @@ class Location (ObjectWithAttributes):
         assert n >= 0
         self.m_clue_tokens += n
 
+    def connections (self):
+        return list (self.m_connections)
+
 class ObjectWithLocation:
     def __init__ (self, initial_location):
         self.m_location = initial_location
@@ -104,7 +126,64 @@ class ObjectWithLocation:
         self.m_location = location
 
 
-class Investigator (ObjectWithLocation):
+class GameplayAction:
+    def __init__ (self, name):
+        self.m_name = name
+    def name (self):
+        return self.m_name
+
+    def perform (self, game, investigator):
+        pass
+    def bound_location (self):
+        return None
+
+class GameplayAction_Fight (GameplayAction):
+    def __init__ (self, monster):
+        GameplayAction.__init__ (self, "fight %s" % monster.name ())
+        self.m_monster = monster
+
+    def perform (self, game, investigator):
+        game.fight (investigator, self.m_monster)
+
+class GameplayAction_Move (GameplayAction):
+    def __init__ (self, location):
+        GameplayAction.__init__ (self, "move to %s" % location.name ())
+        self.m_location = location
+
+    def perform (self, game, investigator):
+        game.move_investigator (investigator, self.m_location)
+
+    def bound_location (self):
+        return self.m_location
+
+class GameplayAction_Stay (GameplayAction):
+    def __init__ (self):
+        GameplayAction.__init__ (self, "stay put")
+
+    def perform (self, game, investigator):
+        investigator.lose_movement_points ()
+
+class GameplayAction_Quit (GameplayAction):
+    def __init__ (self):
+        GameplayAction.__init__ (self, "quit the game")
+
+    def perform (self, game, investigator):
+        game.drop_investigator (investigator)
+
+class GameplayObject:
+    # Game play phases.
+    def turn_start (self, game):
+        return []
+    def upkeep (self, game):
+        return []
+    def movement (self, game):
+        return []
+    def encounters (self, game):
+        return []
+    def mythos (self, game):
+        return []
+
+class Investigator (ObjectWithLocation, GameplayObject):
     def __init__ (self, name, sanity, stamina,
                   initial_money, initial_clues, skills, home):
         ObjectWithLocation.__init__ (self, home)
@@ -118,6 +197,7 @@ class Investigator (ObjectWithLocation):
         self.m_skills = skills
         self.m_movement_points = 0
         self.m_delayed = False
+        self.m_trophies = []
 
     def name (self):
         return self.m_name
@@ -158,11 +238,6 @@ class Investigator (ObjectWithLocation):
     def delayed (self):
         return self.m_delayed
 
-    # Override in subclass
-    def before_turn_0 (self, game):
-        # Pick up fixed & random posessions, whatever else...
-        pass
-
     def perform_check (self, game, skill_name, modifier, difficulty):
         die = self.m_skills.check (skill_name) + modifier
         successes = sum (roll_dice_hook (game, self, skill_name)
@@ -176,6 +251,38 @@ class Investigator (ObjectWithLocation):
 
     def devour (self, game, monster):
         game.devour (self)
+
+    def claim_trophy (self, monster):
+        print "claiming trophy %s" % monster.name ()
+        self.m_trophies.append (monster)
+
+    def select_destinations (self, game):
+        # XXX list of all locations reachable with my amount of
+        # movement points, not including the location I'm standing on.
+        # For now just my locations and all immediate neighbors.
+        return [conn.dest ()
+                for conn in self.location ().connections ()
+                if not conn.attributes.flag ("no_investigator")]
+
+    # Game construction phases.  Phases are called in sequence.  Given
+    # phase is called only after the previous phase was finished for
+    # all investigators.
+    def prepare_pass_1 (self, game):
+        pass
+    def prepare_pass_2 (self, game):
+        pass
+
+    # Game play phases.
+    def upkeep (self, game):
+        mp = self.m_skills.check ("speed")
+        # XXX apply equipment and allies
+        self.m_movement_points = mp
+        return []
+
+    def movement (self, game):
+        return [GameplayAction_Stay ()] \
+            + [GameplayAction_Move (location)
+                for location in self.select_destinations (game)]
 
 class Damage:
     def deal (self, game, investigator, monster):
@@ -259,13 +366,7 @@ class Monster (ObjectWithAttributes, ObjectWithLocation):
         return self.m_name
 
     # Override in subclass
-    def xxx_combat_check (self, game, investigator):
-        # - Before making a Combat check against Crawling One, roll a
-        #   die. X is equal to the result of the die roll. [X is his
-        #   combat rating]
-        raise NotImplementedError ()
-
-    def move (self, game):
+    def movement (self, game):
         raise NotImplementedError ()
 
 class BasicMonster (Monster):
@@ -362,10 +463,11 @@ class Module:
     def name (self):
         return self.m_name
 
-    # Override in subclass
+    # Check consistency constraints of the module.
     def consistent (self, mod_index):
         return False
 
+    # Game construction phases.
     def construct (self, game):
         pass
 
@@ -373,7 +475,24 @@ class Module:
         pass
 
     def before_turn_0 (self, game):
+        # Note: investigators are initialized by now.
         pass
+
+    def turn_0 (self, game):
+        pass
+
+    # Game play phases.
+    def upkeep (self, game):
+        return []
+
+    def movement (self, game):
+        return []
+
+    def encounters (self, game):
+        return []
+
+    def mythos (self, game):
+        return []
 
 class ModuleInstance:
 
@@ -392,6 +511,21 @@ class ModuleInstance:
 
     def before_turn_0 (self):
         return self.m_type.before_turn_0 (self.m_game)
+
+    def turn_0 (self):
+        return self.m_type.turn_0 (self.m_game)
+
+    def upkeep (self):
+        return self.m_type.upkeep (self.m_game)
+
+    def movement (self):
+        return self.m_type.movement (self.m_game)
+
+    def encounters (self):
+        return self.m_type.encounters (self.m_game)
+
+    def mythos (self):
+        return self.m_type.mythos (self.m_game)
 
 class UI:
     def setup_players (self, game):
@@ -439,17 +573,22 @@ class Game:
 
         self.m_neighborhoods = []
         self.m_locations = []
-        self.m_all_investigators = set ()
-        self.m_investigators = []
 
-        self.m_monsters_extra = [] # ancient ones, heralds, etc.
+        self.m_all_investigators = set () # All known investigators.
+        self.m_investigators = [] # Active investigators.
+
+        # Containers for inactive monsters
         self.m_registered_monsters = {} # monster->count
         self.m_monster_cup = []
+
+        # Active monsters
         self.m_loc_monsters = {} # location->monster
+        self.m_monsters_extra = [] # ancient ones, heralds, etc.
 
         if len (modules) == 0:
             raise RuntimeError ("No modules to play with!")
-        assert ui != None
+
+        assert self.m_ui != None
 
     def add_neighborhood (self, neighborhood):
         assert neighborhood not in self.m_neighborhoods
@@ -473,13 +612,18 @@ class Game:
         # Return a copy of internal list of used investigator.
         return list (self.m_investigators)
 
-    def add_investigator (self, it):
-        self.m_all_investigators.add (it)
+    def add_investigator (self, investigator):
+        self.m_all_investigators.add (investigator)
 
     def use_investigator (self, it):
         assert it in self.m_all_investigators
         self.m_investigators.append (it)
         print "%s playing" % it.name ()
+
+    def drop_investigator (self, investigator):
+        del self.m_investigators[self.m_investigators.index (investigator)]
+        if self.m_investigators == []:
+            raise EndGame ()
 
     def add_extra_board_monster (self, monster):
         print "%s is extra board monster" % monster.name ()
@@ -505,14 +649,33 @@ class Game:
             self.m_registered_monsters[monster] = count
         self.m_monster_cup.append (monster)
 
-    def move_monster (self, monster, location):
+    def monster_cup (self):
+        return list (self.m_monster_cup)
+
+    def monster_from_cup (self, monster, location):
+        # XXX ugly linear lookup
+        assert monster in self.m_monster_cup
+        del self.m_monster_cup[self.m_monster_cup.index (monster)]
+
         if location not in self.m_loc_monsters:
             self.m_loc_monsters[location] = []
+        print "%s appears at %s" % (monster.name (), location.name ())
         self.m_loc_monsters[location].append (monster)
         monster.move_to (location)
 
-    def move_investigator (self, investigator, location):
-        investigator.move_to (location)
+    def remove_monster (self, monster, location):
+        assert location in self.m_loc_monsters
+        print "%s removed from %s" % (monster.name (), location.name ())
+        monsters = self.m_loc_monsters[location]
+        assert monster in monsters
+        del monsters[monsters.index (monster)]
+        monster.move_to (None)
+
+    def monsters_at (self, location):
+        if location not in self.m_loc_monsters:
+            return []
+        else:
+            return list (self.m_loc_monsters[location])
 
     def setup_game (self):
         print "-- setting up the game --"
@@ -534,20 +697,82 @@ class Game:
             modi.before_turn_0 ()
 
         for investigator in self.m_investigators:
-            investigator.before_turn_0 (self)
+            investigator.prepare_pass_1 (self)
+
+        for investigator in self.m_investigators:
+            investigator.prepare_pass_2 (self)
+
+        for investigator in self.m_investigators:
             self.m_ui.setup_investigator (self, investigator)
 
-        brave = self.m_investigators[0]
-        import random
-        self.move_monster (random.choice (self.m_monster_cup),
-                           brave.location ())
-        if self.leave_location (brave, brave.location ()):
-            print "you managed to leave the location"
+        for modi in self.m_modis:
+            modi.turn_0 ()
+
+        print "-- entering the game loop --"
+        try:
+            while True:
+                def perform_some_actions (investigator, actions):
+                    if actions:
+                        actions = actions + [GameplayAction_Quit ()]
+                        for action in self.m_ui.select_action (self, investigator, actions):
+                            perform_some_actions (investigator,
+                                                  action.perform (self, investigator))
+
+                print "-- turn start --"
+                # This phase is not in the original game, but I figure
+                # it might be handy if something needs to be done
+                # before the first module fires its upkeep.
+                for investigator in self.m_investigators:
+                    perform_some_actions (investigator,
+                                          investigator.turn_start (self))
+
+                print "-- upkeep --"
+                actions = sum ((modi.upkeep ()
+                                for modi in self.m_modis), [])
+                for investigator in self.m_investigators:
+                    perform_some_actions (investigator,
+                                          actions + investigator.upkeep (self))
+
+                print "-- movement --"
+                actions = sum ((modi.movement ()
+                                for modi in self.m_modis), [])
+                for investigator in self.m_investigators:
+                    perform_some_actions (investigator,
+                                          actions + investigator.movement (self))
+
+                # XXX This brings the disctinction between "arkham"
+                # and "other-world" location into the core.  Currently
+                # don't mind, but may need to revamp the loop later.
+                def in_arkham (inv):
+                    if not inv.location ().attributes.flag ("other_world"):
+                        return 1
+                    else:
+                        return 0
+                investigators = list (self.m_investigators)
+                investigators.sort (cmp = lambda x, y: \
+                                        in_arkham (x) - in_arkham (y))
+
+                print "-- encounters --"
+                actions = sum ((modi.encounters ()
+                                for modi in self.m_modis), [])
+                for investigator in investigators:
+                    perform_some_actions (investigator,
+                                          actions + investigator.encounters (self))
+
+                print "-- mythos --"
+                actions = sum ((modi.mythos ()
+                                for modi in self.m_modis), [])
+                for investigator in self.m_investigators:
+                    perform_some_actions (investigator,
+                                          actions + investigator.mythos (self))
+
+        except EndGame:
+            pass
 
     # 0: won't fight
     # 1: does't want to fight, but failed awareness check
     # 2: wants to fight
-    def will_fight (self, investigator, monster):
+    def will_fight (self, combat, investigator, monster):
         import fight
         if self.m_ui.wants_to_fight (self, investigator, monster):
             return 2
@@ -555,40 +780,71 @@ class Game:
             return 0
         else:
             investigator.lose_movement_points ()
-            fight.deal_combat_damage_hook (self, investigator, monster)
+            fight.deal_combat_damage_hook (combat, investigator, monster)
             if investigator.alive ():
                 return 1
             else:
-                return 0
+                raise fight.EndCombat (False)
 
     # Whether the fight should be ended.
     def break_fight (self, investigator, monster):
+        import fight
         if investigator.location () != monster.location ():
             return True
         if not investigator.alive ():
-            return True
+            raise fight.EndCombat (False)
         return False
 
-    # Retur False if investigator can't leave the location.
-    def leave_location (self, investigator, location):
+    def fight (self, investigator, monster):
         import fight
-        print "%s attempts to leave a location" % investigator.name ()
+        try:
+            combat = Combat (self)
+            if self.will_fight (combat, investigator, monster) != 0:
+                investigator.lose_movement_points ()
+                fight.fight_hook (combat, investigator, monster)
+        except fight.EndCombat, e:
+            if e.success ():
+                fight.combat_won_hook (combat, investigator, monster)
+            else:
+                fight.combat_lost_hook (combat, investigator, monster)
+
+    def move_monster (self, monster, location):
+        if location not in self.m_loc_monsters:
+            self.m_loc_monsters[location] = []
+        self.m_loc_monsters[location].append (monster)
+        monster.move_to (location)
+
+    def move_investigator (self, investigator, location):
+        if self.leave_location (investigator, investigator.location ()):
+            investigator.move_to (location)
+            self.enter_location (investigator, location)
+
+    def deal_with_monsters (self, investigator, location):
         monsters = self.m_loc_monsters.get (location, [])
         if monsters != []:
             for monster in monsters:
                 print "dealing with %s" % monster.name ()
-                try:
-                    if self.will_fight (investigator, monster) != 0:
-                        investigator.lose_movement_points ()
-                        fight.fight_hook (self, investigator, monster)
-                except fight.EndCombat:
-                    pass
+                self.fight (investigator, monster)
                 print "combat is over"
                 if not investigator.alive ():
                     print "investigator died"
                     break
             print "all monsters were dealt with"
-        return investigator.alive () and investigator.movement_points () > 0
+
+
+    # Retur False if investigator can't leave the location.
+    def leave_location (self, investigator, location):
+        import fight
+        print "%s attempts to leave %s" % (investigator.name (), location.name ())
+        self.deal_with_monsters (investigator, location)
+        ret = investigator.alive () and investigator.movement_points () > 0
+        if not ret:
+            print "%s can't leave %s" % (investigator.name (), location.name ())
+        return ret
+
+    def enter_location (self, investigator, location):
+        print "%s entered %s" % (investigator.name (), location.name ())
+        self.deal_with_monsters (investigator, location)
 
     def environment (self):
         # XXX Haunter Of The Dark currently asks for that, but that
@@ -598,7 +854,7 @@ class Game:
 
     def devour (self, investigator):
         # XXX not implemented
-        pass
+        print "NYI: %s should be devoured" % investigator.name ()
 
 roll_dice_hook = fun.Function (Game, Investigator, object)
 dice_roll_successful_hook = fun.Function (Game, Investigator, object, int)

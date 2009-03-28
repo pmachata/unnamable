@@ -83,62 +83,92 @@ class Module (arkham.Module):
         unvisited_isle = maps.location ("Unvisited Isle", unstable = True)
         river_docks = maps.location ("River Docks")
         the_unnamable = maps.location ("The Unnamable", unstable = True)
+        (maps.draw_from (merchant_district)
+         .out (unvisited_isle, black = True, white = True).back ()
+         .out (the_unnamable, black = True, white = True).back ()
+         .out (river_docks, black = True, white = True).back ())
 
         maps.in_neighborhood (maps.neighborhood (game))
         miskatonic_u = maps.location ("Miskatonic University", street = True)
         science_building = maps.location ("Science Building", unstable = True)
         administration = maps.location ("Administration")
         library = maps.location ("Library")
+        (maps.draw_from (miskatonic_u)
+         .out (science_building, black = True, white = True).back ()
+         .out (administration, black = True, white = True).back ()
+         .out (library, black = True, white = True).back ())
 
         maps.in_neighborhood (maps.neighborhood (game))
         uptown = maps.location ("Uptown", street = True)
         st_mary = maps.location ("St. Mary's Hospital", seeker_avoids = True)
         magick_shop = maps.location ("Ye Olde Magick Shoppe", terror_close = 9)
         woods = maps.location ("Woods", unstable = True)
+        (maps.draw_from (uptown)
+         .out (st_mary, black = True, white = True).back ()
+         .out (magick_shop, black = True, white = True).back ()
+         .out (woods, black = True, white = True).back ())
 
         maps.in_neighborhood (maps.neighborhood (game))
         southside = maps.location ("Southside", street = True)
         historical_society = maps.location ("Historical society", unstable = True)
         south_church = maps.location ("South Church")
         ma_s_boarding = maps.location ("Ma's Boarding House")
+        (maps.draw_from (southside)
+         .out (historical_society, black = True, white = True).back ()
+         .out (south_church, black = True, white = True).back ()
+         .out (ma_s_boarding, black = True, white = True).back ())
 
         maps.in_neighborhood (maps.neighborhood (game))
         french_hill = maps.location ("French Hill", street = True)
         silver_twilight = maps.location ("Silver Twilight Lodge", unstable = True)
         witch_house = maps.location ("The Witch House", unstable = True)
+        (maps.draw_from (french_hill)
+         .out (silver_twilight, black = True, white = True).back ()
+         .out (witch_house, black = True, white = True).back ())
 
         maps.in_neighborhood (maps.neighborhood (game))
         rivertown = maps.location ("Rivertown", street = True)
         general_store = maps.location ("General Store", terror_close = 3)
         black_cave = maps.location ("Black Cave", unstable = True)
         graveyard = maps.location ("Graveyard", unstable = True)
+        (maps.draw_from (rivertown)
+         .out (general_store, black = True, white = True).back ()
+         .out (black_cave, black = True, white = True).back ()
+         .out (graveyard, black = True, white = True).back ())
 
         maps.in_neighborhood (maps.neighborhood (game))
         easttown = maps.location ("Easttown", street = True)
         police_station = maps.location ("Police Station")
         velmas_dinner = maps.location ("Velma's Dinner")
         hibbs_roadhouse = maps.location ("Hibb's Roadhouse", unstable = True)
+        (maps.draw_from (easttown)
+         .out (police_station, black = True, white = True).back ()
+         .out (velmas_dinner, black = True, white = True).back ()
+         .out (hibbs_roadhouse, black = True, white = True).back ())
 
         maps.in_neighborhood (maps.neighborhood (game))
         downtown = maps.location ("Downtown", street = True)
         independence_sq = maps.location ("Independence Square", unstable = True)
         arkham_asylum = maps.location ("Arkham Asylum", seeker_avoids = True)
         bank_of_arkham = maps.location ("Bank of Arkham")
+        (maps.draw_from (downtown)
+         .out (independence_sq, black = True, white = True).back ()
+         .out (arkham_asylum, black = True, white = True).back ()
+         .out (bank_of_arkham, black = True, white = True).back ())
 
         maps.in_neighborhood (maps.neighborhood (game))
         northside = maps.location ("Northside", street = True)
         train_station = maps.location ("Train Station")
         newspaper = maps.location ("Newspaper")
         curiosity_shop = maps.location ("Curiositie Shoppe", terror_close = 6)
+        (maps.draw_from (northside)
+         .out (train_station, black = True, white = True).back ()
+         .out (newspaper, black = True, white = True).back ()
+         .out (curiosity_shop, black = True, white = True).back ())
 
         maps.in_neighborhood (None)
         maps.location ("Sky", sky = True)
         maps.location ("Lost in Time and Space", lost_in_time_and_space = True)
-
-        (maps.draw_from (merchant_district)
-         .out (unvisited_isle, black = True, white = True).back ()
-         .out (the_unnamable, black = True, white = True).back ()
-         .out (river_docks, black = True, white = True).back ())
 
         (maps.draw_from (downtown)
          .to (northside, black = True).back (white = True)
@@ -207,7 +237,7 @@ class Module (arkham.Module):
         def do (game, investigator, monster):
             print """XXX If you pass a Combat check against Migo,
             return it to the box and draw 1 Unique Item."""
-            raise fight.EndCombat ()
+            raise fight.EndCombat (True)
 
 
         class Nightgaunt (arkham.BasicMonster):
@@ -244,17 +274,25 @@ class Module (arkham.Module):
                 return arkham.evade_check (-3)
 
         @fight.fight_hook.match (fun.any, fun.any, fun.matchclass (TheBlackMan))
-        def do (game, investigator, monster):
-            if not arkham.SkillCheck ("luck", -1).check (game, investigator):
-                investigator.devour (game, monster)
-            else:
+        def do (combat, investigator, monster):
+            if arkham.SkillCheck ("luck", -1).check (combat.game, investigator):
                 investigator.gain_clues (2)
-            raise fight.EndCombat ()
+                raise fight.EndCombat (True)
+            else:
+                investigator.devour (combat.game, monster)
+                raise fight.EndCombat (False)
 
         @fight.deal_combat_damage_hook.match (fun.any, fun.any, fun.matchclass (TheBlackMan))
-        def do (game, investigator, monster):
+        def do (combat, investigator, monster):
             pass
 
+        @fight.combat_won_hook.match (fun.any, fun.any, fun.matchclass (TheBlackMan))
+        def do (combat, investigator, monster):
+            endless_combat_won_hook (combat, investigator, monster)
+
+        @fight.combat_lost_hook.match (fun.any, fun.any, fun.matchclass (TheBlackMan))
+        def do (combat, investigator, monster):
+            endless_combat_won_hook (combat, investigator, monster)
 
         class TheBloatedWoman (arkham.SimpleMonster):
             def __init__ (self):
@@ -266,15 +304,15 @@ class Module (arkham.Module):
                      endless = True)
 
         @fight.fight_hook.match (fun.any, fun.any, fun.matchclass (TheBloatedWoman))
-        def do (game, investigator, monster):
+        def do (combat, investigator, monster):
             """Before making a Horror check, pass a Will(-2) check or
             or automatically fail the Horror check and the Combat check."""
-            if not arkham.SkillCheck ("will", -2).check (game, investigator):
-                fight.horror_check_fail_hook (game, investigator, monster)
-                fight.combat_check_fail_hook (game, investigator, monster)
-                fight.combat_loop_hook (game, investigator, monster)
+            if not arkham.SkillCheck ("will", -2).check (combat.game, investigator):
+                fight.horror_check_fail_hook (combat, investigator, monster)
+                fight.combat_check_fail_hook (combat, investigator, monster)
+                fight.combat_loop_hook (combat, investigator, monster)
             else:
-                fight.normal_fight_hook (game, investigator, monster)
+                fight.normal_fight_hook (combat, investigator, monster)
 
 
         for count, monster in [
@@ -449,3 +487,22 @@ class Module (arkham.Module):
         for location in game.all_locations ():
             if location.attributes.flag ("unstable"):
                 location.add_clue_tokens (1)
+
+    def turn_0 (self, game):
+        # XXX draw a mythos card and resolve it as usual.  If a Rumor
+        # is drawn, discard it and draw again until you draw a mythos
+        # card that isn't a Rumor.
+
+        # For now just play ordinary mythos phase.
+        self.mythos (game)
+
+    def mythos (self, game):
+        # For now just put new monster somewhere.  Perhaps on the sky,
+        # but we don't care, it's just a temporary solution.
+        import random
+        game.monster_from_cup \
+            (random.choice (game.monster_cup ()),
+             random.choice ([location
+                             for location in game.all_locations ()
+                             if not location.attributes.flag ("street")]))
+        return []
