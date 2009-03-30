@@ -19,8 +19,19 @@ class TUI (arkham.UI):
             in ["Y", "y", ""]
 
     def select_action (self, game, investigator, actions):
+        actions = actions + [arkham.GameplayAction_Quit ()]
+
+        print "======================================================="
+        print "%s @ %s: sanity=%s, stamina=%s, movement=%s"\
+            % (investigator.name (),
+               investigator.location ().name (),
+               investigator.sanity (),
+               investigator.stamina (),
+               investigator.movement_points ())
+        print "trophies:", ", ".join (trophy.name ()
+                                      for trophy in investigator.trophies ())
         while True:
-            print "%s: select an action:" % investigator.name ()
+            print "-------------------------------------------------------"
             id_act = list (enumerate (actions))
             for i, action in id_act:
                 loc = action.bound_location ()
@@ -31,11 +42,17 @@ class TUI (arkham.UI):
                     if mon:
                         extra = extra + " [%s]" % (", ".join (monster.name () for monster in mon))
                 print "%2s: %s%s" % (i, action.name (), extra)
+
             id_act = dict (id_act)
-            sel = int (raw_input ())
+            try:
+                sel = int (raw_input ())
+            except ValueError:
+                continue
+
             if sel in id_act:
-                print "ok"
-                return [id_act[sel]]
+                print "=>", id_act[sel].name ()
+                print "-------------------------------------------------------"
+                return id_act[sel]
 
 idx = arkham.ModuleIndex ()
 

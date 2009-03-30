@@ -23,6 +23,36 @@ class DamageLost (arkham.Damage):
         lose_in_time_and_space (game, investigator)
 damage_lost = DamageLost ()
 
+class GameplayAction_InvestigatorScrewed (arkham.GameplayAction):
+    def __init__ (self, location):
+        arkham.GameplayAction.__init__ (self, "move to %s and lose half the stuff" % location.name ())
+        self.m_location = location
+
+    def perform (self, game, investigator):
+        investigator.move_to (self.m_location)
+        print "lose half items" # xxx
+        print "lose half clue tokens" # xxx
+        print "lose all retainers" # xxx
+
+    def bound_location (self):
+        return self.m_location
+
+class GameplayAction_Insane (GameplayAction_InvestigatorScrewed):
+    def __init__ (self, location):
+        GameplayAction_InvestigatorScrewed.__init__ (self, location)
+
+    def perform (self, game, investigator):
+        GameplayAction_InvestigatorScrewed.perform (self, game, investigator)
+        investigator.add_sanity (1)
+
+class GameplayAction_Unconscious (GameplayAction_InvestigatorScrewed):
+    def __init__ (self, location):
+        GameplayAction_InvestigatorScrewed.__init__ (self, location)
+
+    def perform (self, game, investigator):
+        GameplayAction_InvestigatorScrewed.perform (self, game, investigator)
+        investigator.add_stamina (1)
+
 
 def has_token (what):
     def match (arg):
@@ -100,7 +130,8 @@ class Module (arkham.Module):
 
         maps.in_neighborhood (maps.neighborhood (game))
         uptown = maps.location ("Uptown", street = True)
-        st_mary = maps.location ("St. Mary's Hospital", seeker_avoids = True)
+        st_mary = maps.location ("St. Mary's Hospital",
+                                 hospital = True, seeker_avoids = True)
         magick_shop = maps.location ("Ye Olde Magick Shoppe", terror_close = 9)
         woods = maps.location ("Woods", unstable = True)
         (maps.draw_from (uptown)
@@ -149,7 +180,8 @@ class Module (arkham.Module):
         maps.in_neighborhood (maps.neighborhood (game))
         downtown = maps.location ("Downtown", street = True)
         independence_sq = maps.location ("Independence Square", unstable = True)
-        arkham_asylum = maps.location ("Arkham Asylum", seeker_avoids = True)
+        arkham_asylum = maps.location ("Arkham Asylum",
+                                       asylum = True, seeker_avoids = True)
         bank_of_arkham = maps.location ("Bank of Arkham")
         (maps.draw_from (downtown)
          .out (independence_sq, black = True, white = True).back ()
@@ -288,11 +320,11 @@ class Module (arkham.Module):
 
         @fight.combat_won_hook.match (fun.any, fun.any, fun.matchclass (TheBlackMan))
         def do (combat, investigator, monster):
-            endless_combat_won_hook (combat, investigator, monster)
+            fight.endless_combat_won_hook (combat, investigator, monster)
 
         @fight.combat_lost_hook.match (fun.any, fun.any, fun.matchclass (TheBlackMan))
         def do (combat, investigator, monster):
-            endless_combat_won_hook (combat, investigator, monster)
+            fight.endless_combat_won_hook (combat, investigator, monster)
 
         class TheBloatedWoman (arkham.SimpleMonster):
             def __init__ (self):
@@ -496,9 +528,22 @@ class Module (arkham.Module):
         # For now just play ordinary mythos phase.
         self.mythos (game)
 
+        loc = None
+        for location in game.all_locations ():
+            if location.name () == "River Docks":
+                loc = location
+                break
+        assert loc != None
+
+        for monster in game.monster_cup ():
+            if monster.name () == "Cultist":
+                game.monster_from_cup (monster, loc)
+                break
+
     def mythos (self, game):
-        # For now just put new monster somewhere.  Perhaps on the sky,
-        # but we don't care, it's just a temporary solution.
+        # XXX For now just put new monster somewhere.  It may turn out
+        # to be in "lost in time and space", but we don't care, it's
+        # just a temporary solution.
         import random
         game.monster_from_cup \
             (random.choice (game.monster_cup ()),
@@ -506,3 +551,13 @@ class Module (arkham.Module):
                              for location in game.all_locations ()
                              if not location.attributes.flag ("street")]))
         return []
+
+    def investigator_unconscious (self, game):
+        return [GameplayAction_Unconscious (location)
+                for location in game.all_locations ()
+                             if location.attributes.flag ("hospital")]
+
+    def investigator_insane (self, game):
+        return [GameplayAction_Unconscious (location)
+                for location in game.all_locations ()
+                             if location.attributes.flag ("asylum")]
