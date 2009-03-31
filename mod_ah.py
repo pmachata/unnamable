@@ -21,6 +21,10 @@ def do (game, investigator):
 class DamageLost (arkham.Damage):
     def deal (self, game, investigator, monster):
         lose_in_time_and_space (game, investigator)
+
+    def description (self, game, investigator, monster):
+        return "lost in time and space"
+
 damage_lost = DamageLost ()
 
 class GameplayAction_InvestigatorScrewed (arkham.GameplayAction):
@@ -246,7 +250,8 @@ class Module (arkham.Module):
                 arkham.BasicMonster.__init__ \
                     (self, "Maniac",
                      arkham.evade_check (-1),
-                     arkham.pass_check, None,
+                     arkham.pass_check,
+                     arkham.damage_none,
                      arkham.ConditionalCheck (terror_at_least_6,
                                               arkham.combat_check (+1, 1),
                                               arkham.combat_check (-2, 1)),
@@ -280,6 +285,10 @@ class Module (arkham.Module):
                         open gate. If two or more gates are the same
                         distance from you, you choose which gate you
                         are drawn through."""
+
+                    def description (self, game, investigator, monster):
+                        return "draw through the nearest open gate"
+
                 arkham.BasicMonster.__init__ \
                     (self, "Nightgaunt",
                      arkham.evade_check (-2),
@@ -354,7 +363,8 @@ class Module (arkham.Module):
                                       +1, (-2, 2), 3, (-3, 3))),
             (6, arkham.BasicMonster ("Cultist",
                                      arkham.evade_check (-3),
-                                     arkham.pass_check, None,
+                                     arkham.pass_check,
+                                     arkham.damage_none,
                                      arkham.combat_check (+1, 1),
                                      arkham.DamageStamina (1))),
             (3, arkham.SimpleMonster ("Dark Young",
@@ -376,7 +386,8 @@ class Module (arkham.Module):
             (2, ElderThing ()),
             (2, arkham.BasicMonster ("Fire Vampire",
                                      arkham.evade_check (+0),
-                                     arkham.pass_check, None,
+                                     arkham.pass_check,
+                                     arkham.damage_none,
                                      arkham.combat_check (+2, 1),
                                      arkham.DamageStamina (2))),
             (1, arkham.SimpleMonster ("Flying Polyp",
@@ -452,7 +463,8 @@ class Module (arkham.Module):
                                       magical = "immunity")),
             (2, arkham.BasicMonster ("Witch",
                                      arkham.evade_check (-1),
-                                     arkham.pass_check, None,
+                                     arkham.pass_check,
+                                     arkham.damage_none,
                                      arkham.combat_check (-3, 1),
                                      arkham.DamageStamina (2),
                                      magical = "resistance")),
@@ -545,6 +557,7 @@ class Module (arkham.Module):
         # to be in "lost in time and space", but we don't care, it's
         # just a temporary solution.
         import random
+        print "; ".join (mon.name () for mon in game.monster_cup ())
         game.monster_from_cup \
             (random.choice (game.monster_cup ()),
              random.choice ([location

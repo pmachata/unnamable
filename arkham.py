@@ -43,7 +43,7 @@ class Attributes:
             else:
                 ret.append ("%s%s" % ("" if val else "not ",
                                       attr))
-        return " ".join (ret)
+        return ";".join (ret)
 
 def match_attribute (**kwargs):
     key, = kwargs.keys ()
@@ -145,14 +145,14 @@ class GameplayAction_Fight (GameplayAction):
 
 class GameplayAction_Move (GameplayAction):
     def __init__ (self, location):
-        GameplayAction.__init__ (self, "move to %s" % location.name ())
+        GameplayAction.__init__ (self, "move")
         self.m_location = location
 
     def perform (self, game, investigator):
         game.move_investigator (investigator, self.m_location)
         if investigator.movement_points () > 0:
-            # He might lose all movement points during the fight after
-            # he tried to leave the current location.
+            # He might have lost all movement points during the fight
+            # after he tried to leave the current location.
             investigator.spend_movement_point ()
 
     def bound_location (self):
@@ -369,56 +369,105 @@ class Investigator (ObjectWithLocation, GameplayObject):
 
 class Damage:
     def deal (self, game, investigator, monster):
+        raise NotImplementedError ()
+
+    def description (self, game, investigator, monster):
+        raise NotImplementedError ()
+
+class DamageNone (Damage):
+    def deal (self, game, investigator, monster):
         pass
+
+    def description (self, game, investigator, monster):
+        return "-"
 
 class DamageSanity (Damage):
     def __init__ (self, amount):
         self.m_amount = amount
+
     def deal (self, game, investigator, monster):
         investigator.reduce_sanity (self.m_amount)
+
+    def description (self, game, investigator, monster):
+        return "sanity %+d" % -self.m_amount
 
 class DamageStamina (Damage):
     def __init__ (self, amount):
         self.m_amount = amount
+
     def deal (self, game, investigator, monster):
         investigator.reduce_stamina (self.m_amount)
+
+    def description (self, game, investigator, monster):
+        return "stamina %+d" % -self.m_amount
 
 class DamageDevour (Damage):
     def deal (self, game, investigator, monster):
         investigator.devour (game, monster)
+
+    def description (self, game, investigator, monster):
+        return "devour"
 
 class ConditionalDamage (Damage):
     def __init__ (self, predicate, damage_pass, damage_fail = Damage ()):
         self.m_pred = predicate
         self.m_pass = damage_pass
         self.m_fail = damage_fail
+
     def deal (self, game, investigator, monster):
         if self.m_pred (game, investigator, monster):
             return self.m_pass.deal (game, investigator, monster)
         else:
             return self.m_fail.deal (game, investigator, monster)
 
+    def description (self, game, investigator, monster):
+        if self.m_pred (game, investigator, monster):
+            return self.m_pass.description (game, investigator, monster)
+        else:
+            return self.m_fail.description (game, investigator, monster)
+
+damage_none = DamageNone ()
 damage_devour = DamageDevour ()
 
 class Check:
+    def check (self, game, investigator):
+        raise NotImplementedError ()
+
+    def description (self, game, investigator):
+        raise NotImplementedError ()
+
+class ConstCheck (Check):
     def __init__ (self, ret):
         self.m_ret = ret
+
     def check (self, game, investigator):
         return self.m_ret
+
+    def description (self, game, investigator):
+        if self.m_ret:
+            return "pass"
+        else:
+            return "fail"
 
 class SkillCheck (Check):
     def __init__ (self, skill_name, modifier, difficulty = 1):
         self.m_skill_name = skill_name
         self.m_modifier = modifier
         self.m_difficulty = difficulty
+        assert difficulty >= 1
 
     def check (self, game, investigator):
         print "%s check:" % self.m_skill_name,
         return investigator.perform_check (game, self.m_skill_name,
                                            self.m_modifier, self.m_difficulty)
 
+    def description (self, game, investigator):
+        return "%s(%+d)%s" % (self.m_skill_name, self.m_modifier,
+                               ("[%d]" % self.m_difficulty
+                                if self.m_difficulty > 1 else ""))
+
 class ConditionalCheck (Check):
-    def __init__ (self, predicate, check_pass, check_fail = Check (False)):
+    def __init__ (self, predicate, check_pass, check_fail = ConstCheck (False)):
         self.m_pred = predicate
         self.m_pass = check_pass
         self.m_fail = check_fail
@@ -429,8 +478,14 @@ class ConditionalCheck (Check):
         else:
             return self.m_fail.check (game, investigator)
 
-pass_check = Check (True)
-fail_check = Check (False)
+    def description (self, game, investigator):
+        if self.m_pred (game, investigator):
+            return self.m_pass.description (game, investigator)
+        else:
+            return self.m_fail.description (game, investigator)
+
+pass_check = ConstCheck (True)
+fail_check = ConstCheck (False)
 def evade_check (awareness):
     return SkillCheck ("evade", awareness, 1)
 def horror_check (rating):
@@ -1018,7 +1073,6 @@ class Game:
 
     def enter_location (self, investigator, location):
         print "%s entered %s" % (investigator.name (), location.name ())
-        self.deal_with_monsters (investigator, location)
 
     def environment (self):
         # XXX Haunter Of The Dark currently asks for that, but that

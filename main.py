@@ -19,29 +19,48 @@ class TUI (arkham.UI):
             in ["Y", "y", ""]
 
     def select_action (self, game, investigator, actions):
+        def dump_monster_info (monster, level):
+            prefix = "  " * level
+            print "%s+ %s (%s)" % (prefix, monster.name (),
+                                   monster.attributes.fmt_flags ())
+            print "%s  evade:  %s" \
+                % (prefix,
+                   monster.evade_check ().description (game, investigator))
+            print "%s  horror: %s/%s" \
+                % (prefix,
+                   monster.horror_check ().description (game, investigator),
+                   monster.horror_damage ().description (game, investigator, monster))
+            print "%s  combat: %s/%s" \
+                % (prefix,
+                   monster.combat_check ().description (game, investigator),
+                   monster.combat_damage ().description (game, investigator, monster))
+
+        def dump_location_info (location, level):
+            prefix = "  " * level
+            print "%s%s (%s)" % (prefix, location.name (),
+                                 location.attributes.fmt_flags ())
+            for monster in game.monsters_at (location):
+                dump_monster_info (monster, level + 1)
+
         actions = actions + [arkham.GameplayAction_Quit ()]
 
         print "======================================================="
-        print "%s @ %s: sanity=%s, stamina=%s, movement=%s"\
+        print "%s: sanity=%s, stamina=%s, movement=%s"\
             % (investigator.name (),
-               investigator.location ().name (),
                investigator.sanity (),
                investigator.stamina (),
                investigator.movement_points ())
+        dump_location_info (investigator.location (), 2)
         print "trophies:", ", ".join (trophy.name ()
                                       for trophy in investigator.trophies ())
         while True:
             print "-------------------------------------------------------"
             id_act = list (enumerate (actions))
             for i, action in id_act:
+                print "%2s: %s" % (i, action.name ())
                 loc = action.bound_location ()
-                extra = ""
                 if loc:
-                    extra = " (%s)" % loc.attributes.fmt_flags ()
-                    mon = game.monsters_at (loc)
-                    if mon:
-                        extra = extra + " [%s]" % (", ".join (monster.name () for monster in mon))
-                print "%2s: %s%s" % (i, action.name (), extra)
+                    dump_location_info (loc, 3)
 
             id_act = dict (id_act)
             try:
