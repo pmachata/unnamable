@@ -13,6 +13,6 @@ class Module (arkham.Module):
 
     def before_turn_0 (self, game):
         for monster in game.registered_monsters ():
-            if ((not monster.attributes.has ("in_cup"))
-                or monster.attributes.flag ("in_cup")):
+            if ((not monster.attributes ().has ("in_cup"))
+                or monster.attributes ().flag ("in_cup")):
                 game.put_monster_in_cup (monster)

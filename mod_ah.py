@@ -5,7 +5,7 @@ import fun
 
 def find_location (game, flag):
     for location in game.all_locations ():
-        if location.attributes.flag (flag):
+        if location.attributes ().flag (flag):
             return location
     return None
 
@@ -107,7 +107,7 @@ class Module (arkham.Module):
                     print "add to doom track" # XXX
 
                 for location in game.all_locations ():
-                    if location.attributes.get ("terror_close") == level:
+                    if location.attributes ().get ("terror_close") == level:
                         print "close location %s" % location.name () # XXX
 
         self.mod_terror.track.add_event (TerrorTrack_AHEvents ())
@@ -304,9 +304,9 @@ class Module (arkham.Module):
         # I think it means that if I fail to avoid this monster, I
         # won't get any combat damage.  The combat will then ensue as
         # described above, by Luck check.
-        class TheBlackMan (arkham.Monster):
+        class TheBlackMan (arkham.MonsterProto):
             def __init__ (self):
-                arkham.Monster.__init__ \
+                arkham.MonsterProto.__init__ \
                     (self, "The Black Man",
                      in_cup = False,
                      mask = True,
@@ -372,7 +372,7 @@ class Module (arkham.Module):
                                       physical = "resistance",
                                       nightmarish = 1)),
             (1, arkham.SimpleMonster ("Dhole",
-                                      -1, (-1, 4), 3, (-3, 4),
+                                      -1, (-10, 40), 3, (-3, 4),
                                       physical = "resistance",
                                       magical = "resistance",
                                       nightmarish = 1,
@@ -491,7 +491,7 @@ class Module (arkham.Module):
             def before_turn_0 (self, game):
                 import random
                 masks = [monster for monster in game.registered_monsters ()
-                         if monster.attributes.flag ("mask")]
+                         if monster.attributes ().flag ("mask")]
 
                 for mask in random.sample (masks, 5):
                     game.put_monster_in_cup (mask)
@@ -513,7 +513,7 @@ class Module (arkham.Module):
             assert place != None
 
             for location in game.all_locations ():
-                if location.attributes.flag ("street") and location != place:
+                if location.attributes ().flag ("street") and location != place:
                     (maps.draw_from (place)
                      .to (location,
                           white = True, black = True,
@@ -529,7 +529,7 @@ class Module (arkham.Module):
 
     def before_turn_0 (self, game):
         for location in game.all_locations ():
-            if location.attributes.flag ("unstable"):
+            if location.attributes ().flag ("unstable"):
                 location.add_clue_tokens (1)
 
     def turn_0 (self, game):
@@ -548,7 +548,7 @@ class Module (arkham.Module):
         assert loc != None
 
         for monster in game.monster_cup ():
-            if monster.name () == "Cultist":
+            if monster.name () == "Dhole":
                 game.monster_from_cup (monster, loc)
                 break
 
@@ -562,15 +562,15 @@ class Module (arkham.Module):
             (random.choice (game.monster_cup ()),
              random.choice ([location
                              for location in game.all_locations ()
-                             if not location.attributes.flag ("street")]))
+                             if not location.attributes ().flag ("street")]))
         return []
 
     def investigator_unconscious (self, game):
         return [GameplayAction_Unconscious (location)
                 for location in game.all_locations ()
-                             if location.attributes.flag ("hospital")]
+                             if location.attributes ().flag ("hospital")]
 
     def investigator_insane (self, game):
-        return [GameplayAction_Unconscious (location)
+        return [GameplayAction_Insane (location)
                 for location in game.all_locations ()
-                             if location.attributes.flag ("asylum")]
+                             if location.attributes ().flag ("asylum")]

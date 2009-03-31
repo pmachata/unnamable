@@ -19,28 +19,62 @@ class TUI (arkham.UI):
             in ["Y", "y", ""]
 
     def select_action (self, game, investigator, actions):
-        def dump_monster_info (monster, level):
+        renames = {}
+        known_names = {}
+
+        renames = {}
+        known_names = {}
+
+        def dump_head (obj, level = 0):
             prefix = "  " * level
-            print "%s+ %s (%s)" % (prefix, monster.name (),
-                                   monster.attributes.fmt_flags ())
-            print "%s  evade:  %s" \
-                % (prefix,
-                   monster.evade_check ().description (game, investigator))
-            print "%s  horror: %s/%s" \
-                % (prefix,
-                   monster.horror_check ().description (game, investigator),
-                   monster.horror_damage ().description (game, investigator, monster))
-            print "%s  combat: %s/%s" \
-                % (prefix,
-                   monster.combat_check ().description (game, investigator),
-                   monster.combat_damage ().description (game, investigator, monster))
+            name = obj.name ()
+            first = True
+
+            if name in known_names:
+                if obj in renames:
+                    name = renames[obj]
+                    first = False
+                else:
+                    known_names[name] += 1
+                    nth = known_names[name]
+                    def fmtnumber (n):
+                        # hopefully we won't need more!
+                        return {2:"II",  3:"III", 4:"IV",
+                                5:"V",   6:"VI",  7:"VII",
+                                8:"VIII",9:"IX", 10:"X"}[n]
+                    name = "%s %s" % (name, fmtnumber (nth))
+                    renames[obj] = name
+            else:
+                renames[obj] = name
+                known_names[name] = 1
+
+            print "%s+ %s%s" % (prefix, name,
+                                ((" (%s)" % obj.attributes ().fmt_flags ())
+                                 if first else ""))
+
+            return first
+
+        def dump_monster_info (monster, level):
+            if dump_head (monster, level):
+                prefix = "  " * level
+                print "%s  evade:  %s" \
+                    % (prefix,
+                       monster.proto ().evade_check ().description (game, investigator))
+                print "%s  horror: %s/%s" \
+                    % (prefix,
+                       monster.proto ().horror_check ().description (game, investigator),
+                       monster.proto ().horror_damage ().description (game, investigator, monster))
+                print "%s  combat: %s/%s" \
+                    % (prefix,
+                       monster.proto ().combat_check ().description (game, investigator),
+                       monster.proto ().combat_damage ().description (game, investigator, monster))
+                print "%s  location: %s" % (prefix, monster.location ().name ())
 
         def dump_location_info (location, level):
-            prefix = "  " * level
-            print "%s%s (%s)" % (prefix, location.name (),
-                                 location.attributes.fmt_flags ())
-            for monster in game.monsters_at (location):
-                dump_monster_info (monster, level + 1)
+            if dump_head (location, level):
+                prefix = "  " * level
+                for monster in game.monsters_at (location):
+                    dump_monster_info (monster, level + 1)
 
         actions = actions + [arkham.GameplayAction_Quit ()]
 
@@ -50,17 +84,31 @@ class TUI (arkham.UI):
                investigator.sanity (),
                investigator.stamina (),
                investigator.movement_points ())
-        dump_location_info (investigator.location (), 2)
+        dump_location_info (investigator.location (), 1)
         print "trophies:", ", ".join (trophy.name ()
                                       for trophy in investigator.trophies ())
         while True:
             print "-------------------------------------------------------"
             id_act = list (enumerate (actions))
+
+            already_shown = set ()
             for i, action in id_act:
                 print "%2s: %s" % (i, action.name ())
-                loc = action.bound_location ()
-                if loc:
-                    dump_location_info (loc, 3)
+
+                location = action.bound_location ()
+                if location:
+                    if location not in already_shown:
+                        dump_location_info (location, 3)
+                    else:
+                        dump_head (location, 3)
+
+                monster = action.bound_monster ()
+                if monster:
+                    if monster not in already_shown:
+                        dump_monster_info (monster, 3)
+                    else:
+                        dump_head (monster, 3)
+                    already_shown.add (monster)
 
             id_act = dict (id_act)
             try:

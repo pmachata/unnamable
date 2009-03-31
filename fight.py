@@ -76,10 +76,11 @@ def do (combat, investigator, monster):
 
 @normal_horror_check_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
-    if monster.horror_check ().check (combat.game, investigator):
+    if monster.proto ().horror_check ().check (combat.game, investigator):
         horror_check_pass_hook (combat, investigator, monster)
     else:
         horror_check_fail_hook (combat, investigator, monster)
+    combat.check_ends (investigator, monster)
 
 @horror_check_pass_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
@@ -91,7 +92,7 @@ def do (combat, investigator, monster):
 
 @deal_horror_damage_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
-    monster.horror_damage ().deal (combat.game, investigator, monster)
+    monster.proto ().horror_damage ().deal (combat.game, investigator, monster)
 
 @combat_loop_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
@@ -113,7 +114,7 @@ def do (combat, investigator, monster):
 
 @normal_combat_check_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
-    if monster.combat_check ().check (combat.game, investigator):
+    if monster.proto ().combat_check ().check (combat.game, investigator):
         combat_check_pass_hook (combat, investigator, monster)
     else:
         combat_check_fail_hook (combat, investigator, monster)
@@ -128,7 +129,7 @@ def do (combat, investigator, monster):
 
 @deal_combat_damage_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
-    monster.combat_damage ().deal (combat.game, investigator, monster)
+    monster.proto ().combat_damage ().deal (combat.game, investigator, monster)
 
 @combat_won_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
@@ -137,7 +138,7 @@ def do (combat, investigator, monster):
 @normal_combat_won_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
     investigator.claim_trophy (monster)
-    combat.game.remove_monster (monster, monster.location ())
+    combat.game.remove_monster (monster)
 
 @combat_lost_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
@@ -145,7 +146,15 @@ def do (combat, investigator, monster):
 
 @normal_combat_lost_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
-    combat.game.investigator_unconscious (investigator)
+    unconscious = investigator.stamina () == 0
+    insane = investigator.sanity () == 0
+
+    if unconscious and insane:
+        combat.game.investigator_unconscious_insane (investigator)
+    elif insane:
+        combat.game.investigator_insane (investigator)
+    elif unconscious:
+        combat.game.investigator_unconscious (investigator)
 
 @evade_check_hook.match  (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
@@ -153,7 +162,7 @@ def do (combat, investigator, monster):
 
 @normal_evade_check_hook.match  (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
-    if monster.evade_check ().check (combat.game, investigator):
+    if monster.proto ().evade_check ().check (combat.game, investigator):
         pass_evade_check_hook (combat, investigator, monster)
     else:
         fail_evade_check_hook (combat, investigator, monster)
@@ -197,7 +206,7 @@ endless_combat_won_hook = fun.Function (name="endless_combat_won_hook", trace=tr
 @endless_combat_won_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
     print "monster is endless, put trophy to cup"
-    combat.game.remove_monster (monster, monster.location ())
+    combat.game.remove_monster (monster)
     combat.game.return_monster_in_cup (monster)
 
 @combat_won_hook.match (fun.any, fun.any, arkham.match_flag ("endless"))
