@@ -11,9 +11,9 @@ class Ancient:
     def before_turn_0 (self, game):
         pass
 
-class Module (arkham.Module):
+class ModuleProto (arkham.ModuleProto):
     def __init__ (self):
-        arkham.Module.__init__ (self, "ancient", "Ancient One")
+        arkham.ModuleProto.__init__ (self, "ancient", "Ancient One")
         self.Ancient = Ancient
         self.m_ancients = []
 

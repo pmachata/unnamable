@@ -72,9 +72,9 @@ def do (game, investigator, skill, roll):
 def do (game, investigator, skill, roll):
     return roll >= 6
 
-class Module (arkham.Module):
+class ModuleProto (arkham.ModuleProto):
     def __init__ (self):
-        arkham.Module.__init__ (self, "ah", "Arkham Horror")
+        arkham.ModuleProto.__init__ (self, "ah", "Arkham Horror")
         self.mod_ancient = None
         self.mod_skills = None
         self.mod_terror = None
@@ -230,19 +230,25 @@ class Module (arkham.Module):
             )
         )
 
+        # xxx hack
+        def monster_match (klass):
+            def match (arg):
+                return fun.matchclass (arkham.Monster) (arg) \
+                    and fun.matchclass (klass) (arg.proto ())
+            return match
+
         class ElderThing (arkham.SimpleMonster):
             def __init__ (self):
                 arkham.SimpleMonster.__init__ \
                     (self, "Elder Thing",
                      -2, (-3, 2), 2, (+0, 1))
 
-        @fight.combat_check_fail_hook.match (fun.any, fun.any, fun.matchclass (ElderThing))
+        @fight.combat_check_fail_hook.match (fun.any, fun.any, monster_match (ElderThing))
         def do (game, investigator, monster):
             print """XXX When you fail a Combat check against Elder
             Thing, you must discard 1 of your Weapons or Spells (your
             choice), if able."""
             fight.deal_combat_damage_hook (game, investigator, monster)
-
 
         class Maniac (arkham.BasicMonster):
             def __init__ (self, mod_terror):
@@ -270,7 +276,7 @@ class Module (arkham.Module):
                                      # goes to the cup after it's
                                      # killed.
 
-        @fight.combat_check_pass_hook.match (fun.any, fun.any, fun.matchclass (MiGo))
+        @fight.combat_check_pass_hook.match (fun.any, fun.any, monster_match (MiGo))
         def do (game, investigator, monster):
             print """XXX If you pass a Combat check against Migo,
             return it to the box and draw 1 Unique Item."""
@@ -311,10 +317,23 @@ class Module (arkham.Module):
                      in_cup = False,
                      mask = True,
                      endless = True)
+
             def evade_check (self):
                 return arkham.evade_check (-3)
 
-        @fight.fight_hook.match (fun.any, fun.any, fun.matchclass (TheBlackMan))
+            def horror_check (self):
+                return arkham.SpecialCheck ()
+
+            def combat_check (self):
+                return arkham.SpecialCheck ()
+
+            def horror_damage (self):
+                return arkham.SpecialDamage ()
+
+            def combat_damage (self):
+                return arkham.SpecialDamage ()
+
+        @fight.fight_hook.match (fun.any, fun.any, monster_match (TheBlackMan))
         def do (combat, investigator, monster):
             if arkham.SkillCheck ("luck", -1).check (combat.game, investigator):
                 investigator.gain_clues (2)
@@ -323,15 +342,15 @@ class Module (arkham.Module):
                 investigator.devour (combat.game, monster)
                 raise fight.EndCombat (False)
 
-        @fight.deal_combat_damage_hook.match (fun.any, fun.any, fun.matchclass (TheBlackMan))
+        @fight.deal_combat_damage_hook.match (fun.any, fun.any, monster_match (TheBlackMan))
         def do (combat, investigator, monster):
             pass
 
-        @fight.combat_won_hook.match (fun.any, fun.any, fun.matchclass (TheBlackMan))
+        @fight.combat_won_hook.match (fun.any, fun.any, monster_match (TheBlackMan))
         def do (combat, investigator, monster):
             fight.endless_combat_won_hook (combat, investigator, monster)
 
-        @fight.combat_lost_hook.match (fun.any, fun.any, fun.matchclass (TheBlackMan))
+        @fight.combat_lost_hook.match (fun.any, fun.any, monster_match (TheBlackMan))
         def do (combat, investigator, monster):
             fight.endless_combat_won_hook (combat, investigator, monster)
 
@@ -344,7 +363,7 @@ class Module (arkham.Module):
                      mask = True,
                      endless = True)
 
-        @fight.fight_hook.match (fun.any, fun.any, fun.matchclass (TheBloatedWoman))
+        @fight.fight_hook.match (fun.any, fun.any, monster_match (TheBloatedWoman))
         def do (combat, investigator, monster):
             """Before making a Horror check, pass a Will(-2) check or
             or automatically fail the Horror check and the Combat check."""
@@ -547,10 +566,11 @@ class Module (arkham.Module):
                 break
         assert loc != None
 
-        for monster in game.monster_cup ():
-            if monster.name () == "Dhole":
-                game.monster_from_cup (monster, loc)
-                break
+        if False:
+            for monster in game.monster_cup ():
+                if monster.name () == "The Black Man":
+                    game.monster_from_cup (monster, loc)
+                    break
 
     def mythos (self, game):
         # XXX For now just put new monster somewhere.  It may turn out

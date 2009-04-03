@@ -3,9 +3,9 @@
 
 import arkham
 
-class Module (arkham.Module):
+class ModuleProto (arkham.ModuleProto):
     def __init__ (self):
-        arkham.Module.__init__ (self, "monster", "Populate Monster Cup")
+        arkham.ModuleProto.__init__ (self, "monster", "Populate Monster Cup")
         self.m_ancients = []
 
     def consistent (self, mod_index):

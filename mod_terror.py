@@ -4,9 +4,9 @@ class TerrorTrack (arkham.Track):
     def __init__ (self, owner):
         arkham.Track.__init__ (self, owner)
 
-class Module (arkham.Module):
+class ModuleProto (arkham.ModuleProto):
     def __init__ (self):
-        arkham.Module.__init__ (self, "terror", "Terror Track")
+        arkham.ModuleProto.__init__ (self, "terror", "Terror Track")
         self.track = TerrorTrack (self)
 
     def consistent (self, mod_index):

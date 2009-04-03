@@ -13,11 +13,6 @@ class TUI (arkham.UI):
         # decide initial values
         print "XXX setup investigator %s" % investigator.name ()
 
-    def wants_to_fight (self, game, investigator, monster):
-        return raw_input ("%s: Do you want to fight %s? [Y/n] "
-                          % (investigator.name (), monster.name ()))\
-            in ["Y", "y", ""]
-
     def select_action (self, game, investigator, actions):
         renames = {}
         known_names = {}
@@ -125,19 +120,19 @@ idx = arkham.ModuleIndex ()
 
 # some sort of module discovery would be here instead
 import mod_ah
-idx.add_module (mod_ah.Module ())
+idx.add_module (mod_ah.ModuleProto ())
 
 import mod_ancient
-idx.add_module (mod_ancient.Module ())
+idx.add_module (mod_ancient.ModuleProto ())
 
 import mod_monster
-idx.add_module (mod_monster.Module ())
+idx.add_module (mod_monster.ModuleProto ())
 
 import mod_skills
-idx.add_module (mod_skills.Module ())
+idx.add_module (mod_skills.ModuleProto ())
 
 import mod_terror
-idx.add_module (mod_terror.Module ())
+idx.add_module (mod_terror.ModuleProto ())
 
 # let's play arkham horror!
 idx.request ("ah")

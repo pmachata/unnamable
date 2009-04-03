@@ -20,9 +20,9 @@ class Skills:
             skill = self.m_checks[skill]
         return self.m_skills[skill]
 
-class Module (arkham.Module):
+class ModuleProto (arkham.ModuleProto):
     def __init__ (self):
-        arkham.Module.__init__ (self, "skills", "Skill Model")
+        arkham.ModuleProto.__init__ (self, "skills", "Skill Model")
         self.Skills = Skills
 
     def consistent (self, mod_index):
