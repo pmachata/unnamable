@@ -1,15 +1,8 @@
-from checks import *
-from damage import *
-from obj import *
+from deck import *
 
-class MonsterProto (ObjectWithAttributes):
+class MonsterProto (DeckItem):
     def __init__ (self, name, **attributes):
-        ObjectWithAttributes.__init__ (self)
-        self.m_name = name
-        self.apply_attributes (attributes)
-
-    def name (self):
-        return self.m_name
+        DeckItem.__init__ (self, name, **attributes)
 
     # Override in subclass
     def movement (self, game):
@@ -80,3 +73,6 @@ class SimpleMonster (BasicMonster):
                                combat_check (combat_rating, toughness),
                                DamageStamina (combat_damage),
                                **attributes)
+
+from damage import *
+from checks import *

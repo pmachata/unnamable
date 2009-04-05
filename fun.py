@@ -167,14 +167,14 @@ def if_else (pred, if_match, if_mismatch = val (None)):
     return match
 
 if __name__ == "__main__":
-    classify = Function (object, name="classify")
-
     def test1 ():
         class B:
             def __init__ (self, name):
                 self.name = name
             def __str__ (self):
                 return self.name
+
+        classify = Function (object, name="classify")
 
         @classify.match (catch (lambda a: a % 2 == 0))
         def classify_even (a):

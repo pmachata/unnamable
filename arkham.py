@@ -1,8 +1,5 @@
 import fun
 
-# Whether we want hook traces.
-trace = True
-
 from obj import *
 from loc import *
 from investigator import *
@@ -10,13 +7,24 @@ from monster import *
 from actions import *
 from checks import *
 from damage import *
-from fight import *
 from track import *
+from item import *
+from deck import *
+
+from fight import *
+from check_hooks import *
+
+def match_proto (klass):
+    def match (arg):
+        return fun.matchclass (Monster) (arg) \
+            and fun.matchclass (klass) (arg.proto ())
+    return match
 
 class ModuleIndex:
     def __init__ (self):
         self.m_module_idx = {}
         self.m_modules = {}
+        self.m_modules_ordered = []
 
     def add_module (self, module):
         self.m_module_idx[module.signature ()] = module
@@ -41,6 +49,7 @@ class ModuleIndex:
             return None
 
         print "included %s" % signature
+        self.m_modules_ordered.append (module)
         return module
 
     def has_module (self, signature):
@@ -51,7 +60,7 @@ class ModuleIndex:
             return self.m_modules[module]
 
     def requested_modules (self):
-        return [mod for mod, on in self.m_modules.iteritems () if on]
+        return list (self.m_modules_ordered)
 
 class ModuleProto:
     def __init__ (self, signature, name):

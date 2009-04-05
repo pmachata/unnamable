@@ -1,15 +1,17 @@
+import arkham
+
 class Check:
     def check (self, game, investigator):
         raise NotImplementedError ()
 
-    def description (self, game, investigator):
+    def description (self, game, investigator, subject):
         raise NotImplementedError ()
 
 class ConstCheck (Check):
     def __init__ (self, ret):
         self.m_ret = ret
 
-    def check (self, game, investigator):
+    def check (self, game, investigator, subject):
         return self.m_ret
 
     def description (self, game, investigator):
@@ -25,10 +27,11 @@ class SkillCheck (Check):
         self.m_difficulty = difficulty
         assert difficulty >= 1
 
-    def check (self, game, investigator):
-        print "%s check:" % self.m_skill_name,
-        return investigator.perform_check (game, self.m_skill_name,
-                                           self.m_modifier, self.m_difficulty)
+    def check (self, game, investigator, subject):
+        print "%s check:" % self.m_skill_name
+        return arkham.perform_check_hook \
+            (game, investigator, subject,
+             self.m_skill_name, self.m_modifier, self.m_difficulty)
 
     def description (self, game, investigator):
         return "%s(%+d)%s" % (self.m_skill_name, self.m_modifier,
@@ -41,11 +44,11 @@ class ConditionalCheck (Check):
         self.m_pass = check_pass
         self.m_fail = check_fail
 
-    def check (self, game, investigator):
+    def check (self, game, investigator, subject):
         if self.m_pred (game, investigator):
-            return self.m_pass.check (game, investigator)
+            return self.m_pass.check (game, investigator, subject)
         else:
-            return self.m_fail.check (game, investigator)
+            return self.m_fail.check (game, investigator, subject)
 
     def description (self, game, investigator):
         if self.m_pred (game, investigator):

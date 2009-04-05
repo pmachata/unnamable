@@ -1,5 +1,8 @@
 import fun
-import arkham
+import conf
+from investigator import Investigator
+from game import Monster
+from obj import cond_bind_attrib, match_flag
 
 class EndCombat (Exception):
     # Success is True if the investigator killed the monster, False if
@@ -27,8 +30,8 @@ class Combat:
 
 # Combat hooks.  Monsters or investigators override these to achieve
 # fine-grained customization of combat process.
-trace = arkham.trace # whether we want to trace hooks
-fight_args = (Combat, arkham.Investigator, arkham.Monster) # all the combat hooks have this prototype
+trace = conf.trace # whether we want to trace hooks
+fight_args = (Combat, Investigator, Monster) # all the combat hooks have this prototype
 
 fight_hook = fun.Function (name="fight_hook", trace=trace, *fight_args)
 normal_fight_hook = fun.Function (name="normal_fight_hook", trace=trace, *fight_args)
@@ -76,7 +79,7 @@ def do (combat, investigator, monster):
 
 @normal_horror_check_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
-    if monster.proto ().horror_check ().check (combat.game, investigator):
+    if monster.proto ().horror_check ().check (combat.game, investigator, monster):
         horror_check_pass_hook (combat, investigator, monster)
     else:
         horror_check_fail_hook (combat, investigator, monster)
@@ -114,7 +117,7 @@ def do (combat, investigator, monster):
 
 @normal_combat_check_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
-    if monster.proto ().combat_check ().check (combat.game, investigator):
+    if monster.proto ().combat_check ().check (combat.game, investigator, monster):
         combat_check_pass_hook (combat, investigator, monster)
     else:
         combat_check_fail_hook (combat, investigator, monster)
@@ -162,7 +165,7 @@ def do (combat, investigator, monster):
 
 @normal_evade_check_hook.match  (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
-    if monster.proto ().evade_check ().check (combat.game, investigator):
+    if monster.proto ().evade_check ().check (combat.game, investigator, monster):
         pass_evade_check_hook (combat, investigator, monster)
     else:
         fail_evade_check_hook (combat, investigator, monster)
@@ -189,12 +192,12 @@ def do (combat, investigator, monster):
 # Overwhelming/Nightmarish modifiers.
 
 @horror_check_pass_hook.match (fun.any, fun.any,
-                               fun.bind (X = arkham.cond_bind_attrib ("nightmarish")))
+                               fun.bind (X = cond_bind_attrib ("nightmarish")))
 def do (combat, investigator, monster):
     investigator.reduce_sanity (X)
 
 @combat_check_pass_hook.match (fun.any, fun.any,
-                               fun.bind (X = arkham.cond_bind_attrib ("overwhelming")))
+                               fun.bind (X = cond_bind_attrib ("overwhelming")))
 def do (combat, investigator, monster):
     investigator.reduce_stamina (X)
 
@@ -207,8 +210,8 @@ endless_combat_won_hook = fun.Function (name="endless_combat_won_hook", trace=tr
 def do (combat, investigator, monster):
     print "monster is endless, put trophy to cup"
     combat.game.remove_monster (monster)
-    combat.game.return_monster_in_cup (monster)
+    monster.discard ()
 
-@combat_won_hook.match (fun.any, fun.any, arkham.match_flag ("endless"))
+@combat_won_hook.match (fun.any, fun.any, match_flag ("endless"))
 def do (combat, investigator, monster):
     endless_combat_won_hook (combat, investigator, monster)

@@ -14,6 +14,9 @@ class ModuleInstance:
     def game (self):
         return self.m_game
 
+    def name (self):
+        return self.m_type.name ()
+
     # Game construction phases.
     def construct (self):
         return self.m_type.construct (self.m_game)
@@ -77,6 +80,9 @@ class Monster (ObjectWithLocation):
     def attributes (self):
         return self.m_proto.attributes ()
 
+    def discard (self):
+        return self.m_proto.discard ()
+
 class Game:
     def __init__ (self, modules, ui):
         self.m_modules = [ModuleInstance (self, mod) for mod in modules]
@@ -88,11 +94,9 @@ class Game:
         self.m_all_investigators = set () # All known investigators.
         self.m_investigators = [] # Active investigators.
 
-        # Containers for inactive monsters
-        self.m_registered_monsters = {} # monster->count
-        self.m_monster_cup = []
+        self.m_decks = {}
 
-        # Active monsters
+        # Monsters in play
         self.m_loc_monsters = {} # location->monster
         self.m_monsters_extra = [] # ancient ones, heralds, etc.
 
@@ -125,6 +129,13 @@ class Game:
         # Return a copy of internal list of all investigators.
         return list (self.m_all_investigators)
 
+    def add_deck (self, deck_class):
+        assert deck_class not in self.m_decks
+        self.m_decks[deck_class] = deck_class ()
+
+    def deck (self, deck_class):
+        return self.m_decks[deck_class]
+
     def investigators (self):
         # Return a copy of internal list of used investigator.
         return list (self.m_investigators)
@@ -146,37 +157,10 @@ class Game:
         print "%s is extra board monster" % monster.name ()
         self.m_monsters_extra.append (monster)
 
-    def register_monster (self, monster, count):
-        if monster not in self.m_registered_monsters:
-            self.m_registered_monsters[monster] = 0
-        self.m_registered_monsters[monster] += count
+    def deck (self, name):
+        return self.m_decks[name]
 
-    def registered_monsters (self):
-        return sum (([monster] * count
-                     for monster, count in self.m_registered_monsters.iteritems ()),
-                    [])
-
-    def put_monster_in_cup (self, monster):
-        assert monster in self.m_registered_monsters
-        count = self.m_registered_monsters[monster]
-        count -= 1
-        if count == 0:
-            del self.m_registered_monsters[monster]
-        else:
-            self.m_registered_monsters[monster] = count
-        self.m_monster_cup.append (monster)
-
-    def return_monster_in_cup (self, monster):
-        self.m_monster_cup.append (monster)
-
-    def monster_cup (self):
-        return list (self.m_monster_cup)
-
-    def monster_from_cup (self, monster_proto, location):
-        # XXX ugly linear lookup
-        assert monster_proto in self.m_monster_cup
-        del self.m_monster_cup[self.m_monster_cup.index (monster_proto)]
-
+    def add_monster (self, monster_proto, location):
         if location not in self.m_loc_monsters:
             self.m_loc_monsters[location] = []
         print "%s appears at %s" % (monster_proto.name (), location.name ())
@@ -202,6 +186,7 @@ class Game:
     def setup_game (self):
         print "-- setting up the game --"
         for modi in self.m_modules:
+            print "call construct in %s" % modi.name ()
             modi.construct ()
         if len (self.m_all_investigators) == 0:
             raise RuntimeError ("No Investigator's to play with!")

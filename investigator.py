@@ -20,6 +20,7 @@ class Investigator (ObjectWithLocation, GameplayObject):
         self.m_delayed = False
         self.m_trophies = []
         self.m_hands = []
+        self.m_active_items = []
 
     def name (self):
         return self.m_name
@@ -88,16 +89,8 @@ class Investigator (ObjectWithLocation, GameplayObject):
     def delayed (self):
         return self.m_delayed
 
-    def perform_check (self, game, skill_name, modifier, difficulty):
-        die = self.m_skills.check (skill_name) + modifier
-        successes = sum (roll_dice_hook (game, self, skill_name)
-                         for _ in xrange (die))
-        # XXX spend clue tokens to gain advantage
-        ret = successes >= difficulty
-        print "check %s, %s/%s successes on %s die"\
-            % ("passed" if ret else "failed",
-               successes, difficulty, die)
-        return ret
+    def skill (self, skill_name):
+        return self.m_skills.check (skill_name)
 
     def devour (self, game, monster):
         game.devour (self)
@@ -108,6 +101,9 @@ class Investigator (ObjectWithLocation, GameplayObject):
     def claim_trophy (self, monster):
         print "claiming trophy %s" % monster.name ()
         self.m_trophies.append (monster)
+
+    def active_items (self):
+        return []
 
     # Game construction phases.  Phases are called in sequence.  Given
     # phase is called only after the previous phase was finished for

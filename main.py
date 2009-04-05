@@ -128,6 +128,9 @@ idx.add_module (mod_ancient.ModuleProto ())
 import mod_monster
 idx.add_module (mod_monster.ModuleProto ())
 
+import mod_common
+idx.add_module (mod_common.ModuleProto ())
+
 import mod_skills
 idx.add_module (mod_skills.ModuleProto ())
 
