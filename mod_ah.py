@@ -45,13 +45,23 @@ def has_token (what):
         return False
     return match
 
-@arkham.dice_roll_successful_hook.match (fun.any, has_token ("blessing"), fun.any, fun.any)
-def do (game, investigator, skill, roll):
-    return roll >= 4
+class ItemBlessing:
+    pass
 
-@arkham.dice_roll_successful_hook.match (fun.any, has_token ("curse"), fun.any, fun.any)
-def do (game, investigator, skill, roll):
-    return roll >= 6
+class ItemCurse:
+    pass
+
+@arkham.dice_roll_successes_bonus_hook.match \
+    (fun.any, fun.any, fun.any, arkham.match_proto (ItemBlessing), fun.any, fun.any)
+def do (game, investigator, subject, item, skill_name, roll):
+    if roll == 4:
+        return 1
+
+@arkham.dice_roll_successes_bonus_hook.match \
+    (fun.any, fun.any, fun.any, arkham.match_proto (ItemCurse), fun.any, fun.any)
+def do (game, investigator, subject, item, skill_name, roll):
+    if roll == 5:
+        return -1
 
 class ModuleProto (arkham.ModuleProto):
     def __init__ (self):
@@ -211,7 +221,7 @@ class ModuleProto (arkham.ModuleProto):
          .to (rivertown).back ())
 
         game.add_investigator (
-            arkham.Investigator (
+            arkham.CommonInvestigator (
                 "\"Ashcan\" Pete", 4, 6, 1, 3,
                 self.mod_skills.Skills (4,
                                         3, 6, 5,
@@ -308,10 +318,16 @@ class ModuleProto (arkham.ModuleProto):
                                   (lambda arg: arg.name () == "Maniac"),
                               loc)
 
+        if True:
+            for investigator in game.investigators ():
+                item = self.m_common_deck.draw ()
+                investigator.take_item (game, item)
+
     def mythos (self, game):
         # XXX For now just put new monster somewhere.  It may turn out
         # to be in "lost in time and space", but we don't care, it's
         # just a temporary solution.
+        # XXX handle the monster-cup-empty case
         import random
         print "; ".join (mon.name () for mon in self.m_monster_cup.cards ())
         game.add_monster \

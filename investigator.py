@@ -1,4 +1,5 @@
 from loc import *
+import arkham
 
 class Hand:
     def can_handle (self, game, investigator, object):
@@ -19,8 +20,11 @@ class Investigator (ObjectWithLocation, GameplayObject):
         self.m_movement_points = 0
         self.m_delayed = False
         self.m_trophies = []
-        self.m_hands = []
-        self.m_active_items = []
+
+        self.m_hands = set ()
+
+        self.m_items = []
+        self.m_active_items = {} # item->[hands]
 
     def name (self):
         return self.m_name
@@ -102,8 +106,67 @@ class Investigator (ObjectWithLocation, GameplayObject):
         print "claiming trophy %s" % monster.name ()
         self.m_trophies.append (monster)
 
-    def active_items (self):
-        return []
+    def add_hand (self, hand):
+        assert hand not in self.m_hands
+        self.m_hands.add (hand)
+
+    def take_item (self, game, item):
+        self.m_items.append (item)
+
+    def wield_item (self, game, item):
+        wants_wield = self.m_active_items.keys () + [item]
+        if sum (item.hands () for item in wants_wield) > len (self.m_hands):
+            return False
+
+        # Taken from Python Recipe 190465, from the comment #6 made by Simone
+        # Leo at 8:37 a.m. on 20 feb 2007:
+        # http://code.activestate.com/recipes/190465/#c6
+        def xpermutations(L):
+            if len(L) <= 1:
+                yield L
+            else:
+                a = [L.pop(0)]
+                for p in xpermutations(L):
+                    for i in range(len(p)+1):
+                        yield p[:i] + a + p[i:]
+
+        # We basically try to assign hands to items in all possible
+        # ways.  This involves iterating all permutations of list of
+        # hands.  That's factorial in time complexity.  Luckily we
+        # typically deal with two-handed investigators, and the most
+        # hands we can probably encounter is three or four.  So don't
+        # bother inventing anything smart.
+        found_wield = None
+        for hands in xpermutations (list (self.m_hands)):
+            can_handle_all = True
+            wield = {}
+
+            it = 0
+            for item in wants_wield:
+                h = item.hands ()
+                hands_for_item = hands[it : it+h]
+                it += h
+                if False in (hand.can_handle (game, self, item)
+                             for hand in hands_for_item):
+                    can_handle_all = False
+                    break
+                wield[item] = hands_for_item
+
+            if can_handle_all:
+                found_wield = wield
+
+        if found_wield != None:
+            self.m_active_items = found_wield
+            return True
+        else:
+            return False
+
+    def release_item (self, game, item):
+        assert item in self.m_active_items
+        del self.m_active_items[item]
+
+    def wields_items (self):
+        return list (self.m_active_items.keys ())
 
     # Game construction phases.  Phases are called in sequence.  Given
     # phase is called only after the previous phase was finished for
@@ -122,7 +185,7 @@ class Investigator (ObjectWithLocation, GameplayObject):
 
     def movement (self, game):
         if self.m_movement_points > 0:
-            dest_actions = [GameplayAction_Move (location)
+            dest_actions = [arkham.GameplayAction_Move (location)
                             for location
                             in [conn.dest ()
                                 for conn in self.location ().connections ()
@@ -130,16 +193,26 @@ class Investigator (ObjectWithLocation, GameplayObject):
         else:
             dest_actions = []
 
-        return [GameplayAction_Stay (self.m_location)] + dest_actions
+        return [arkham.GameplayAction_Stay (self.m_location)] + dest_actions
 
     # Combat phases.
+    def item_actions (self):
+        return [arkham.GameplayAction_WieldItem (item)
+                for item in self.m_items
+                if item not in self.m_active_items] \
+             + [arkham.GameplayAction_ReleseItem (item)
+                for item in self.m_items
+                if item in self.m_active_items]
+
     def pre_combat (self, combat, monster):
-        return [GameplayAction_Evade_PreCombat (combat, monster),
-                GameplayAction_Fight (monster)]
+        return ([arkham.GameplayAction_Evade_PreCombat (combat, monster),
+                 arkham.GameplayAction_Fight (monster)]
+                + self.item_actions ())
 
     def combat_turn (self, combat, monster):
-        return [GameplayAction_Evade_Combat (combat, monster),
-                GameplayAction_Fight (monster)]
+        return ([arkham.GameplayAction_Evade_Combat (combat, monster),
+                 arkham.GameplayAction_Fight (monster)]
+                + self.item_actions ())
 
     # Unconscious/Insane actions.
     def investigator_unconscious (self, game):
@@ -150,7 +223,6 @@ class Investigator (ObjectWithLocation, GameplayObject):
 
 class CommonInvestigator (Investigator):
     def __init__ (self, *args, **kwargs):
-        Investigator.__init__ (*args, **kwargs)
-        self.m_hands = [Hand (), Hand ()]
-
-from actions import *
+        Investigator.__init__ (self, *args, **kwargs)
+        self.add_hand (Hand ())
+        self.add_hand (Hand ())

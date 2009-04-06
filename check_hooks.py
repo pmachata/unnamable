@@ -122,7 +122,7 @@ def do (game, investigator, subject, skill_name, modifier, difficulty):
     difficulty = difficulty_mod_hook (game, investigator, subject, skill_name, difficulty)
 
     bonus = 0
-    for item in investigator.active_items (): # active_items include skill cards, spells, weapons, etc.
+    for item in investigator.wields_items (): # includes skill cards, spells, weapons, etc.
         i_bonus = bonus_hook (game, investigator, subject, item, skill_name)
         bonus += bonus_mod_hook (game, investigator, subject, item, skill_name, i_bonus)
 
@@ -138,7 +138,7 @@ def do (game, investigator, subject, skill_name, modifier, difficulty):
         roll = random.randint (1, 6) # xxx or something
         r_successes = dice_roll_successes_hook (game, investigator, subject, skill_name, roll)
 
-        for item in investigator.active_items ():
+        for item in investigator.wields_items ():
             b_successes = dice_roll_successes_bonus_hook (game, investigator, subject, item, skill_name, roll)
             r_successes += dice_roll_successes_bonus_mod_hook (game, investigator, subject, item, skill_name, b_successes)
 
@@ -252,11 +252,11 @@ def do (game, investigator, subject, item, skill_name, roll):
 
 @dice_roll_successes_bonus_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, item, skill_name, roll):
-    return normal_dice_roll_successes_bonus_mod_hook (game, investigator, subject, item, skill_name, successes)
+    return normal_dice_roll_successes_bonus_mod_hook (game, investigator, subject, item, skill_name, roll)
 
 @normal_dice_roll_successes_bonus_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)
-def do (game, investigator, subject, item, skill_name, successes):
-    return successes
+def do (game, investigator, subject, item, skill_name, roll):
+    return roll
 
 
 @dice_roll_successes_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)

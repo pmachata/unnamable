@@ -10,6 +10,7 @@ from damage import *
 from track import *
 from item import *
 from deck import *
+from game import *
 
 from fight import *
 from check_hooks import *

@@ -131,7 +131,9 @@ class Game:
 
     def add_deck (self, deck_class):
         assert deck_class not in self.m_decks
-        self.m_decks[deck_class] = deck_class ()
+        deck = deck_class ()
+        print "adding deck", deck.name (), deck
+        self.m_decks[deck_class] = deck
 
     def deck (self, deck_class):
         return self.m_decks[deck_class]
@@ -156,9 +158,6 @@ class Game:
     def add_extra_board_monster (self, monster):
         print "%s is extra board monster" % monster.name ()
         self.m_monsters_extra.append (monster)
-
-    def deck (self, name):
-        return self.m_decks[name]
 
     def add_monster (self, monster_proto, location):
         if location not in self.m_loc_monsters:

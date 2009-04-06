@@ -71,6 +71,9 @@ class TUI (arkham.UI):
                 for monster in game.monsters_at (location):
                     dump_monster_info (monster, level + 1)
 
+        def dump_item_info (item, level):
+            dump_head (item, level)
+
         actions = actions + [arkham.GameplayAction_Quit ()]
 
         print "======================================================="
@@ -82,6 +85,11 @@ class TUI (arkham.UI):
         dump_location_info (investigator.location (), 1)
         print "trophies:", ", ".join (trophy.name ()
                                       for trophy in investigator.trophies ())
+        if investigator.wields_items ():
+            print "wields items:"
+            for item in investigator.wields_items ():
+                dump_item_info (item, 1)
+
         while True:
             print "-------------------------------------------------------"
             id_act = list (enumerate (actions))
@@ -104,6 +112,14 @@ class TUI (arkham.UI):
                     else:
                         dump_head (monster, 3)
                     already_shown.add (monster)
+
+                item = action.bound_item ()
+                if item:
+                    if item not in already_shown:
+                        dump_item_info (item, 3)
+                    else:
+                        dump_head (item, 3)
+                    already_shown.add (item)
 
             id_act = dict (id_act)
             try:

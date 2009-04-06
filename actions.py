@@ -1,6 +1,6 @@
 import fun
 from loc import *
-from monster import *
+import arkham
 
 class GameplayAction:
     def __init__ (self, name):
@@ -16,6 +16,9 @@ class GameplayAction:
         return None
 
     def bound_monster (self):
+        return None
+
+    def bound_item (self):
         return None
 
 class LocationBoundGameplayAction (GameplayAction):
@@ -34,6 +37,14 @@ class MonsterBoundGameplayAction (GameplayAction):
     def bound_monster (self):
         return self.m_monster
 
+class ItemBoundGameplayAction (GameplayAction):
+    def __init__ (self, item, name):
+        GameplayAction.__init__ (self, name)
+        self.m_item = item
+
+    def bound_item (self):
+        return self.m_item
+
 class GameplayAction_Move (LocationBoundGameplayAction):
     def __init__ (self, location):
         LocationBoundGameplayAction.__init__ (self, location, "move")
@@ -51,7 +62,7 @@ class GameplayAction_Stay (LocationBoundGameplayAction):
 
     def perform (self, game, investigator):
         investigator.lose_movement_points ()
-        raise EndPhase ()
+        raise arkham.EndPhase ()
 
 class GameplayAction_Quit (GameplayAction):
     def __init__ (self):
@@ -102,19 +113,16 @@ class GameplayAction_DealWithMonster (MonsterBoundGameplayAction):
         game.fight (investigator, self.m_monster)
         print "combat finished"
 
+class GameplayAction_WieldItem (ItemBoundGameplayAction):
+    def __init__ (self, item):
+        ItemBoundGameplayAction.__init__ (self, item, "wield")
 
-from game import *
-from investigator import *
+    def perform (self, game, investigator):
+        investigator.wield_item (game, self.m_item)
 
-roll_dice_hook = fun.Function (Game, Investigator, object)
-dice_roll_successful_hook = fun.Function (Game, Investigator, object, int)
+class GameplayAction_ReleseItem (ItemBoundGameplayAction):
+    def __init__ (self, item):
+        ItemBoundGameplayAction.__init__ (self, item, "release")
 
-@roll_dice_hook.match (fun.any, fun.any, fun.any)
-def do (game, investigator, skill):
-    import random
-    return dice_roll_successful_hook (game, investigator, skill,
-                                      random.randint (1, 6))
-
-@dice_roll_successful_hook.match (fun.any, fun.any, fun.any, fun.any)
-def do (game, investigator, skill, roll):
-    return roll >= 5
+    def perform (self, game, investigator):
+        investigator.release_item (game, self.m_item)
