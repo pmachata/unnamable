@@ -17,8 +17,7 @@ from check_hooks import *
 
 def match_proto (klass):
     def match (arg):
-        return fun.matchclass (Monster) (arg) \
-            and fun.matchclass (klass) (arg.proto ())
+        return fun.matchclass (klass) (arg.proto ())
     return match
 
 class ModuleIndex:

@@ -1,8 +1,8 @@
 import fun
 from investigator import Investigator
-from game import Game
-from item import Item
+from game import Game, Item
 import conf
+import arkham
 
 check_trace = conf.trace # whether we want to trace hooks
 
@@ -13,6 +13,13 @@ Die = int
 Roll = int
 Subject = object # e.g. a monster, or a card that cause the check to be made
 Successes = int
+
+die_count_hook = fun.Function \
+    (Game, Investigator, Subject, SkillName, Modifier,
+     name="die_count_hook", trace=check_trace)
+normal_die_count_hook = fun.Function \
+    (Game, Investigator, Subject, SkillName, Modifier,
+     name="normal_die_count_hook", trace=check_trace)
 
 perform_check_hook = fun.Function \
     (Game, Investigator, Subject, SkillName, Modifier, Difficulty,
@@ -77,6 +84,13 @@ normal_total_die_mod_hook = fun.Function \
     (Game, Investigator, Subject, SkillName, Die,
      name="normal_total_die_mod_hook", trace=check_trace)
 
+one_dice_roll_hook = fun.Function \
+    (Game, Investigator, Subject, SkillName,
+     name="one_dice_roll_hook", trace=check_trace)
+normal_one_dice_roll_hook = fun.Function \
+    (Game, Investigator, Subject, SkillName,
+     name="normal_one_dice_roll_hook", trace=check_trace)
+
 dice_roll_successes_hook = fun.Function \
     (Game, Investigator, Subject, SkillName, Roll,
      name="dice_roll_successes_hook", trace=check_trace)
@@ -112,14 +126,43 @@ normal_total_dice_roll_successes_mod_hook = fun.Function \
     (Game, Investigator, Subject, SkillName, Successes,
      name="normal_total_dice_roll_successes_mod_hook", trace=check_trace)
 
-@perform_check_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)
-def do (game, investigator, subject, skill_name, modifier, difficulty):
-    import random
+class Roll:
+    def __init__ (self, modifier):
+        self.m_roll = []
+        self.m_modifier = modifier
 
+    def reroll (self, game, investigator, subject, skill_name):
+        self.m_roll = []
+        for _ in xrange (die_count_hook (game, investigator, subject,
+                                         skill_name, self.m_modifier)):
+            self.add_roll (game, investigator, subject, skill_name)
+
+    def add_roll (self, game, investigator, subject, skill_name):
+        self.m_roll.append (one_dice_roll_hook (game, investigator,
+                                                subject, skill_name))
+
+    def roll (self):
+        return list (self.m_roll)
+
+    def update_roll (self, roll):
+        self.m_roll = list (roll)
+
+check_correction_actions_hook = fun.Function \
+    (Game, Investigator, Subject, Item, SkillName, Roll,
+     name="check_correction_actions_hook", trace=check_trace)
+normal_check_correction_actions_hook = fun.Function \
+    (Game, Investigator, Subject, Item, SkillName, Roll,
+     name="normal_check_correction_actions_hook", trace=check_trace)
+
+@die_count_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
+def do (game, investigator, subject, skill_name, modifier):
+    return normal_die_count_hook (game, investigator, subject, skill_name, modifier)
+
+@normal_die_count_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
+def do (game, investigator, subject, skill_name, modifier):
     die = base_die_mod_hook (game, investigator, subject, skill_name,
                              investigator.skill (skill_name))
     modifier = base_modifier_mod_hook (game, investigator, subject, skill_name, modifier)
-    difficulty = difficulty_mod_hook (game, investigator, subject, skill_name, difficulty)
 
     bonus = 0
     for item in investigator.wields_items (): # includes skill cards, spells, weapons, etc.
@@ -130,30 +173,52 @@ def do (game, investigator, subject, skill_name, modifier, difficulty):
     modifier = total_modifier_mod_hook (game, investigator, subject, skill_name, modifier)
     die = total_die_mod_hook (game, investigator, subject, skill_name, die + modifier)
 
-    successes = 0
-    for i in xrange (die):
-        # Six-sided dice is so entrenched in the system, that we
-        # can hopefully assume that no expansion will replace
-        # that.
-        roll = random.randint (1, 6) # xxx or something
-        r_successes = dice_roll_successes_hook (game, investigator, subject, skill_name, roll)
+    return die
 
-        for item in investigator.wields_items ():
-            b_successes = dice_roll_successes_bonus_hook (game, investigator, subject, item, skill_name, roll)
-            r_successes += dice_roll_successes_bonus_mod_hook (game, investigator, subject, item, skill_name, b_successes)
 
-        successes += dice_roll_successes_mod_hook (game, investigator, subject, skill_name, r_successes)
+@perform_check_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)
+def do (game, investigator, subject, skill_name, modifier, difficulty):
 
-    successes = total_dice_roll_successes_mod_hook (game, investigator, subject, skill_name, successes)
+    roll = Roll (modifier)
+    roll.reroll (game, investigator, subject, skill_name)
 
-    if successes < difficulty:
-        # XXX spend clue tokens to gain advantage
+    difficulty = difficulty_mod_hook (game, investigator, subject, skill_name, difficulty)
+
+    try:
+        while True:
+            successes = 0
+            for dice in roll.roll ():
+                r_successes = dice_roll_successes_hook (game, investigator, subject, skill_name, dice)
+
+                for item in investigator.wields_items ():
+                    b_successes = dice_roll_successes_bonus_hook (game, investigator, subject, item, skill_name, dice)
+                    r_successes += dice_roll_successes_bonus_mod_hook (game, investigator, subject, item, skill_name, b_successes)
+
+                successes += dice_roll_successes_mod_hook (game, investigator, subject, skill_name, r_successes)
+
+            successes = total_dice_roll_successes_mod_hook (game, investigator, subject, skill_name, successes)
+
+            ret = successes >= difficulty
+
+            # xxx This needs to be passed over to UI as some sort of
+            # event description object.
+            print "check %s, %s/%s successes on %s die"\
+                % ("passed" if ret else "failed",
+                   successes, difficulty, len (roll.roll ()))
+
+            if successes >= difficulty:
+                # No need to modify the roll.
+                break
+
+            actions = sum ((check_correction_actions_hook (game, investigator, subject, item, skill_name, roll)
+                            for item in investigator.wields_items ()), []) \
+                            + investigator.check_correction_actions (game, subject, skill_name, roll)
+            actions.append (arkham.GameplayAction_FailRoll ())
+            if not game.perform_selected_action (investigator, actions):
+                break
+
+    except arkham.EndPhase:
         pass
-
-    ret = successes >= difficulty
-    print "check %s, %s/%s successes on %s die"\
-        % ("passed" if ret else "failed",
-           successes, difficulty, die)
 
     return ret
 
@@ -229,6 +294,19 @@ def do (game, investigator, subject, skill_name, die):
     return die
 
 
+@one_dice_roll_hook.match (fun.any, fun.any, fun.any, fun.any)
+def do (game, investigator, subject, skill_name):
+    return normal_one_dice_roll_hook (game, investigator, subject, skill_name)
+
+@normal_one_dice_roll_hook.match (fun.any, fun.any, fun.any, fun.any)
+def do (game, investigator, subject, skill_name):
+    # Six-sided dice is so entrenched in the system, that we
+    # can hopefully assume that no expansion will replace
+    # that.
+    import random
+    return random.randint (1, 6)
+
+
 @dice_roll_successes_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, skill_name, roll):
     return normal_dice_roll_successes_hook (game, investigator, subject, skill_name, roll)
@@ -275,3 +353,12 @@ def do (game, investigator, subject, skill_name, successes):
 @normal_total_dice_roll_successes_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, skill_name, successes):
     return successes
+
+
+@check_correction_actions_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)
+def do (game, investigator, subject, item, skill_name, roll):
+    return normal_check_correction_actions_hook (game, investigator, subject, item, skill_name, roll)
+
+@normal_check_correction_actions_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)
+def do (game, investigator, subject, item, skill_name, roll):
+    return []

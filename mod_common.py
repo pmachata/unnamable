@@ -8,7 +8,7 @@ class CommonItem (arkham.InvestigatorItem):
 
 class CommonDeck (arkham.Deck):
     def __init__ (self):
-        arkham.Deck.__init__ (self, "Common Items")
+        arkham.Deck.__init__ (self, "Common Items", arkham.Item)
 
 class ModuleProto (arkham.ModuleProto):
     def __init__ (self):

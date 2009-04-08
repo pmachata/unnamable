@@ -61,16 +61,20 @@ class Function (object):
                     "Top level predicates function must return True of False"
 
                 if not ret:
+                    #print "   rejected on argument #", arg
                     return False
                 bindings.update (bind)
 
             return True
+
+        #print " +",", ".join (self.fmt_info (body) for _, body, _ in self.m_variants)
 
         candidates = []
         best_priority = None
         bindings = {}
         for variant in self.m_variants:
             priority = variant[2].priority
+            #print " * %s [prio=%s, best=%s]" % (self.fmt_info (variant[1]), priority, best_priority)
             if best_priority == None or priority >= best_priority:
                 if match_variant (variant):
                     if best_priority == None or priority > best_priority:

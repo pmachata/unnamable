@@ -5,7 +5,7 @@ import arkham
 
 class MonsterCup (arkham.Deck):
     def __init__ (self):
-        arkham.Deck.__init__ (self, "Monster Cup")
+        arkham.Deck.__init__ (self, "Monster Cup", arkham.Monster)
 
 class ModuleProto (arkham.ModuleProto):
     def __init__ (self):

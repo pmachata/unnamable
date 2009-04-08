@@ -320,8 +320,13 @@ class ModuleProto (arkham.ModuleProto):
 
         if True:
             for investigator in game.investigators ():
-                item = self.m_common_deck.draw ()
-                investigator.take_item (game, item)
+                while True:
+                    item = self.m_common_deck.draw ()
+                    if item.name () != "Bullwhip":
+                        self.m_common_deck.give_back (item.proto ())
+                    else:
+                        investigator.take_item (game, item)
+                        break
 
     def mythos (self, game):
         # XXX For now just put new monster somewhere.  It may turn out

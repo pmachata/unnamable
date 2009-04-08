@@ -36,6 +36,10 @@ class Investigator (ObjectWithLocation, GameplayObject):
         assert clues > 0
         self.m_clues += clues
 
+    def spend_clue (self):
+        assert self.m_clues > 0
+        self.m_clues -= 1
+
     def sanity (self):
         return self.m_sanity
 
@@ -179,7 +183,8 @@ class Investigator (ObjectWithLocation, GameplayObject):
     # Game play phases.
     def upkeep (self, game):
         mp = self.m_skills.check ("speed")
-        # XXX apply equipment and allies
+        for item in self.m_active_items:
+            item.upkeep (game)
         self.m_movement_points = mp
         return []
 
@@ -220,6 +225,16 @@ class Investigator (ObjectWithLocation, GameplayObject):
 
     def investigator_insane (self, game):
         return []
+
+    # Other actions
+    def check_correction_actions (self, game, subject, skill_name, roll):
+        ret = []
+        if self.m_clues > 0:
+            ret.append \
+                (arkham.GameplayAction_Multiple \
+                     ([arkham.GameplayAction_SpendClue (),
+                       arkham.GameplayAction_AddRoll (subject, skill_name, roll)]))
+        return ret
 
 class CommonInvestigator (Investigator):
     def __init__ (self, *args, **kwargs):

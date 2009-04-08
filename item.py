@@ -1,6 +1,6 @@
 from obj import *
 
-class Item (ObjectWithAttributes):
+class ItemProto (ObjectWithAttributes):
     def __init__ (self, name, **attributes):
         ObjectWithAttributes.__init__ (self)
         self.apply_attributes (attributes)

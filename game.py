@@ -83,6 +83,32 @@ class Monster (ObjectWithLocation):
     def discard (self):
         return self.m_proto.discard ()
 
+class Item:
+    def __init__ (self, proto):
+        self.m_proto = proto
+        self.m_exhausted = False
+
+    def name (self):
+        return self.m_proto.name ()
+
+    def proto (self):
+        return self.m_proto
+
+    def attributes (self):
+        return self.m_proto.attributes ()
+
+    def hands (self):
+        return self.m_proto.hands ()
+
+    def exhausted (self):
+        return self.m_exhausted
+
+    def exhaust (self):
+        self.m_exhausted = True
+
+    def upkeep (self, game):
+        self.m_exhausted = False
+
 class Game:
     def __init__ (self, modules, ui):
         self.m_modules = [ModuleInstance (self, mod) for mod in modules]
@@ -159,11 +185,11 @@ class Game:
         print "%s is extra board monster" % monster.name ()
         self.m_monsters_extra.append (monster)
 
-    def add_monster (self, monster_proto, location):
+    def add_monster (self, monster, location):
+        assert monster.proto () != None # make sure we got an instance
         if location not in self.m_loc_monsters:
             self.m_loc_monsters[location] = []
-        print "%s appears at %s" % (monster_proto.name (), location.name ())
-        monster = Monster (monster_proto)
+        print "%s appears at %s" % (monster.proto ().name (), location.name ())
         self.m_loc_monsters[location].append (monster)
         monster.move_to (location)
 
