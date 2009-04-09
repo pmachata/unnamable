@@ -104,10 +104,19 @@ class Item:
         return self.m_exhausted
 
     def exhaust (self):
+        assert not self.m_exhausted
         self.m_exhausted = True
 
-    def upkeep (self, game):
+    def discard (self):
+        return self.m_proto.discard ()
+
+    # Game phases
+    def upkeep (self, game, owner):
         self.m_exhausted = False
+        return self.m_proto.upkeep (game, owner, self)
+
+    def movement (self, game, owner):
+        return self.m_proto.movement (game, owner, self)
 
 class Game:
     def __init__ (self, modules, ui):

@@ -322,7 +322,7 @@ class ModuleProto (arkham.ModuleProto):
             for investigator in game.investigators ():
                 while True:
                     item = self.m_common_deck.draw ()
-                    if item.name () != "Bullwhip":
+                    if item.name () != "Map of Arkham":
                         self.m_common_deck.give_back (item.proto ())
                     else:
                         investigator.take_item (game, item)

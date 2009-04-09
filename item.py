@@ -11,3 +11,9 @@ class ItemProto (ObjectWithAttributes):
 
     def discard (self):
         pass
+
+    def upkeep (self, game, owner, item):
+        return []
+
+    def movement (self, game, owner, item):
+        return []

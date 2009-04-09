@@ -97,6 +97,16 @@ class GameplayAction_Stay (LocationBoundGameplayAction):
         investigator.lose_movement_points ()
         raise arkham.EndPhase ()
 
+class GameplayAction_GainMovementPoints (GameplayAction):
+    def __init__ (self, amount):
+        GameplayAction.__init__ (self,
+                                 "gain %d movement point%s" \
+                                     % (amount, "s" if amount > 1 else ""))
+        self.m_amount = amount
+
+    def perform (self, game, investigator):
+        investigator.gain_movement_points (self.m_amount)
+
 class GameplayAction_Quit (GameplayAction):
     def __init__ (self):
         GameplayAction.__init__ (self, "quit the game")
@@ -170,6 +180,16 @@ class GameplayAction_Exhaust (ItemBoundGameplayAction):
 
     def perform (self, game, investigator):
         self.m_item.exhaust ()
+
+class GameplayAction_Discard (ItemBoundGameplayAction):
+    def __init__ (self, item):
+        ItemBoundGameplayAction.__init__ (self, item, "discard")
+
+    def perform (self, game, investigator):
+        print "ASDFKJDLFKJSDLFKJSDLFKJSDLKFJ"
+        if investigator.wields_item (self.m_item):
+            investigator.release_item (self.m_item)
+        investigator.discard_item (self.m_item)
 
 class GameplayAction_SpendClue (GameplayAction):
     def __init__ (self):

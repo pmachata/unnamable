@@ -82,8 +82,13 @@ class Investigator (ObjectWithLocation, GameplayObject):
         assert self.m_movement_points > 0
         self.m_movement_points -= 1
 
+    def gain_movement_points (self, amount):
+        assert amount > 0
+        self.m_movement_points += amount
+
     def lose_movement_points (self):
-        self.m_movement_points = 0
+        self.m_movement_points = None # no movement at all possible
+                                      # until next turn
 
     def movement_points (self):
         return self.m_movement_points
@@ -116,6 +121,12 @@ class Investigator (ObjectWithLocation, GameplayObject):
 
     def take_item (self, game, item):
         self.m_items.append (item)
+
+    def discard_item (self, item):
+        # xxx ugly linear lookup
+        assert item in self.m_items
+        del self.m_items[self.m_items.index (item)]
+        item.discard ()
 
     def wield_item (self, game, item):
         wants_wield = self.m_active_items.keys () + [item]
@@ -165,12 +176,15 @@ class Investigator (ObjectWithLocation, GameplayObject):
         else:
             return False
 
-    def release_item (self, game, item):
+    def release_item (self, item):
         assert item in self.m_active_items
         del self.m_active_items[item]
 
     def wields_items (self):
         return list (self.m_active_items.keys ())
+
+    def wields_item (self, item):
+        return item in self.m_active_items
 
     # Game construction phases.  Phases are called in sequence.  Given
     # phase is called only after the previous phase was finished for
@@ -183,10 +197,9 @@ class Investigator (ObjectWithLocation, GameplayObject):
     # Game play phases.
     def upkeep (self, game):
         mp = self.m_skills.check ("speed")
-        for item in self.m_active_items:
-            item.upkeep (game)
         self.m_movement_points = mp
-        return []
+        return sum ((item.upkeep (game, self)
+                     for item in self.m_active_items), [])
 
     def movement (self, game):
         if self.m_movement_points > 0:
@@ -198,7 +211,9 @@ class Investigator (ObjectWithLocation, GameplayObject):
         else:
             dest_actions = []
 
-        return [arkham.GameplayAction_Stay (self.m_location)] + dest_actions
+        return [arkham.GameplayAction_Stay (self.m_location)] + dest_actions \
+            + sum ((item.movement (game, self)
+                    for item in self.m_active_items), [])
 
     # Combat phases.
     def item_actions (self):
