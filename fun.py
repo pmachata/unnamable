@@ -116,6 +116,10 @@ class Function (object):
             del body.func_globals[key]
         for key, val in backup.iteritems ():
             body.func_globals[key] = val
+
+        if options.trace:
+            print "%s returning" % self.m_name, retval
+
         return retval
 
 def bind (**kwargs):

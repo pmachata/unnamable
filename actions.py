@@ -172,7 +172,7 @@ class GameplayAction_ReleseItem (ItemBoundGameplayAction):
         ItemBoundGameplayAction.__init__ (self, item, "release")
 
     def perform (self, game, investigator):
-        investigator.release_item (game, self.m_item)
+        investigator.release_item (self.m_item)
 
 class GameplayAction_Exhaust (ItemBoundGameplayAction):
     def __init__ (self, item):
@@ -186,7 +186,6 @@ class GameplayAction_Discard (ItemBoundGameplayAction):
         ItemBoundGameplayAction.__init__ (self, item, "discard")
 
     def perform (self, game, investigator):
-        print "ASDFKJDLFKJSDLFKJSDLFKJSDLKFJ"
         if investigator.wields_item (self.m_item):
             investigator.release_item (self.m_item)
         investigator.discard_item (self.m_item)

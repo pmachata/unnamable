@@ -44,7 +44,9 @@ combat_loop_hook = fun.Function (name="combat_loop_hook", trace=trace, *fight_ar
 combat_check_hook = fun.Function (name="combat_check_hook", trace=trace, *fight_args)
 normal_combat_check_hook = fun.Function (name="normal_combat_check_hook", trace=trace, *fight_args)
 combat_check_pass_hook = fun.Function (name="combat_check_pass_hook", trace=trace, *fight_args)
+normal_combat_check_pass_hook = fun.Function (name="normal_combat_check_pass_hook", trace=trace, *fight_args)
 combat_check_fail_hook = fun.Function (name="combat_check_fail_hook", trace=trace, *fight_args)
+normal_combat_check_fail_hook = fun.Function (name="normal_combat_check_fail_hook", trace=trace, *fight_args)
 deal_combat_damage_hook = fun.Function (name="deal_combat_damage_hook", trace=trace, *fight_args)
 
 # Evade check hooks.
@@ -124,9 +126,17 @@ def do (combat, investigator, monster):
 
 @combat_check_pass_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
+    return normal_combat_check_pass_hook (combat, investigator, monster)
+
+@normal_combat_check_pass_hook.match (fun.any, fun.any, fun.any)
+def do (combat, investigator, monster):
     raise EndCombat (True)
 
 @combat_check_fail_hook.match (fun.any, fun.any, fun.any)
+def do (combat, investigator, monster):
+    return normal_combat_check_fail_hook (combat, investigator, monster)
+
+@normal_combat_check_fail_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
     deal_combat_damage_hook (combat, investigator, monster)
 
@@ -195,11 +205,13 @@ def do (combat, investigator, monster):
                                fun.bind (X = cond_bind_attrib ("nightmarish")))
 def do (combat, investigator, monster):
     investigator.reduce_sanity (X)
+    return normal_combat_check_pass_hook (combat, investigator, monster)
 
 @combat_check_pass_hook.match (fun.any, fun.any,
                                fun.bind (X = cond_bind_attrib ("overwhelming")))
 def do (combat, investigator, monster):
     investigator.reduce_stamina (X)
+    return normal_combat_check_pass_hook (combat, investigator, monster)
 
 
 # Endless monsters.

@@ -315,14 +315,14 @@ class ModuleProto (arkham.ModuleProto):
 
         if True:
             game.add_monster (self.m_monster_cup.draw \
-                                  (lambda arg: arg.name () == "Maniac"),
+                                  (lambda arg: arg.name () == "Gug"),
                               loc)
 
         if True:
             for investigator in game.investigators ():
                 while True:
                     item = self.m_common_deck.draw ()
-                    if item.name () != "Map of Arkham":
+                    if item.name () != ".38 Revolver":
                         self.m_common_deck.give_back (item.proto ())
                     else:
                         investigator.take_item (game, item)

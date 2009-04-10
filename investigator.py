@@ -128,21 +128,22 @@ class Investigator (ObjectWithLocation, GameplayObject):
         del self.m_items[self.m_items.index (item)]
         item.discard ()
 
-    def wield_item (self, game, item):
-        wants_wield = self.m_active_items.keys () + [item]
-        if sum (item.hands () for item in wants_wield) > len (self.m_hands):
+    def find_wield (self, game, item, hands):
+        wants_wield = [(item, item.hands ())
+                       for item in  self.m_active_items.keys ()] \
+                       + [(item, hands)]
+        if sum (hands for item, hands in wants_wield) > len (self.m_hands):
             return False
 
-        # Taken from Python Recipe 190465, from the comment #6 made by Simone
-        # Leo at 8:37 a.m. on 20 feb 2007:
+        # Taken from Python Recipe 190465, from a comment by Simone Leo:
         # http://code.activestate.com/recipes/190465/#c6
-        def xpermutations(L):
-            if len(L) <= 1:
+        def xpermutations (L):
+            if len (L) <= 1:
                 yield L
             else:
-                a = [L.pop(0)]
-                for p in xpermutations(L):
-                    for i in range(len(p)+1):
+                a = [L.pop (0)]
+                for p in xpermutations (L):
+                    for i in range (len (p) + 1):
                         yield p[:i] + a + p[i:]
 
         # We basically try to assign hands to items in all possible
@@ -157,8 +158,7 @@ class Investigator (ObjectWithLocation, GameplayObject):
             wield = {}
 
             it = 0
-            for item in wants_wield:
-                h = item.hands ()
+            for item, h in wants_wield:
                 hands_for_item = hands[it : it+h]
                 it += h
                 if False in (hand.can_handle (game, self, item)
@@ -170,6 +170,10 @@ class Investigator (ObjectWithLocation, GameplayObject):
             if can_handle_all:
                 found_wield = wield
 
+        return found_wield
+
+    def wield_item (self, game, item):
+        found_wield = self.find_wield (game, item, item.hands ())
         if found_wield != None:
             self.m_active_items = found_wield
             return True
@@ -249,7 +253,17 @@ class Investigator (ObjectWithLocation, GameplayObject):
                 (arkham.GameplayAction_Multiple \
                      ([arkham.GameplayAction_SpendClue (),
                        arkham.GameplayAction_AddRoll (subject, skill_name, roll)]))
-        return ret
+        # xxx apparently, clue tokens should simply be items.  The
+        # downside of that is that the investigator could choose from
+        # N identical "spend this clue token" actions, that would need
+        # to be handled in some way.
+        return ret + sum (([arkham.GameplayAction_Multiple \
+                                ([spend_clue_action,
+                                  arkham.GameplayAction_AddRoll (subject, skill_name, roll)])
+                            for spend_clue_action
+                            in arkham.spend_clue_token_actions_hook \
+                                (game, self, subject, item, skill_name)]
+                           for item in self.m_active_items), [])
 
 class CommonInvestigator (Investigator):
     def __init__ (self, *args, **kwargs):

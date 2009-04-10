@@ -4,6 +4,19 @@ import fun
 
 def build (game, module):
 
+    def plain_item (name, price, hands, **bonuses):
+        class PlainItem (arkham.InvestigatorItem):
+            def __init__ (self):
+                arkham.InvestigatorItem.__init__ (self, name, price, hands)
+
+        for key, value in bonuses.iteritems ():
+            @arkham.bonus_hook.match \
+                (fun.any, fun.any, fun.any, arkham.match_proto (PlainItem), fun.matchvalue (key))
+            def do (game, investigator, subject, item, skill_name):
+                return value
+
+        return PlainItem ()
+
     # xxx .18 Derringer cannot be lost or stolen unless you choose to
     # allow it.
     class Derringer18 (arkham.InvestigatorItem):
@@ -15,42 +28,23 @@ def build (game, module):
     def do (game, investigator, subject, item, skill_name):
         return 2
 
-    module.m_common_deck.register (Derringer18 (), 1)
-
-    # ---
-
-    class Revolver38 (arkham.InvestigatorItem):
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ (self, ".38 Revolver", 4, 1)
-
-    @arkham.bonus_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (Revolver38), fun.matchvalue ("combat"))
-    def do (game, investigator, subject, item, skill_name):
-        return 3
-
-    module.m_common_deck.register (Revolver38 (), 1)
-
-    # ---
-
-    class Automatic45 (arkham.InvestigatorItem):
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ (self, ".45 Automatic", 5, 1)
-
-    @arkham.bonus_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (Revolver38), fun.matchvalue ("combat"))
-    def do (game, investigator, subject, item, skill_name):
-        return 4
-
-    module.m_common_deck.register (Automatic45 (), 1)
-
     # ---
 
     class xxxAncientTome:
         pass
 
-    class xxxAxe:
-        """Bonus: +2 Combat check (+3 instead if your other hand is empty)"""
-        pass
+    class Axe (arkham.InvestigatorItem):
+        def __init__ (self):
+            arkham.InvestigatorItem.__init__ (self, "Axe", 3, 1)
+
+    @arkham.bonus_hook.match \
+        (fun.any, fun.any, fun.any, arkham.match_proto (Axe), fun.matchvalue ("combat"))
+    def do (game, investigator, subject, item, skill_name):
+        # Do we have one extra hand capable of holding this axe?
+        if investigator.find_wield (game, item, 1):
+            return 3
+        else:
+            return 2
 
     # ---
 
@@ -73,21 +67,6 @@ def build (game, module):
         else:
             return []
 
-    module.m_common_deck.register (Bullwhip (), 1)
-
-    # ---
-
-    class CavalrySaber (arkham.InvestigatorItem):
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ (self, "Cavalry Saber", 3, 1)
-
-    @arkham.bonus_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (CavalrySaber), fun.matchvalue ("combat"))
-    def do (game, investigator, subject, item, skill_name):
-        return 2
-
-    module.m_common_deck.register (CavalrySaber (), 1)
-
     # ---
 
     class Cross (arkham.InvestigatorItem):
@@ -105,21 +84,6 @@ def build (game, module):
     def do (game, investigator, subject, item, skill_name):
         return 1
 
-    module.m_common_deck.register (Cross (), 1)
-
-    # ---
-
-    class DarkCloak (arkham.InvestigatorItem):
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ (self, "Dark Cloak", 2, 0)
-
-    @arkham.bonus_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (DarkCloak), fun.matchvalue ("evade"))
-    def do (game, investigator, subject, item, skill_name):
-        return 1
-
-    module.m_common_deck.register (DarkCloak (), 1)
-
     # ---
 
     class xxxDynamite:
@@ -129,32 +93,6 @@ def build (game, module):
     class xxxFood:
         """Any phase: Discard Food to reduce any Stamina loss by 1."""
         pass
-
-    # ---
-
-    class Knife (arkham.InvestigatorItem):
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ (self, "Knife", 2, 1)
-
-    @arkham.bonus_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (Knife), fun.matchvalue ("combat"))
-    def do (game, investigator, subject, item, skill_name):
-        return 1
-
-    module.m_common_deck.register (Knife (), 1)
-
-    # ---
-
-    class Lantern (arkham.InvestigatorItem):
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ (self, "Lantern", 3, 0)
-
-    @arkham.bonus_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (Knife), fun.matchvalue ("luck"))
-    def do (game, investigator, subject, item, skill_name):
-        return 1
-
-    module.m_common_deck.register (Lantern (), 1)
 
     # ---
 
@@ -168,8 +106,6 @@ def build (game, module):
         return [arkham.GameplayAction_Multiple \
                     ([arkham.GameplayAction_Discard (item),
                       arkham.GameplayAction_Reroll (subject, skill_name, roll)])]
-
-    module.m_common_deck.register (LuckyCigaretteCase (), 1)
 
     # ---
 
@@ -186,4 +122,81 @@ def build (game, module):
             else:
                 return []
 
-    module.m_common_deck.register (MapOfArkham (), 1)
+    # ---
+
+    class Motorcycle (arkham.InvestigatorItem):
+        def __init__ (self):
+            arkham.InvestigatorItem.__init__ (self, "Motorcycle", 4, 0)
+
+        def movement (self, game, owner, item):
+            if owner.movement_points () != None and not item.exhausted ():
+                # i.e. the movement is not over yet
+                return [arkham.GameplayAction_Multiple \
+                            ([arkham.GameplayAction_Exhaust (item),
+                              arkham.GameplayAction_GainMovementPoints (2)])]
+            else:
+                return []
+
+    # ---
+
+    class xxxOldJournal:
+        """Movement: Exhaust and spend 1 movement point to make a Lore
+        (-1) check. If you pass, gain 3 Clue tokens and discard Old
+        Journal. If you fail, nothing happens."""
+        pass
+
+    # ---
+
+    class ResearchMaterials (arkham.InvestigatorItem):
+        def __init__ (self):
+            arkham.InvestigatorItem.__init__ (self, "Research Materials", 1, 0)
+
+    @arkham.spend_clue_token_actions_hook.match \
+        (fun.any, fun.any, fun.any, arkham.match_proto (ResearchMaterials), fun.any)
+    def do (game, investigator, subject, item, skill_name):
+        return [arkham.GameplayAction_Discard (item)]
+
+    # ---
+
+    class Shotgun (arkham.InvestigatorItem):
+        def __init__ (self):
+            arkham.InvestigatorItem.__init__ (self, "Shotgun", 6, 2)
+
+    @arkham.bonus_hook.match \
+        (fun.any, fun.any, fun.any, arkham.match_proto (Shotgun), fun.matchvalue ("combat"))
+    def do (game, investigator, subject, item, skill_name):
+        return 4
+
+    @arkham.dice_roll_successes_bonus_hook.match \
+        (fun.any, fun.any, fun.any, arkham.match_proto (Shotgun), fun.matchvalue ("combat"), fun.matchvalue (6))
+    def do (game, investigator, subject, item, skill_name, dice):
+        return 1
+
+    # ---
+
+    class xxxWhiskey:
+        """Any phase: Discard Whiskey to reduce any Sanity loss by 1."""
+        pass
+
+    # ---
+
+    for item_proto, count in [
+            (Derringer18 (), 1),
+            (plain_item (".38 Revolver", 4, 1, combat=3), 1),
+            (plain_item (".45 Automatic", 5, 1, combat=4), 1),
+            (Axe (), 1),
+            (Bullwhip (), 1),
+            (plain_item ("Cavalry Saber", 3, 1, combat=2), 1),
+            (Cross (), 1),
+            (plain_item ("Dark Cloak", 2, 0, evade=1), 1),
+            (plain_item ("Knife", 2, 1, combat=1), 1),
+            (plain_item ("Lantern", 3, 0, luck=1), 1),
+            (LuckyCigaretteCase (), 1),
+            (MapOfArkham (), 1),
+            (Motorcycle (), 1),
+            (ResearchMaterials (), 1),
+            (plain_item ("Rifle", 6, 2, combat=5), 1),
+            (Shotgun (), 1),
+            (plain_item ("Tommy Gun", 7, 2, combat=6), 1)
+        ]:
+        module.m_common_deck.register (item_proto, count)
