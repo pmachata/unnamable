@@ -124,6 +124,8 @@ class Investigator (ObjectWithLocation, GameplayObject):
 
     def discard_item (self, item):
         # xxx ugly linear lookup
+        if item in self.m_active_items:
+            self.release_item (item)
         assert item in self.m_items
         del self.m_items[self.m_items.index (item)]
         item.discard ()

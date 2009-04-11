@@ -148,6 +148,17 @@ class GameplayAction_GainMovementPoints (GameplayAction):
     def perform (self, game, investigator):
         investigator.gain_movement_points (self.m_amount)
 
+class GameplayAction_GainClues (GameplayAction):
+    def __init__ (self, amount):
+        assert amount > 0
+        GameplayAction.__init__ (self,
+                                 "gain %d clue%s" \
+                                     % (amount, "s" if amount > 1 else ""))
+        self.m_amount = amount
+
+    def perform (self, game, investigator):
+        investigator.gain_clues (self.m_amount)
+
 class GameplayAction_SpendMovementPoints (GameplayAction):
     def __init__ (self, amount):
         assert amount > 0

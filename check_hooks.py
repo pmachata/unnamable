@@ -52,51 +52,30 @@ normal_perform_check_hook = fun.Function \
 base_die_mod_hook = fun.Function \
     (Game, Investigator, Subject, SkillName, Modifier,
      name="base_die_mod_hook", trace=check_trace)
-normal_base_die_mod_hook = fun.Function \
-    (Game, Investigator, Subject, SkillName, Modifier,
-     name="normal_base_die_mod_hook", trace=check_trace)
 
 base_modifier_mod_hook = fun.Function \
     (Game, Investigator, Subject, SkillName, Modifier,
      name="base_modifier_mod_hook", trace=check_trace)
-normal_base_modifier_mod_hook = fun.Function \
-    (Game, Investigator, Subject, SkillName, Modifier,
-     name="normal_base_modifier_mod_hook", trace=check_trace)
 
 difficulty_mod_hook = fun.Function \
     (Game, Investigator, Subject, SkillName, Difficulty,
      name="difficulty_mod_hook", trace=check_trace)
-normal_difficulty_mod_hook = fun.Function \
-    (Game, Investigator, Subject, SkillName, Difficulty,
-     name="normal_difficulty_mod_hook", trace=check_trace)
 
 bonus_hook = fun.Function \
     (Game, Investigator, Subject, Item, SkillName,
      name="bonus_hook", trace=check_trace)
-normal_bonus_hook = fun.Function \
-    (Game, Investigator, Subject, Item, SkillName,
-     name="normal_bonus_hook", trace=check_trace)
 
 bonus_mod_hook = fun.Function \
     (Game, Investigator, Subject, Item, SkillName, Modifier,
      name="bonus_mod_hook", trace=check_trace)
-normal_bonus_mod_hook = fun.Function \
-    (Game, Investigator, Subject, Item, SkillName, Modifier,
-     name="normal_bonus_mod_hook", trace=check_trace)
 
 total_bonus_mod_hook = fun.Function \
     (Game, Investigator, Subject, SkillName, Modifier,
      name="total_bonus_mod_hook", trace=check_trace)
-normal_total_bonus_mod_hook = fun.Function \
-    (Game, Investigator, Subject, SkillName, Modifier,
-     name="normal_total_bonus_mod_hook", trace=check_trace)
 
 total_modifier_mod_hook = fun.Function \
     (Game, Investigator, Subject, SkillName, Modifier,
      name="total_modifier_mod_hook", trace=check_trace)
-normal_total_modifier_mod_hook = fun.Function \
-    (Game, Investigator, Subject, SkillName, Modifier,
-     name="normal_total_modifier_mod_hook", trace=check_trace)
 
 total_die_mod_hook = fun.Function \
     (Game, Investigator, Subject, SkillName, Die,
@@ -122,44 +101,30 @@ normal_dice_roll_successes_hook = fun.Function \
 dice_roll_successes_bonus_hook = fun.Function \
     (Game, Investigator, Subject, Item, SkillName, Dice,
      name="dice_roll_successes_bonus_hook", trace=check_trace)
-normal_dice_roll_successes_bonus_hook = fun.Function \
-    (Game, Investigator, Subject, Item, SkillName, Dice,
-     name="normal_dice_roll_successes_bonus_hook", trace=check_trace)
 
 dice_roll_successes_bonus_mod_hook = fun.Function \
     (Game, Investigator, Subject, Item, SkillName, Successes,
      name="dice_roll_successes_bonus_mod_hook", trace=check_trace)
-normal_dice_roll_successes_bonus_mod_hook = fun.Function \
-    (Game, Investigator, Subject, Item, SkillName, Successes,
-     name="normal_dice_roll_successes_bonus_mod_hook", trace=check_trace)
 
 dice_roll_successes_mod_hook = fun.Function \
     (Game, Investigator, Subject, SkillName, Successes,
      name="dice_roll_successes_mod_hook", trace=check_trace)
-normal_dice_roll_successes_mod_hook = fun.Function \
-    (Game, Investigator, Subject, SkillName, Successes,
-     name="normal_dice_roll_successes_mod_hook", trace=check_trace)
 
 total_dice_roll_successes_mod_hook = fun.Function \
     (Game, Investigator, Subject, SkillName, Successes,
      name="total_dice_roll_successes_mod_hook", trace=check_trace)
-normal_total_dice_roll_successes_mod_hook = fun.Function \
-    (Game, Investigator, Subject, SkillName, Successes,
-     name="normal_total_dice_roll_successes_mod_hook", trace=check_trace)
+
+item_after_use_hook = fun.Function \
+    (Game, Investigator, Subject, Item, SkillName,
+     name="item_after_use_hook", trace=check_trace)
 
 check_correction_actions_hook = fun.Function \
     (Game, Investigator, Subject, Item, SkillName, Roll,
      name="check_correction_actions_hook", trace=check_trace)
-normal_check_correction_actions_hook = fun.Function \
-    (Game, Investigator, Subject, Item, SkillName, Roll,
-     name="normal_check_correction_actions_hook", trace=check_trace)
 
 spend_clue_token_actions_hook = fun.Function \
     (Game, Investigator, Subject, Item, SkillName,
      name="spend_clue_token_actions_hook", trace=check_trace)
-normal_spend_clue_token_actions_hook = fun.Function \
-    (Game, Investigator, Subject, Item, SkillName,
-     name="normal_spend_clue_token_actions_hook", trace=check_trace)
 
 @die_count_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, skill_name, modifier):
@@ -205,6 +170,9 @@ def do (game, investigator, subject, skill_name, modifier, difficulty):
 
             successes = total_dice_roll_successes_mod_hook (game, investigator, subject, skill_name, successes)
 
+            for item in investigator.wields_items ():
+                item_after_use_hook (game, investigator, subject, item, skill_name)
+
             ret = successes >= difficulty
 
             # xxx This needs to be passed over to UI as some sort of
@@ -235,63 +203,29 @@ def do (game, investigator, subject, skill_name, modifier, difficulty):
 
 @base_die_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, skill_name, modifier):
-    return normal_base_die_mod_hook (game, investigator, subject, skill_name, modifier)
-
-@normal_base_die_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
-def do (game, investigator, subject, skill_name, modifier):
     return modifier
-
 
 @base_modifier_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, skill_name, modifier):
-    return normal_base_modifier_mod_hook (game, investigator, subject, skill_name, modifier)
-
-@normal_base_modifier_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
-def do (game, investigator, subject, skill_name, modifier):
     return modifier
-
 
 @difficulty_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, skill_name, difficulty):
-    return normal_difficulty_mod_hook (game, investigator, subject, skill_name, difficulty)
-
-@normal_difficulty_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
-def do (game, investigator, subject, skill_name, difficulty):
     return difficulty
-
 
 @bonus_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, item, skill_name):
-    return normal_bonus_hook (game, investigator, subject, item, skill_name)
-
-@normal_bonus_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
-def do (game, investigator, subject, item, skill_name):
     return 0
-
 
 @bonus_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, item, skill_name, modifier):
-    return normal_bonus_mod_hook (game, investigator, subject, item, skill_name, modifier)
-
-@normal_bonus_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)
-def do (game, investigator, subject, item, skill_name, modifier):
     return modifier
-
 
 @total_bonus_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, skill_name, modifier):
-    return normal_total_bonus_mod_hook (game, investigator, subject, skill_name, modifier)
-
-@normal_total_bonus_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
-def do (game, investigator, subject, skill_name, modifier):
     return modifier
 
-
 @total_modifier_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
-def do (game, investigator, subject, skill_name, modifier):
-    return normal_total_modifier_mod_hook (game, investigator, subject, skill_name, modifier)
-
-@normal_total_modifier_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, skill_name, modifier):
     return modifier
 
@@ -332,53 +266,28 @@ def do (game, investigator, subject, skill_name, roll):
 
 @dice_roll_successes_bonus_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, item, skill_name, dice):
-    return normal_dice_roll_successes_bonus_hook (game, investigator, subject, item, skill_name, dice)
-
-@normal_dice_roll_successes_bonus_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)
-def do (game, investigator, subject, item, skill_name, dice):
     return 0
-
 
 @dice_roll_successes_bonus_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, item, skill_name, roll):
-    return normal_dice_roll_successes_bonus_mod_hook (game, investigator, subject, item, skill_name, roll)
-
-@normal_dice_roll_successes_bonus_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)
-def do (game, investigator, subject, item, skill_name, roll):
     return roll
-
 
 @dice_roll_successes_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, skill_name, successes):
-    return normal_dice_roll_successes_mod_hook (game, investigator, subject, skill_name, successes)
-
-@normal_dice_roll_successes_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
-def do (game, investigator, subject, skill_name, successes):
     return successes
-
 
 @total_dice_roll_successes_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, skill_name, successes):
-    return normal_total_dice_roll_successes_mod_hook (game, investigator, subject, skill_name, successes)
-
-@normal_total_dice_roll_successes_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
-def do (game, investigator, subject, skill_name, successes):
     return successes
 
+@item_after_use_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
+def do (game, investigator, subject, item, skill_name):
+    pass
 
 @check_correction_actions_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, item, skill_name, roll):
-    return normal_check_correction_actions_hook (game, investigator, subject, item, skill_name, roll)
-
-@normal_check_correction_actions_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)
-def do (game, investigator, subject, item, skill_name, roll):
     return []
 
-
 @spend_clue_token_actions_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
-def do (game, investigator, subject, item, skill_name):
-    return normal_spend_clue_token_actions_hook (game, investigator, subject, item, skill_name)
-
-@normal_spend_clue_token_actions_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, item, skill_name):
     return []

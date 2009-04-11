@@ -17,6 +17,32 @@ def build (game, module):
 
         return PlainItem ()
 
+    def tome (name, price, movement_points, check, success_action):
+        class Tome (arkham.InvestigatorItem):
+            def __init__ (self):
+                arkham.InvestigatorItem.__init__ (self, name, price, 0)
+
+            def movement (self, game, owner, item):
+                mp = owner.movement_points ()
+                if mp != None and mp >= movement_points and not item.exhausted ():
+                    """Exhaust and spend MOVEMENT_POINTS to make a
+                    CHECK. If you pass, do ACTION and discard Ancient
+                    Tome. If you fail, nothing happens."""
+                    return [
+                        arkham.GameplayAction_Multiple \
+                            ([arkham.GameplayAction_Exhaust (item),
+                              arkham.GameplayAction_SpendMovementPoints (movement_points),
+                              arkham.GameplayAction_Conditional \
+                                  (game, owner, item, check,
+                                   arkham.GameplayAction_Multiple \
+                                       ([success_action,
+                                         arkham.GameplayAction_Discard (item)]))])
+                        ]
+                else:
+                    return []
+
+        return Tome ()
+
     # ---
 
     # xxx .18 Derringer cannot be lost or stolen unless you choose to
@@ -29,33 +55,6 @@ def build (game, module):
         (fun.any, fun.any, fun.any, arkham.match_proto (Derringer18), fun.matchvalue ("combat"))
     def do (game, investigator, subject, item, skill_name):
         return 2
-
-    # ---
-
-    class AncientTome (arkham.InvestigatorItem):
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ (self, "Ancient Tome", 4, 0)
-
-        def movement (self, game, owner, item):
-            mp = owner.movement_points ()
-            if mp != None and mp >= 2 and not item.exhausted ():
-                """ Exhaust and spend 2 movement points to make a Lore
-                (-1) check. If you pass, draw 1 Spell and discard
-                Ancient Tome. If you fail, nothing happens. """
-                deck = module.m_common_deck # xxx should be spell deck
-                return [
-                    arkham.GameplayAction_Multiple \
-                        ([arkham.GameplayAction_Exhaust (item),
-                          arkham.GameplayAction_SpendMovementPoints (2),
-                          arkham.GameplayAction_Conditional \
-                              (game, owner, item,
-                               arkham.SkillCheck ("lore", -1),
-                               arkham.GameplayAction_Multiple \
-                                   ([arkham.GameplayAction_DrawItem (deck),
-                                     arkham.GameplayAction_Discard (item)]))])
-                    ]
-            else:
-                return []
 
     # ---
 
@@ -112,9 +111,22 @@ def build (game, module):
 
     # ---
 
-    class xxxDynamite:
-        """Bonus: +8 Combat check (Discard after use)"""
-        pass
+    class Dynamite (arkham.InvestigatorItem):
+        def __init__ (self):
+            arkham.InvestigatorItem.__init__ (self, "Dynamite", 4, 2)
+            """Bonus: +8 Combat check (Discard after use)"""
+
+    @arkham.bonus_hook.match \
+        (fun.any, fun.any, fun.any, arkham.match_proto (Dynamite), fun.matchvalue ("combat"))
+    def do (game, investigator, subject, item, skill_name):
+        return 8
+
+    @arkham.item_after_use_hook.match \
+        (fun.any, fun.any, fun.any, arkham.match_proto (Dynamite), fun.matchvalue ("combat"))
+    def do (game, investigator, subject, item, skill_name):
+        investigator.discard_item (item)
+
+    # ---
 
     class xxxFood:
         """Any phase: Discard Food to reduce any Stamina loss by 1."""
@@ -165,14 +177,6 @@ def build (game, module):
 
     # ---
 
-    class xxxOldJournal:
-        """Movement: Exhaust and spend 1 movement point to make a Lore
-        (-1) check. If you pass, gain 3 Clue tokens and discard Old
-        Journal. If you fail, nothing happens."""
-        pass
-
-    # ---
-
     class ResearchMaterials (arkham.InvestigatorItem):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, "Research Materials", 1, 0)
@@ -206,24 +210,31 @@ def build (game, module):
 
     # ---
 
-    for item_proto, count in [
-            (Derringer18 (), 1),
-            (plain_item (".38 Revolver", 4, 1, combat=3), 1),
-            (plain_item (".45 Automatic", 5, 1, combat=4), 1),
-            (AncientTome (), 1),
-            (Axe (), 1),
-            (Bullwhip (), 1),
-            (plain_item ("Cavalry Saber", 3, 1, combat=2), 1),
-            (Cross (), 1),
-            (plain_item ("Dark Cloak", 2, 0, evade=1), 1),
-            (plain_item ("Knife", 2, 1, combat=1), 1),
-            (plain_item ("Lantern", 3, 0, luck=1), 1),
-            (LuckyCigaretteCase (), 1),
-            (MapOfArkham (), 1),
-            (Motorcycle (), 1),
-            (ResearchMaterials (), 1),
-            (plain_item ("Rifle", 6, 2, combat=5), 1),
-            (Shotgun (), 1),
-            (plain_item ("Tommy Gun", 7, 2, combat=6), 1)
+    for count, item_proto in [
+            (1, Derringer18 ()),
+            (1, plain_item (".38 Revolver", 4, 1, combat=3)),
+            (1, plain_item (".45 Automatic", 5, 1, combat=4)),
+            (1, tome ("Ancient Tome", 4, 2,
+                      arkham.SkillCheck ("lore", -1),
+                      # xxx should be spell deck
+                      arkham.GameplayAction_DrawItem (module.m_common_deck))),
+            (1, Axe ()),
+            (1, Bullwhip ()),
+            (1, plain_item ("Cavalry Saber", 3, 1, combat=2)),
+            (1, Cross ()),
+            (1, plain_item ("Dark Cloak", 2, 0, evade=1)),
+            (1, Dynamite ()),
+            (1, plain_item ("Knife", 2, 1, combat=1)),
+            (1, plain_item ("Lantern", 3, 0, luck=1)),
+            (1, LuckyCigaretteCase ()),
+            (1, MapOfArkham ()),
+            (1, Motorcycle ()),
+            (1, tome ("Old Journal", 1, 1,
+                      arkham.SkillCheck ("lore", -1),
+                      arkham.GameplayAction_GainClues (3))),
+            (1, ResearchMaterials ()),
+            (1, plain_item ("Rifle", 6, 2, combat=5)),
+            (1, Shotgun ()),
+            (1, plain_item ("Tommy Gun", 7, 2, combat=6))
         ]:
         module.m_common_deck.register (item_proto, count)
