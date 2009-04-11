@@ -12,8 +12,9 @@ from item import *
 from deck import *
 from game import *
 
-from fight import *
+from fight_hooks import *
 from check_hooks import *
+from damage_hooks import *
 
 def match_proto (klass):
     def match (arg):

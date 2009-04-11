@@ -205,7 +205,7 @@ def do (combat, investigator, monster):
                                fun.bind (X = cond_bind_attrib ("nightmarish")))
 def do (combat, investigator, monster):
     investigator.reduce_sanity (X)
-    return normal_combat_check_pass_hook (combat, investigator, monster)
+    return normal_horror_check_pass_hook (combat, investigator, monster)
 
 @combat_check_pass_hook.match (fun.any, fun.any,
                                fun.bind (X = cond_bind_attrib ("overwhelming")))

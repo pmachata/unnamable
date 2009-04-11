@@ -1,3 +1,4 @@
+import arkham
 from loc import *
 
 class EndGame (Exception):
@@ -378,8 +379,7 @@ class Game:
         return self.devour (investigator)
 
     def fight (self, investigator, monster):
-        import fight
-        combat = fight.Combat (self)
+        combat = arkham.Combat (self)
         print "game.fight"
         try:
             try:
@@ -389,20 +389,20 @@ class Game:
                     combat.check_ends (investigator, monster)
                     self.pre_combat (combat, investigator, monster)
 
-            except fight.ContinueCombat:
+            except arkham.ContinueCombat:
                 investigator.lose_movement_points ()
                 combat.check_ends (investigator, monster)
-                fight.fight_hook (combat, investigator, monster)
+                arkham.fight_hook (combat, investigator, monster)
                 assert False
 
-        except fight.EndCombat, e:
+        except arkham.EndCombat, e:
             succ = e.success ()
             if succ == None:
                 pass
             elif succ:
-                fight.combat_won_hook (combat, investigator, monster)
+                arkham.combat_won_hook (combat, investigator, monster)
             else:
-                fight.combat_lost_hook (combat, investigator, monster)
+                arkham.combat_lost_hook (combat, investigator, monster)
 
     def move_monster (self, monster, location):
         if location not in self.m_loc_monsters:
@@ -455,7 +455,6 @@ class Game:
 
     # Retur False if investigator can't leave the location.
     def leave_location (self, investigator):
-        import fight
         location = investigator.location ()
         print "%s attempts to leave %s" % (investigator.name (), location.name ())
         self.deal_with_monsters (investigator)

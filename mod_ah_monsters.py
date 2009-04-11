@@ -1,5 +1,4 @@
 import fun
-import fight
 import arkham
 
 # xxx should be published by module so that it's possible to override it
@@ -29,12 +28,12 @@ def build (game, module):
                 (self, "Elder Thing",
                  -2, (-3, 2), 2, (+0, 1))
 
-    @fight.combat_check_fail_hook.match (fun.any, fun.any, arkham.match_proto (ElderThing))
+    @arkham.combat_check_fail_hook.match (fun.any, fun.any, arkham.match_proto (ElderThing))
     def do (game, investigator, monster):
         print """XXX When you fail a Combat check against Elder
         Thing, you must discard 1 of your Weapons or Spells (your
         choice), if able."""
-        fight.deal_combat_damage_hook (game, investigator, monster)
+        arkham.deal_combat_damage_hook (game, investigator, monster)
 
     class Maniac (arkham.BasicMonster):
         def __init__ (self, mod_terror):
@@ -62,11 +61,11 @@ def build (game, module):
                                  # goes to the cup after it's
                                  # killed.
 
-    @fight.combat_check_pass_hook.match (fun.any, fun.any, arkham.match_proto (MiGo))
+    @arkham.combat_check_pass_hook.match (fun.any, fun.any, arkham.match_proto (MiGo))
     def do (game, investigator, monster):
         print """XXX If you pass a Combat check against Migo,
         return it to the box and draw 1 Unique Item."""
-        raise fight.EndCombat (True)
+        raise arkham.EndCombat (True)
 
 
     class Nightgaunt (arkham.BasicMonster):
@@ -119,26 +118,26 @@ def build (game, module):
         def combat_damage (self):
             return arkham.SpecialDamage ()
 
-    @fight.fight_hook.match (fun.any, fun.any, arkham.match_proto (TheBlackMan))
+    @arkham.fight_hook.match (fun.any, fun.any, arkham.match_proto (TheBlackMan))
     def do (combat, investigator, monster):
         if arkham.SkillCheck ("luck", -1).check (combat.game, investigator, monster):
             investigator.gain_clues (2)
-            raise fight.EndCombat (True)
+            raise arkham.EndCombat (True)
         else:
             investigator.devour (combat.game, monster)
-            raise fight.EndCombat (False)
+            raise arkham.EndCombat (False)
 
-    @fight.deal_combat_damage_hook.match (fun.any, fun.any, arkham.match_proto (TheBlackMan))
+    @arkham.deal_combat_damage_hook.match (fun.any, fun.any, arkham.match_proto (TheBlackMan))
     def do (combat, investigator, monster):
         pass
 
-    @fight.combat_won_hook.match (fun.any, fun.any, arkham.match_proto (TheBlackMan))
+    @arkham.combat_won_hook.match (fun.any, fun.any, arkham.match_proto (TheBlackMan))
     def do (combat, investigator, monster):
-        fight.endless_combat_won_hook (combat, investigator, monster)
+        arkham.endless_combat_won_hook (combat, investigator, monster)
 
-    @fight.combat_lost_hook.match (fun.any, fun.any, arkham.match_proto (TheBlackMan))
+    @arkham.combat_lost_hook.match (fun.any, fun.any, arkham.match_proto (TheBlackMan))
     def do (combat, investigator, monster):
-        fight.endless_combat_won_hook (combat, investigator, monster)
+        arkham.endless_combat_won_hook (combat, investigator, monster)
 
     class TheBloatedWoman (arkham.SimpleMonster):
         def __init__ (self):
@@ -149,16 +148,16 @@ def build (game, module):
                  mask = True,
                  endless = True)
 
-    @fight.fight_hook.match (fun.any, fun.any, arkham.match_proto (TheBloatedWoman))
+    @arkham.fight_hook.match (fun.any, fun.any, arkham.match_proto (TheBloatedWoman))
     def do (combat, investigator, monster):
         """Before making a Horror check, pass a Will(-2) check or
         or automatically fail the Horror check and the Combat check."""
         if not arkham.SkillCheck ("will", -2).check (combat.game, investigator, monster):
-            fight.horror_check_fail_hook (combat, investigator, monster)
-            fight.combat_check_fail_hook (combat, investigator, monster)
-            fight.combat_loop_hook (combat, investigator, monster)
+            arkham.horror_check_fail_hook (combat, investigator, monster)
+            arkham.combat_check_fail_hook (combat, investigator, monster)
+            arkham.combat_loop_hook (combat, investigator, monster)
         else:
-            fight.normal_fight_hook (combat, investigator, monster)
+            arkham.normal_fight_hook (combat, investigator, monster)
 
 
     for count, monster in [

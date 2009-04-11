@@ -189,28 +189,25 @@ class GameplayAction_Evade_PreCombat (GameplayAction_Evade):
         GameplayAction_Evade.__init__ (self, *args)
 
     def perform (self, game, investigator):
-        import fight
         monster = self.m_monster
-        fight.evade_check_hook (self.m_combat, investigator, monster)
+        arkham.evade_check_hook (self.m_combat, investigator, monster)
         investigator.lose_movement_points ()
-        raise fight.ContinueCombat () # Proceed with the combat.
+        raise arkham.ContinueCombat () # Proceed with the combat.
 
 class GameplayAction_Evade_Combat (GameplayAction_Evade):
     def __init__ (self, *args):
         GameplayAction_Evade.__init__ (self, *args)
 
     def perform (self, game, investigator):
-        import fight
         monster = self.m_monster
-        fight.evade_check_hook (self.m_combat, investigator, monster)
+        arkham.evade_check_hook (self.m_combat, investigator, monster)
 
 class GameplayAction_Fight (MonsterBoundGameplayAction):
     def __init__ (self, monster):
         MonsterBoundGameplayAction.__init__ (self, monster, "fight")
 
     def perform (self, game, investigator):
-        import fight
-        raise fight.ContinueCombat ()
+        raise arkham.ContinueCombat ()
 
 class GameplayAction_DealWithMonster (MonsterBoundGameplayAction):
     def __init__ (self, monster):
