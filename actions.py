@@ -75,6 +75,46 @@ class GameplayAction_Multiple (GameplayAction):
             ret = action.bound_item () or ret
         return ret
 
+class GameplayAction_Conditional (GameplayAction):
+    def __init__ (self, game, investigator, subject,
+                  check, action_pass, action_fail = None):
+        GameplayAction.__init__ (self,
+                                 "if %s passes then %s%s" \
+                                     % (check.description (game, investigator),
+                                        action_pass.name (),
+                                        ("else %s" % action_fail.name () \
+                                             if action_fail != None else "")))
+        assert action_pass
+        self.m_check = check
+        self.m_pass = action_pass
+        self.m_fail = action_fail
+        self.m_subject = subject
+
+    def perform (self, game, investigator):
+        if self.m_check.check (game, investigator, self.m_subject):
+            return self.m_pass.perform (game, investigator)
+        elif self.m_fail != None:
+            return self.m_fail.perform (game, investigator)
+        else:
+            return None
+
+    def bound_location (self):
+        ret = self.m_pass.bound_location ()
+        if ret == None and self.m_fail:
+            ret = self.m_fail.bound_location ()
+        return ret
+
+    def bound_monster (self):
+        ret = self.m_pass.bound_monster ()
+        if ret == None and self.m_fail:
+            ret = self.m_fail.bound_monster ()
+        return ret
+
+    def bound_item (self):
+        ret = self.m_pass.bound_item ()
+        if ret == None and self.m_fail:
+            ret = self.m_fail.bound_item ()
+        return ret
 
 # Movement actions
 
@@ -87,7 +127,7 @@ class GameplayAction_Move (LocationBoundGameplayAction):
         if investigator.movement_points () > 0:
             # He might have lost all movement points during the fight
             # after he tried to leave the current location.
-            investigator.spend_movement_point ()
+            investigator.spend_movement_points (1)
 
 class GameplayAction_Stay (LocationBoundGameplayAction):
     def __init__ (self, location):
@@ -99,6 +139,7 @@ class GameplayAction_Stay (LocationBoundGameplayAction):
 
 class GameplayAction_GainMovementPoints (GameplayAction):
     def __init__ (self, amount):
+        assert amount > 0
         GameplayAction.__init__ (self,
                                  "gain %d movement point%s" \
                                      % (amount, "s" if amount > 1 else ""))
@@ -106,6 +147,17 @@ class GameplayAction_GainMovementPoints (GameplayAction):
 
     def perform (self, game, investigator):
         investigator.gain_movement_points (self.m_amount)
+
+class GameplayAction_SpendMovementPoints (GameplayAction):
+    def __init__ (self, amount):
+        assert amount > 0
+        GameplayAction.__init__ (self,
+                                 "spend %d movement point%s" \
+                                     % (amount, "s" if amount > 1 else ""))
+        self.m_amount = amount
+
+    def perform (self, game, investigator):
+        investigator.spend_movement_points (self.m_amount)
 
 class GameplayAction_Quit (GameplayAction):
     def __init__ (self):
@@ -196,6 +248,15 @@ class GameplayAction_SpendClue (GameplayAction):
 
     def perform (self, game, investigator):
         investigator.spend_clue ()
+
+class GameplayAction_DrawItem (GameplayAction):
+    def __init__ (self, deck):
+        GameplayAction.__init__ (self, "draw from %s" % deck.name ())
+        assert deck != None
+        self.m_deck = deck
+
+    def perform (self, game, investigator):
+        investigator.take_item (game, self.m_deck.draw ())
 
 # Roll correction actions
 

@@ -78,10 +78,6 @@ class Investigator (ObjectWithLocation, GameplayObject):
             self.m_stamina = self.m_max_stamina
         print "to", self.m_stamina
 
-    def spend_movement_point (self):
-        assert self.m_movement_points > 0
-        self.m_movement_points -= 1
-
     def gain_movement_points (self, amount):
         assert amount > 0
         self.m_movement_points += amount
@@ -89,6 +85,10 @@ class Investigator (ObjectWithLocation, GameplayObject):
     def lose_movement_points (self):
         self.m_movement_points = None # no movement at all possible
                                       # until next turn
+
+    def spend_movement_points (self, amount):
+        assert self.m_movement_points >= amount
+        self.m_movement_points -= amount
 
     def movement_points (self):
         return self.m_movement_points

@@ -17,6 +17,8 @@ def build (game, module):
 
         return PlainItem ()
 
+    # ---
+
     # xxx .18 Derringer cannot be lost or stolen unless you choose to
     # allow it.
     class Derringer18 (arkham.InvestigatorItem):
@@ -30,8 +32,32 @@ def build (game, module):
 
     # ---
 
-    class xxxAncientTome:
-        pass
+    class AncientTome (arkham.InvestigatorItem):
+        def __init__ (self):
+            arkham.InvestigatorItem.__init__ (self, "Ancient Tome", 4, 0)
+
+        def movement (self, game, owner, item):
+            mp = owner.movement_points ()
+            if mp != None and mp >= 2 and not item.exhausted ():
+                """ Exhaust and spend 2 movement points to make a Lore
+                (-1) check. If you pass, draw 1 Spell and discard
+                Ancient Tome. If you fail, nothing happens. """
+                deck = module.m_common_deck # xxx should be spell deck
+                return [
+                    arkham.GameplayAction_Multiple \
+                        ([arkham.GameplayAction_Exhaust (item),
+                          arkham.GameplayAction_SpendMovementPoints (2),
+                          arkham.GameplayAction_Conditional \
+                              (game, owner, item,
+                               arkham.SkillCheck ("lore", -1),
+                               arkham.GameplayAction_Multiple \
+                                   ([arkham.GameplayAction_DrawItem (deck),
+                                     arkham.GameplayAction_Discard (item)]))])
+                    ]
+            else:
+                return []
+
+    # ---
 
     class Axe (arkham.InvestigatorItem):
         def __init__ (self):
@@ -184,6 +210,7 @@ def build (game, module):
             (Derringer18 (), 1),
             (plain_item (".38 Revolver", 4, 1, combat=3), 1),
             (plain_item (".45 Automatic", 5, 1, combat=4), 1),
+            (AncientTome (), 1),
             (Axe (), 1),
             (Bullwhip (), 1),
             (plain_item ("Cavalry Saber", 3, 1, combat=2), 1),
