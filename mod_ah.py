@@ -8,35 +8,21 @@ def find_location (game, flag):
             return location
     return None
 
-class GameplayAction_InvestigatorScrewed (arkham.GameplayAction):
-    def __init__ (self, location):
+class GameplayAction_Incapacitated (arkham.GameplayAction):
+    def __init__ (self, location, aspect):
         arkham.GameplayAction.__init__ (self, "move to %s and lose half the stuff" % location.name ())
         self.m_location = location
+        self.m_aspect = aspect
 
     def perform (self, game, investigator):
         investigator.move_to (self.m_location)
         print "lose half items" # xxx
         print "lose half clue tokens" # xxx
         print "lose all retainers" # xxx
+        investigator.health (self.m_aspect).add (1)
 
     def bound_location (self):
         return self.m_location
-
-class GameplayAction_Insane (GameplayAction_InvestigatorScrewed):
-    def __init__ (self, location):
-        GameplayAction_InvestigatorScrewed.__init__ (self, location)
-
-    def perform (self, game, investigator):
-        GameplayAction_InvestigatorScrewed.perform (self, game, investigator)
-        investigator.add_sanity (1)
-
-class GameplayAction_Unconscious (GameplayAction_InvestigatorScrewed):
-    def __init__ (self, location):
-        GameplayAction_InvestigatorScrewed.__init__ (self, location)
-
-    def perform (self, game, investigator):
-        GameplayAction_InvestigatorScrewed.perform (self, game, investigator)
-        investigator.add_stamina (1)
 
 
 def has_token (what):
@@ -222,7 +208,10 @@ class ModuleProto (arkham.ModuleProto):
 
         game.add_investigator (
             arkham.CommonInvestigator (
-                "\"Ashcan\" Pete", 4, 6, 1, 3,
+                "\"Ashcan\" Pete",
+                {arkham.health_sanity:4,
+                 arkham.health_stamina: 6},
+                1, 3,
                 self.mod_skills.Skills (4,
                                         3, 6, 5,
                                         5, 3, 3),
@@ -342,12 +331,16 @@ class ModuleProto (arkham.ModuleProto):
                              if not location.attributes ().flag ("street")]))
         return []
 
-    def investigator_unconscious (self, game):
-        return [GameplayAction_Unconscious (location)
-                for location in game.all_locations ()
-                             if location.attributes ().flag ("hospital")]
+    def investigator_dead (self, game, investigator):
+        flag_map = {arkham.health_stamina: "hospital",
+                    arkham.health_sanity: "asylum"}
 
-    def investigator_insane (self, game):
-        return [GameplayAction_Insane (location)
-                for location in game.all_locations ()
-                             if location.attributes ().flag ("asylum")]
+        ret = []
+        for aspect in investigator.health_aspects ():
+            if investigator.health (aspect).cur () == 0:
+                flag = flag_map.get (aspect, None)
+                if flag:
+                    ret += [GameplayAction_Incapacitated (location, aspect)
+                            for location in game.all_locations ()
+                            if location.attributes ().flag (flag)]
+        return ret

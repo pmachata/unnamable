@@ -79,12 +79,12 @@ class TUI (arkham.UI):
         actions = actions + [arkham.GameplayAction_Quit ()]
 
         print "======================================================="
-        print "%s: sanity=%s, stamina=%s, movement=%s, clues=%s"\
+        print "%s: movement=%s, clues=%s, %s"\
             % (investigator.name (),
-               investigator.sanity (),
-               investigator.stamina (),
                investigator.movement_points (),
-               investigator.clues ())
+               investigator.clues (),
+               ", ".join ("%s=%s" % (aspect.name (), investigator.health (aspect).cur ())
+                          for aspect in investigator.health_aspects ()))
         dump_location_info (investigator.location (), 1)
         print "trophies:", ", ".join (trophy.name ()
                                       for trophy in investigator.trophies ())

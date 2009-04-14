@@ -5,15 +5,50 @@ class Hand:
     def can_handle (self, game, investigator, object):
         return True
 
+class HealthAspect:
+    def __init__ (self, name):
+        self.m_name = name
+    def name (self):
+        return self.m_name
+
+health_stamina = HealthAspect ("stamina")
+health_sanity = HealthAspect ("sanity")
+
+class Health:
+    def __init__ (self, aspect, max):
+        self.m_aspect = aspect
+        self.m_max = max
+        self.m_cur = max
+
+    def cur (self):
+        return self.m_cur
+
+    def reduce (self, amount):
+        assert amount >= 0
+        print "reduce %s by %s" % (self.m_aspect.name (), amount),
+        self.m_cur -= amount
+        if self.m_cur < 0:
+            self.m_cur = 0
+        print "to", self.m_cur
+
+    def add (self, amount):
+        assert amount >= 0
+        print "add %s to %s" % (amount, self.m_aspect.name ()),
+        self.m_cur += amount
+        if self.m_cur > self.m_max:
+            self.m_cur = self.m_max
+        print "to", self.m_cur
+
 class Investigator (ObjectWithLocation, GameplayObject):
-    def __init__ (self, name, sanity, stamina,
+    def __init__ (self, name, initial_health,
                   initial_money, initial_clues, skills, home):
         ObjectWithLocation.__init__ (self, home)
         self.m_name = name
-        self.m_max_sanity = sanity
-        self.m_sanity = sanity
-        self.m_max_stamina = stamina
-        self.m_stamina = stamina
+
+        self.m_health = {}
+        for aspect, max in initial_health.iteritems ():
+            self.m_health[aspect] = Health (aspect, max)
+
         self.m_money = initial_money
         self.m_clues = initial_clues
         self.m_skills = skills
@@ -40,43 +75,11 @@ class Investigator (ObjectWithLocation, GameplayObject):
         assert self.m_clues > 0
         self.m_clues -= 1
 
-    def sanity (self):
-        return self.m_sanity
+    def health (self, aspect):
+        return self.m_health[aspect]
 
-    def stamina (self):
-        return self.m_stamina
-
-    def reduce_sanity (self, amount):
-        assert amount >= 0
-        print "reduce sanity by %s" % amount,
-        self.m_sanity -= amount
-        if self.m_sanity < 0:
-            self.m_sanity = 0
-        print "to", self.m_sanity
-
-    def add_sanity (self, amount):
-        assert amount >= 0
-        print "add %s to sanity" % amount,
-        self.m_sanity += amount
-        if self.m_sanity > self.m_max_sanity:
-            self.m_sanity = self.m_max_sanity
-        print "to", self.m_sanity
-
-    def reduce_stamina (self, amount):
-        assert amount >= 0
-        print "reduce stamina by %s" % amount,
-        self.m_stamina -= amount
-        if self.m_stamina < 0:
-            self.m_stamina = 0
-        print "to", self.m_stamina
-
-    def add_stamina (self, amount):
-        assert amount >= 0
-        print "add %s to stamina" % amount,
-        self.m_stamina += amount
-        if self.m_stamina > self.m_max_stamina:
-            self.m_stamina = self.m_max_stamina
-        print "to", self.m_stamina
+    def health_aspects (self):
+        return self.m_health.keys ()
 
     def gain_movement_points (self, amount):
         assert amount > 0
@@ -94,7 +97,10 @@ class Investigator (ObjectWithLocation, GameplayObject):
         return self.m_movement_points
 
     def alive (self):
-        return self.m_sanity > 0 and self.m_stamina > 0
+        for health in self.m_health.itervalues ():
+            if health.cur () <= 0:
+                return False
+        return True
 
     def delay (self):
         self.m_delayed = True
@@ -244,10 +250,7 @@ class Investigator (ObjectWithLocation, GameplayObject):
                 + self.item_actions ())
 
     # Unconscious/Insane actions.
-    def investigator_unconscious (self, game):
-        return []
-
-    def investigator_insane (self, game):
+    def investigator_dead (self, game):
         return []
 
     # Other actions
@@ -269,6 +272,13 @@ class Investigator (ObjectWithLocation, GameplayObject):
                             in arkham.spend_clue_token_actions_hook \
                                 (game, self, subject, item, skill_name)]
                            for item in self.m_active_items), [])
+
+    def should_be_devoured (self, game):
+        # Be devoured if all your health aspects are zero.
+        for aspect, health in self.m_health.iteritems ():
+            if health.cur () > 0:
+                return False
+        return True
 
 class CommonInvestigator (Investigator):
     def __init__ (self, *args, **kwargs):

@@ -113,10 +113,7 @@ class ModuleProto:
         return []
 
     # Unconscious/Insane actions.
-    def investigator_unconscious (self, game):
-        return []
-
-    def investigator_insane (self, game):
+    def investigator_dead (self, game, investigator):
         return []
 
 class UI:

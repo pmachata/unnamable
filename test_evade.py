@@ -49,5 +49,5 @@ class Game2 (tester.TestGame):
 def do (combat, investigator, monster):
     raise tester.EndTest (True)
 
-tester.run_test (Game1)
-tester.run_test (Game2)
+tester.run_test (Game1 ())
+tester.run_test (Game2 ())

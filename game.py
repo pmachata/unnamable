@@ -52,11 +52,8 @@ class ModuleInstance:
         return self.m_type.combat_turn (combat, investigator, monster)
 
     # Unconscious/Insane actions.
-    def investigator_unconscious (self):
-        return self.m_type.investigator_unconscious (self.m_game)
-
-    def investigator_insane (self):
-        return self.m_type.investigator_insane (self.m_game)
+    def investigator_dead (self, investigator):
+        return self.m_type.investigator_dead (self.m_game, investigator)
 
 class Monster (ObjectWithLocation):
     def __init__ (self, proto):
@@ -352,24 +349,16 @@ class Game:
                               for modi in self.m_modules), []))
         self.perform_selected_action (investigator, actions)
 
-    def investigator_unconscious (self, investigator):
-        print "-- investigator_unconscious --"
-        actions = []
-        actions.extend (investigator.investigator_unconscious (self))
-        actions.extend (sum ((modi.investigator_unconscious ()
-                              for modi in self.m_modules), []))
-        self.perform_selected_action (investigator, actions)
-
-    def investigator_insane (self, investigator):
-        print "-- investigator_insane --"
-        actions = []
-        actions.extend (investigator.investigator_insane (self))
-        actions.extend (sum ((modi.investigator_insane ()
-                              for modi in self.m_modules), []))
-        self.perform_selected_action (investigator, actions)
-
-    def investigator_unconscious_insane (self, investigator):
-        return self.devour (investigator)
+    def investigator_dead (self, investigator):
+        if investigator.should_be_devoured (self):
+            self.devour (investigator)
+        else:
+            print "-- investigator_dead --"
+            actions = []
+            actions.extend (investigator.investigator_dead (self))
+            actions.extend (sum ((modi.investigator_dead (investigator)
+                                  for modi in self.m_modules), []))
+            self.perform_selected_action (investigator, actions)
 
     def fight (self, investigator, monster):
         combat = arkham.Combat (self)

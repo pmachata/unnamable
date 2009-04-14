@@ -1,3 +1,5 @@
+import arkham
+
 class Damage:
     def deal (self, game, investigator, monster):
         raise NotImplementedError ()
@@ -12,25 +14,25 @@ class DamageNone (Damage):
     def description (self, game, investigator, monster):
         return "-"
 
-class DamageSanity (Damage):
-    def __init__ (self, amount):
+class DamageHealth (Damage):
+    def __init__ (self, aspect, amount):
+        self.m_aspect = aspect
         self.m_amount = amount
 
-    def deal (self, game, investigator, monster):
-        investigator.reduce_sanity (self.m_amount)
-
     def description (self, game, investigator, monster):
-        return "sanity %+d" % -self.m_amount
+        return "%s %+d" % (self.m_aspect.name (), -self.m_amount)
 
-class DamageStamina (Damage):
+    def deal (self, game, investigator, monster):
+        arkham.deal_damage_hook (game, investigator, monster,
+                                 self.m_aspect, self.m_amount)
+
+class DamageSanity (DamageHealth):
     def __init__ (self, amount):
-        self.m_amount = amount
+        DamageHealth.__init__ (self, arkham.health_sanity, amount)
 
-    def deal (self, game, investigator, monster):
-        investigator.reduce_stamina (self.m_amount)
-
-    def description (self, game, investigator, monster):
-        return "stamina %+d" % -self.m_amount
+class DamageStamina (DamageHealth):
+    def __init__ (self, amount):
+        DamageHealth.__init__ (self, arkham.health_stamina, amount)
 
 class DamageDevour (Damage):
     def deal (self, game, investigator, monster):
@@ -60,7 +62,6 @@ class ConditionalDamage (Damage):
 class SpecialDamage (Damage):
     def description (self, game, investigator, monster):
         return "*"
-
 
 damage_none = DamageNone ()
 damage_devour = DamageDevour ()

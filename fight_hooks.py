@@ -159,15 +159,8 @@ def do (combat, investigator, monster):
 
 @normal_combat_lost_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
-    unconscious = investigator.stamina () == 0
-    insane = investigator.sanity () == 0
-
-    if unconscious and insane:
-        combat.game.investigator_unconscious_insane (investigator)
-    elif insane:
-        combat.game.investigator_insane (investigator)
-    elif unconscious:
-        combat.game.investigator_unconscious (investigator)
+    if not investigator.alive ():
+        combat.game.investigator_dead (investigator)
 
 @evade_check_hook.match  (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
@@ -204,13 +197,13 @@ def do (combat, investigator, monster):
 @horror_check_pass_hook.match (fun.any, fun.any,
                                fun.bind (X = cond_bind_attrib ("nightmarish")))
 def do (combat, investigator, monster):
-    investigator.reduce_sanity (X)
+    investigator.health (arkham.health_sanity).reduce (X)
     return normal_horror_check_pass_hook (combat, investigator, monster)
 
 @combat_check_pass_hook.match (fun.any, fun.any,
                                fun.bind (X = cond_bind_attrib ("overwhelming")))
 def do (combat, investigator, monster):
-    investigator.reduce_stamina (X)
+    investigator.health (arkham.health_stamina).reduce (X)
     return normal_combat_check_pass_hook (combat, investigator, monster)
 
 

@@ -134,7 +134,9 @@ def bind (**kwargs):
     return match
 
 def matchclass (c):
-    return lambda arg: isinstance (arg, c)
+    def match (arg):
+        return isinstance (arg, c)
+    return match
 
 def catch (pred):
     def match (arg):

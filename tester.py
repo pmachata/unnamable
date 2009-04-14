@@ -36,19 +36,25 @@ class TestInvestigator (arkham.CommonInvestigator):
                   money=0, clues=0, **skills):
         arkham.CommonInvestigator.__init__ \
             (self, name,
-             sanity, stamina, money, clues,
+             {arkham.health_sanity: sanity,
+              arkham.health_stamina: stamina},
+             money, clues,
              FixedSkills (**skills), home)
 
     def initial_movement_points (self):
         return 0
 
 class ModuleProto (arkham.ModuleProto):
-    def __init__ (self, constructor):
+    def __init__ (self, constructor, request):
         arkham.ModuleProto.__init__ (self, "test", "Test Board")
         self.m_constructor = constructor
         self.m_locations = {}
+        self.m_request = list (request)
 
     def consistent (self, mod_index):
+        for req in self.m_request:
+            if not mod_index.request (req):
+                return False
         return True
 
     def construct (self, game):
@@ -57,7 +63,11 @@ class ModuleProto (arkham.ModuleProto):
     def add_locations (self, *names):
         ret = []
         for name in names:
-            loc = maps.location ("Loc" + name)
+            if isinstance (name, tuple):
+                name, attributes = name
+            else:
+                attributes = {}
+            loc = maps.location ("Loc" + name, **attributes)
             self.m_locations[name] = loc
             ret.append (loc)
         return ret
@@ -80,10 +90,11 @@ def match_combat (klass):
     return lambda arg: isinstance (arg.game, klass)
 
 class TestGame (arkham.Game):
-    def __init__ (self, controller):
+    def __init__ (self, controller, request=[]):
         idx = arkham.ModuleIndex ()
         modules.discover_modules (idx)
-        idx.add_module (ModuleProto (controller))
+        controller.add_modules (idx)
+        idx.add_module (ModuleProto (controller, request))
         idx.request ("test")
 
         arkham.Game.__init__ (self, idx.requested_modules (),
@@ -92,7 +103,7 @@ class TestGame (arkham.Game):
 
     def roll (self):
         ret = self.m_controller.next ()
-        assert isinstance (ret, int)
+        assert isinstance (ret, int), ret
         assert ret > 0
         return ret
 
@@ -108,15 +119,22 @@ class Controller:
         return self.m_generator.next ()
 
     def use_investigators (self, game, investigators):
+        ret = []
         for investigator in game.all_investigators ():
             if investigator.name () in investigators:
                 game.use_investigator (investigator)
-            else:
-                print investigator.name ()
+                ret.append (investigator)
+        return ret
 
-def run_test (klass):
+    def construct (self, game, module):
+        pass
+
+    def add_modules (self, idx):
+        pass
+
+def run_test (game):
     try:
-        klass ().run ()
+        game.run ()
     except EndTest, e:
         if not e.success ():
             print "FAILURE"
