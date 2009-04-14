@@ -123,6 +123,7 @@ class Game:
     def __init__ (self, modules, ui):
         self.m_modules = [ModuleInstance (self, mod) for mod in modules]
         self.m_ui = ui
+        self.m_turn = 0
 
         self.m_neighborhoods = []
         self.m_locations = []
@@ -218,7 +219,7 @@ class Game:
         else:
             return list (self.m_loc_monsters[location])
 
-    def setup_game (self):
+    def run (self):
         print "-- setting up the game --"
         for modi in self.m_modules:
             print "call construct in %s" % modi.name ()
@@ -244,21 +245,19 @@ class Game:
         for investigator in self.m_investigators:
             investigator.prepare_pass_2 (self)
 
-        for investigator in self.m_investigators:
-            self.m_ui.setup_investigator (self, investigator)
-
         for modi in self.m_modules:
             modi.turn_0 ()
 
         print "-- entering the game loop --"
         try:
             while True:
+                self.m_turn += 1
                 print
                 print
                 print
                 print "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
                 print "+                                                       +"
-                print "+ NEW TURN                                              +"
+                print "+ TURN %-9d                                        +" % self.m_turn
                 print "+                                                       +"
                 print "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
                 print
@@ -293,9 +292,7 @@ class Game:
 
                     if (investigator, investigator.location ()) \
                             not in self.m_dealt_with:
-                        print "need to deal with monsters"
                         self.deal_with_monsters (investigator)
-                        print "dealt with monsters"
                     else:
                         print "skipping second dealing with monsters"
 
@@ -331,11 +328,7 @@ class Game:
     def perform_selected_action (self, investigator, actions):
         if actions:
             assert len (actions) > 0
-            if len (actions) == 1:
-                action = actions[0]
-                print "(choosing the only available action, %s)" % action.name ()
-            else:
-                action = self.m_ui.select_action (self, investigator, actions)
+            action = self.m_ui.select_action (self, investigator, actions)
             action.perform (self, investigator)
             return action
         else:
@@ -451,7 +444,6 @@ class Game:
             actions.remove (action)
 
         self.m_dealt_with.add ((investigator, location))
-        print "deal_with_monsters finished"
 
     # Retur False if investigator can't leave the location.
     def leave_location (self, investigator):

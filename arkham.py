@@ -123,8 +123,5 @@ class UI:
     def setup_players (self, game):
         raise NotImplementedError ()
 
-    def setup_investigator (self, game, investigator):
-        raise NotImplementedError ()
-
     def select_action (self, game, investigator, actions):
         raise NotImplementedError ()

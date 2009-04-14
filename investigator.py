@@ -202,8 +202,7 @@ class Investigator (ObjectWithLocation, GameplayObject):
 
     # Game play phases.
     def upkeep (self, game):
-        mp = self.m_skills.check ("speed")
-        self.m_movement_points = mp
+        self.m_movement_points = self.initial_movement_points ()
         return sum ((item.upkeep (game, self)
                      for item in self.m_active_items), [])
 
@@ -220,6 +219,10 @@ class Investigator (ObjectWithLocation, GameplayObject):
         return [arkham.GameplayAction_Stay (self.m_location)] + dest_actions \
             + sum ((item.movement (game, self)
                     for item in self.m_active_items), [])
+
+    def initial_movement_points (self):
+        " not including bonuses for items "
+        return self.m_skills.check ("speed")
 
     # Combat phases.
     def item_actions (self):

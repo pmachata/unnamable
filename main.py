@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import arkham
+import modules
 
 class TUI (arkham.UI):
     def setup_players (self, game):
@@ -9,11 +10,12 @@ class TUI (arkham.UI):
             game.use_investigator (investigator)
             break
 
-    def setup_investigator (self, game, investigator):
-        # decide initial values
-        print "XXX setup investigator %s" % investigator.name ()
-
     def select_action (self, game, investigator, actions):
+        if len (actions) == 1:
+            action = actions[0]
+            print "(choosing the only available action, %s)" % action.name ()
+            return action
+
         renames = {}
         known_names = {}
 
@@ -134,28 +136,8 @@ class TUI (arkham.UI):
                 return id_act[sel]
 
 idx = arkham.ModuleIndex ()
-
-# some sort of module discovery would be here instead
-import mod_ah
-idx.add_module (mod_ah.ModuleProto ())
-
-import mod_ancient
-idx.add_module (mod_ancient.ModuleProto ())
-
-import mod_monster
-idx.add_module (mod_monster.ModuleProto ())
-
-import mod_common
-idx.add_module (mod_common.ModuleProto ())
-
-import mod_skills
-idx.add_module (mod_skills.ModuleProto ())
-
-import mod_terror
-idx.add_module (mod_terror.ModuleProto ())
-
-# let's play arkham horror!
+modules.discover_modules (idx)
 idx.request ("ah")
 
 game = arkham.Game (idx.requested_modules (), TUI ())
-game.setup_game ()
+game.run ()
