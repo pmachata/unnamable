@@ -40,18 +40,18 @@ class Module (arkham.Module):
         for monster in [
             BasicMonster ("Child of Abhoth",
                           arkham.evade_check (+1),
-                          arkham.horror_check (-2), arkham.DamageSanity (2),
-                          arkham.fight_check (-2, 3), arkham.DamageStamina (2),
+                          arkham.horror_check (-2), arkham.HarmSanity (2),
+                          arkham.fight_check (-2, 3), arkham.HarmStamina (2),
                           child_of_abhoth = 1),
             BasicMonster ("Child of Abhoth",
                           arkham.evade_check (+1),
-                          arkham.horror_check (-2), arkham.DamageSanity (4),
-                          arkham.fight_check (-1, 3), arkham.DamageStamina (2),
+                          arkham.horror_check (-2), arkham.HarmSanity (4),
+                          arkham.fight_check (-1, 3), arkham.HarmStamina (2),
                           child_of_abhoth = 2),
             BasicMonster ("Child of Abhoth",
                           arkham.evade_check (+1),
-                          arkham.horror_check (-1), arkham.DamageSanity (2),
-                          arkham.fight_check (-2, 3), arkham.DamageStamina (4),
+                          arkham.horror_check (-1), arkham.HarmSanity (2),
+                          arkham.fight_check (-2, 3), arkham.HarmStamina (4),
                           child_of_abhoth = 3)
             ]:
             game.register_monster (monster)

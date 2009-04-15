@@ -1,20 +1,48 @@
 import arkham
 
+class Amount:
+    def __init__ (self, amount):
+        self.m_amount = amount
+
+    def reduce (self, amount):
+        assert amount > 0
+        self.m_amount -= amount
+        if self.m_amount < 0:
+            self.m_amount == 0
+
+    def amount (self):
+        return self.m_amount
+
 class Damage:
+    def __init__ (self, aspects):
+        self.m_aspects = aspects
+
+
+    def amount (self, aspect):
+        return self.m_aspects[aspect]
+
+    def aspects (self):
+        return self.m_aspects.keys ()
+
+    def inflict (self, investigator):
+        for aspect, amount in self.m_aspects.iteritems ():
+            investigator.health (aspect).reduce (amount.amount ())
+
+class Harm:
     def deal (self, game, investigator, monster):
         raise NotImplementedError ()
 
     def description (self, game, investigator, monster):
         raise NotImplementedError ()
 
-class DamageNone (Damage):
+class HarmNone (Harm):
     def deal (self, game, investigator, monster):
         pass
 
     def description (self, game, investigator, monster):
         return "-"
 
-class DamageHealth (Damage):
+class HarmHealth (Harm):
     def __init__ (self, aspect, amount):
         self.m_aspect = aspect
         self.m_amount = amount
@@ -23,29 +51,29 @@ class DamageHealth (Damage):
         return "%s %+d" % (self.m_aspect.name (), -self.m_amount)
 
     def deal (self, game, investigator, monster):
-        arkham.deal_damage_hook (game, investigator, monster,
-                                 self.m_aspect, self.m_amount)
+        arkham.damage_hook (game, investigator, monster,
+                            Damage ({self.m_aspect: Amount (self.m_amount)}))
 
-class DamageSanity (DamageHealth):
+class HarmSanity (HarmHealth):
     def __init__ (self, amount):
-        DamageHealth.__init__ (self, arkham.health_sanity, amount)
+        HarmHealth.__init__ (self, arkham.health_sanity, amount)
 
-class DamageStamina (DamageHealth):
+class HarmStamina (HarmHealth):
     def __init__ (self, amount):
-        DamageHealth.__init__ (self, arkham.health_stamina, amount)
+        HarmHealth.__init__ (self, arkham.health_stamina, amount)
 
-class DamageDevour (Damage):
+class HarmDevour (Harm):
     def deal (self, game, investigator, monster):
         investigator.devour (game, monster)
 
     def description (self, game, investigator, monster):
         return "devour"
 
-class ConditionalDamage (Damage):
-    def __init__ (self, predicate, damage_pass, damage_fail = Damage ()):
+class ConditionalHarm (Harm):
+    def __init__ (self, predicate, harm_pass, harm_fail = Harm ()):
         self.m_pred = predicate
-        self.m_pass = damage_pass
-        self.m_fail = damage_fail
+        self.m_pass = harm_pass
+        self.m_fail = harm_fail
 
     def deal (self, game, investigator, monster):
         if self.m_pred (game, investigator, monster):
@@ -59,9 +87,9 @@ class ConditionalDamage (Damage):
         else:
             return self.m_fail.description (game, investigator, monster)
 
-class SpecialDamage (Damage):
+class SpecialHarm (Harm):
     def description (self, game, investigator, monster):
         return "*"
 
-damage_none = DamageNone ()
-damage_devour = DamageDevour ()
+harm_none = HarmNone ()
+harm_devour = HarmDevour ()

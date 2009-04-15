@@ -128,9 +128,17 @@ def build (game, module):
 
     # ---
 
-    class xxxFood:
-        """Any phase: Discard Food to reduce any Stamina loss by 1."""
-        pass
+    class Food (arkham.InvestigatorItem):
+        def __init__ (self):
+            arkham.InvestigatorItem.__init__ (self, "Food", 1, 0)
+
+    @arkham.damage_correction_actions_hook.match \
+        (fun.any, fun.any, fun.any, arkham.match_proto (Food),
+         lambda damage: arkham.health_stamina in damage.aspects ())
+    def do (game, investigator, subject, item, damage):
+        return [arkham.GameplayAction_Multiple \
+                    ([arkham.GameplayAction_Discard (item),
+                      arkham.GameplayAction_ReduceDamage (damage, arkham.health_stamina, 1)])]
 
     # ---
 
@@ -204,9 +212,17 @@ def build (game, module):
 
     # ---
 
-    class xxxWhiskey:
-        """Any phase: Discard Whiskey to reduce any Sanity loss by 1."""
-        pass
+    class Whiskey (arkham.InvestigatorItem):
+        def __init__ (self):
+            arkham.InvestigatorItem.__init__ (self, "Whiskey", 1, 0)
+
+    @arkham.damage_correction_actions_hook.match \
+        (fun.any, fun.any, fun.any, arkham.match_proto (Food),
+         lambda damage: arkham.health_sanity in damage.aspects ())
+    def do (game, investigator, subject, item, damage):
+        return [arkham.GameplayAction_Multiple \
+                    ([arkham.GameplayAction_Discard (item),
+                      arkham.GameplayAction_ReduceDamage (damage, arkham.health_sanity, 1)])]
 
     # ---
 
@@ -224,6 +240,7 @@ def build (game, module):
             (1, Cross ()),
             (1, plain_item ("Dark Cloak", 2, 0, evade=1)),
             (1, Dynamite ()),
+            (1, Food ()),
             (1, plain_item ("Knife", 2, 1, combat=1)),
             (1, plain_item ("Lantern", 3, 0, luck=1)),
             (1, LuckyCigaretteCase ()),
@@ -235,6 +252,7 @@ def build (game, module):
             (1, ResearchMaterials ()),
             (1, plain_item ("Rifle", 6, 2, combat=5)),
             (1, Shotgun ()),
-            (1, plain_item ("Tommy Gun", 7, 2, combat=6))
+            (1, plain_item ("Tommy Gun", 7, 2, combat=6)),
+            (1, Whiskey ())
         ]:
         module.m_common_deck.register (item_proto, count)

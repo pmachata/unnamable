@@ -273,6 +273,9 @@ class Investigator (ObjectWithLocation, GameplayObject):
                                 (game, self, subject, item, skill_name)]
                            for item in self.m_active_items), [])
 
+    def damage_correction_actions (self, game, subject, damage):
+        return []
+
     def should_be_devoured (self, game):
         # Be devoured if all your health aspects are zero.
         for aspect, health in self.m_health.iteritems ():

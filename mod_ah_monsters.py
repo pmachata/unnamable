@@ -11,14 +11,14 @@ def do (game, investigator):
         game.move_investigator (investigator, place)
     investigator.delay ()
 
-class DamageLost (arkham.Damage):
+class HarmLost (arkham.Harm):
     def deal (self, game, investigator, monster):
         lose_in_time_and_space (game, investigator)
 
     def description (self, game, investigator, monster):
         return "lost in time and space"
 
-damage_lost = DamageLost ()
+harm_lost = HarmLost ()
 
 def build (game, module):
 
@@ -42,13 +42,13 @@ def build (game, module):
                 (self, "Maniac",
                  arkham.evade_check (-1),
                  arkham.pass_check,
-                 arkham.damage_none,
+                 arkham.harm_none,
                  arkham.ConditionalCheck (terror_at_least_6,
                                           arkham.combat_check (+1, 1),
                                           arkham.combat_check (-2, 1)),
-                 arkham.ConditionalDamage (terror_at_least_6,
-                                           arkham.DamageStamina (1),
-                                           arkham.DamageStamina (3)),
+                 arkham.ConditionalHarm (terror_at_least_6,
+                                         arkham.HarmStamina (1),
+                                         arkham.HarmStamina (3)),
                  endless = True) # XXX only if terror_track >= 6!
 
 
@@ -70,7 +70,7 @@ def build (game, module):
 
     class Nightgaunt (arkham.BasicMonster):
         def __init__ (self):
-            class Damage (arkham.Damage):
+            class Harm (arkham.Harm):
                 def deal (self, game, investigator, monster):
                     print """XXX you are drawn through the nearest
                     open gate. If two or more gates are the same
@@ -83,8 +83,8 @@ def build (game, module):
             arkham.BasicMonster.__init__ \
                 (self, "Nightgaunt",
                  arkham.evade_check (-2),
-                 arkham.horror_check (-1), arkham.DamageSanity (1),
-                 arkham.combat_check (-2, 2), Damage ())
+                 arkham.horror_check (-1), arkham.HarmSanity (1),
+                 arkham.combat_check (-2, 2), Harm ())
 
 
     # The rules say: """Before making a Horror check, pass a
@@ -113,10 +113,10 @@ def build (game, module):
             return arkham.SpecialCheck ()
 
         def horror_damage (self):
-            return arkham.SpecialDamage ()
+            return arkham.SpecialHarm ()
 
         def combat_damage (self):
-            return arkham.SpecialDamage ()
+            return arkham.SpecialHarm ()
 
     @arkham.fight_hook.match (fun.any, fun.any, arkham.match_proto (TheBlackMan))
     def do (combat, investigator, monster):
@@ -168,9 +168,9 @@ def build (game, module):
         (6, arkham.BasicMonster ("Cultist",
                                  arkham.evade_check (-3),
                                  arkham.pass_check,
-                                 arkham.damage_none,
+                                 arkham.harm_none,
                                  arkham.combat_check (+1, 1),
-                                 arkham.DamageStamina (1))),
+                                 arkham.HarmStamina (1))),
         (3, arkham.SimpleMonster ("Dark Young",
                                   -2, (+0, 3), 3, (-1, 3),
                                   physical = "resistance",
@@ -184,16 +184,16 @@ def build (game, module):
         (2, arkham.BasicMonster ("Dimensional Shambler",
                                  arkham.evade_check (-3),
                                  arkham.horror_check (-2),
-                                 arkham.DamageSanity (1),
+                                 arkham.HarmSanity (1),
                                  arkham.combat_check (-2, 1),
-                                 damage_lost)),
+                                 harm_lost)),
         (2, ElderThing ()),
         (2, arkham.BasicMonster ("Fire Vampire",
                                  arkham.evade_check (+0),
                                  arkham.pass_check,
-                                 arkham.damage_none,
+                                 arkham.harm_none,
                                  arkham.combat_check (+2, 1),
-                                 arkham.DamageStamina (2))),
+                                 arkham.HarmStamina (2))),
         (1, arkham.SimpleMonster ("Flying Polyp",
                                   +0, (-2, 4), 3, (-3, 3),
                                   physical = "resistance",
@@ -221,14 +221,14 @@ def build (game, module):
         (1, arkham.BasicMonster ("Haunter Of The Dark",
                                  arkham.evade_check (-3),
                                  arkham.horror_check (-1),
-                                 arkham.DamageSanity (2),
+                                 arkham.HarmSanity (2),
                                  arkham.ConditionalCheck\
                                      (lambda game, investigator: \
                                           ### Temporary...
                                           game.environment () == "Blackest Night",
                                       arkham.combat_check (-5, 2),
                                       arkham.combat_check (-2, 2)),
-                                 arkham.DamageStamina (2),
+                                 arkham.HarmStamina (2),
                                  in_cup = False,
                                  mask = True,
                                  endless = True)),
@@ -252,9 +252,9 @@ def build (game, module):
         (1, arkham.BasicMonster ("The Dark Pharoah",
                                  arkham.evade_check (-1),
                                  arkham.horror_check (-1),
-                                 arkham.DamageSanity (1),
+                                 arkham.HarmSanity (1),
                                  arkham.SkillCheck ("lore", -3, 2),
-                                 arkham.DamageStamina (3),
+                                 arkham.HarmStamina (3),
                                  in_cup = False,
                                  mask = True,
                                  endless = True)),
@@ -268,9 +268,9 @@ def build (game, module):
         (2, arkham.BasicMonster ("Witch",
                                  arkham.evade_check (-1),
                                  arkham.pass_check,
-                                 arkham.damage_none,
+                                 arkham.harm_none,
                                  arkham.combat_check (-3, 1),
-                                 arkham.DamageStamina (2),
+                                 arkham.HarmStamina (2),
                                  magical = "resistance")),
         (2, arkham.SimpleMonster ("Zombie",
                                   +1, (-1, 1), 1, (-1, 2),

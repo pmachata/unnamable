@@ -69,9 +69,9 @@ class SimpleMonster (BasicMonster):
         BasicMonster.__init__ (self, name,
                                evade_check (awareness),
                                horror_check (horror_rating),
-                               DamageSanity (horror_damage),
+                               HarmSanity (horror_damage),
                                combat_check (combat_rating, toughness),
-                               DamageStamina (combat_damage),
+                               HarmStamina (combat_damage),
                                **attributes)
 
 from damage import *

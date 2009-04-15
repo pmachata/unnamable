@@ -17,10 +17,12 @@ class TestUI (arkham.UI):
         self.m_controller.setup_players (game)
 
     def select_action (self, game, investigator, actions):
-        print actions
+        print "SELECT_ACTION\n" + "\n".join (" " + action.name () for action in actions)
         selector = self.m_controller.next ()
         actions = [action for action in actions if selector (action)]
-        assert len (actions) == 1
+        if len (actions) != 1:
+            self.m_controller.throw (AssertionError ("need exactly one action"))
+        print "=> " + actions[0].name ()
         return actions[0]
 
 class FixedSkills:
@@ -117,6 +119,9 @@ class Controller:
 
     def next (self):
         return self.m_generator.next ()
+
+    def throw (self, obj):
+        return self.m_generator.throw (obj)
 
     def use_investigators (self, game, investigators):
         ret = []

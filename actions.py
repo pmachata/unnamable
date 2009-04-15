@@ -296,3 +296,23 @@ class GameplayAction_FailRoll (GameplayAction):
 
     def perform (self, game, investigator):
         raise arkham.EndPhase ()
+
+# Damage correction actions
+
+class GameplayAction_ReduceDamage (GameplayAction):
+    def __init__ (self, damage, aspect, amount):
+        GameplayAction.__init__ \
+            (self, "reduce %s damage by %d" % (aspect.name (), amount))
+        self.m_damage = damage
+        self.m_aspect = aspect
+        self.m_amount = amount
+
+    def perform (self, game, investigator):
+        self.m_damage.amount (self.m_aspect).reduce (self.m_amount)
+
+class GameplayAction_IncurDamage (GameplayAction):
+    def __init__ (self):
+        GameplayAction.__init__ (self, "incur damage")
+
+    def perform (self, game, investigator):
+        raise arkham.EndPhase ()

@@ -1,24 +1,19 @@
 import tester
-import arkham
-import maps
-import fun
 import mod_ah
+import test_ah
+import fun
+import arkham
 
-class Investigator1 (tester.TestInvestigator):
-    def __init__ (self, name, loc, **skills):
-        tester.TestInvestigator.__init__ (self, name, loc, **skills)
-
-class ModuleProto (mod_ah.ModuleProto):
-    def mythos (self, game):
-        # We don't want to do regular AH mythos phase.
-        return []
-
+class ModuleProto (test_ah.ModuleProto):
     def construct (self, game):
-        mod_ah.ModuleProto.construct (self, game)
+        test_ah.ModuleProto.construct (self, game)
+        self.m_monster_cup.register (
+            arkham.SimpleMonster ("Test-Mon1",
+                                  -2, (-1, 2), 3, (-2, 4)),
+            1)
 
     def turn_0 (self, game):
-        # We don't want to do regular AH turn_0 phase.
-        mon = self.m_monster_cup.draw (lambda arg: arg.name () == "Gug")
+        mon = self.m_monster_cup.draw (lambda arg: arg.name () == "Test-Mon1")
         invs = game.investigators ()
         assert len (invs) == 1
         game.add_monster (mon, invs[0].location ())
@@ -40,13 +35,10 @@ class Test1 (tester.Controller):
             yield fun.matchclass (arkham.GameplayAction_Fight)
             for roll in 1,1,1: yield roll
             yield fun.matchclass (arkham.GameplayAction_FailRoll)
+            yield fun.matchclass (arkham.GameplayAction_IncurDamage)
         yield fun.matchclass (mod_ah.GameplayAction_Incapacitated)
         assert self.inv.location ().attributes ().flag ("hospital")
         raise tester.EndTest (True)
-
-class Game1 (tester.TestGame):
-    def __init__ (self):
-        tester.TestGame.__init__ (self, Test1 (), ["ah"])
 
 class Test2 (Test1):
     def actions (self):
@@ -56,13 +48,10 @@ class Test2 (Test1):
         yield fun.matchclass (arkham.GameplayAction_Fight)
         for roll in 1,: yield roll # fail horror check
         yield fun.matchclass (arkham.GameplayAction_FailRoll)
+        yield fun.matchclass (arkham.GameplayAction_IncurDamage)
         yield fun.matchclass (mod_ah.GameplayAction_Incapacitated)
         assert self.inv.location ().attributes ().flag ("asylum")
         raise tester.EndTest (True)
 
-class Game2 (tester.TestGame):
-    def __init__ (self):
-        tester.TestGame.__init__ (self, Test2 (), ["ah"])
-
-tester.run_test (Game1 ())
-#tester.run_test (Game2 ())
+tester.run_test (test_ah.Game (Test1 ()))
+tester.run_test (test_ah.Game (Test2 ()))
