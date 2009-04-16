@@ -137,16 +137,7 @@ class GameplayAction_Stay (LocationBoundGameplayAction):
         investigator.lose_movement_points ()
         raise arkham.EndPhase ()
 
-class GameplayAction_GainMovementPoints (GameplayAction):
-    def __init__ (self, amount):
-        assert amount > 0
-        GameplayAction.__init__ (self,
-                                 "gain %d movement point%s" \
-                                     % (amount, "s" if amount > 1 else ""))
-        self.m_amount = amount
-
-    def perform (self, game, investigator):
-        investigator.gain_movement_points (self.m_amount)
+# Investigator actions
 
 class GameplayAction_GainClues (GameplayAction):
     def __init__ (self, amount):
@@ -159,6 +150,17 @@ class GameplayAction_GainClues (GameplayAction):
     def perform (self, game, investigator):
         investigator.gain_clues (self.m_amount)
 
+class GameplayAction_GainMovementPoints (GameplayAction):
+    def __init__ (self, amount):
+        assert amount > 0
+        GameplayAction.__init__ (self,
+                                 "gain %d movement point%s" \
+                                     % (amount, "s" if amount > 1 else ""))
+        self.m_amount = amount
+
+    def perform (self, game, investigator):
+        investigator.gain_movement_points (self.m_amount)
+
 class GameplayAction_SpendMovementPoints (GameplayAction):
     def __init__ (self, amount):
         assert amount > 0
@@ -170,12 +172,14 @@ class GameplayAction_SpendMovementPoints (GameplayAction):
     def perform (self, game, investigator):
         investigator.spend_movement_points (self.m_amount)
 
-class GameplayAction_Quit (GameplayAction):
-    def __init__ (self):
-        GameplayAction.__init__ (self, "quit the game")
+class GameplayAction_CauseHarm (GameplayAction):
+    def __init__ (self, subject, harm):
+        GameplayAction.__init__ (self, harm.description ())
+        self.m_subject = subject
+        self.m_harm = harm
 
     def perform (self, game, investigator):
-        game.drop_investigator (investigator)
+        self.m_harm.deal (game, investigator, subject)
 
 # Combat actions
 
@@ -316,3 +320,12 @@ class GameplayAction_IncurDamage (GameplayAction):
 
     def perform (self, game, investigator):
         raise arkham.EndPhase ()
+
+# Various
+
+class GameplayAction_Quit (GameplayAction):
+    def __init__ (self):
+        GameplayAction.__init__ (self, "quit the game")
+
+    def perform (self, game, investigator):
+        game.drop_investigator (investigator)

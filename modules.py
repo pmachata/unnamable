@@ -13,6 +13,9 @@ def discover_modules (idx):
     import mod_common
     idx.add_module (mod_common.ModuleProto ())
 
+    import mod_unique
+    idx.add_module (mod_unique.ModuleProto ())
+
     import mod_skills
     idx.add_module (mod_skills.ModuleProto ())
 

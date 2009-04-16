@@ -57,32 +57,22 @@ class ModuleProto (arkham.ModuleProto):
         self.mod_terror = None
 
     def consistent (self, mod_index):
-        ancient = mod_index.request ("ancient")
-        monster = mod_index.request ("monster")
-        skills = mod_index.request ("skills")
-        terror = mod_index.request ("terror")
-        common = mod_index.request ("common")
+        decks = dict (("mod_" + id, mod_index.request (id))
+                      for id in ["ancient", "monster", "skills",
+                                 "terror", "common", "unique"])
+        success = None not in decks.values ()
 
-        success = ancient and monster and skills and terror and common
-        if not success:
-            ancient = None
-            monster = None
-            skills = None
-            terror = None
-            common = None
+        if success:
+            for key, val in decks.iteritems ():
+                setattr (self, key, val)
 
-        self.mod_ancient = ancient
-        self.mod_monster = monster
-        self.mod_skills = skills
-        self.mod_terror = terror
-        self.mod_common = common
-
-        return not not success
+        return success
 
     def construct (self, game):
 
         self.m_monster_cup = game.deck (self.mod_monster.MonsterCup)
         self.m_common_deck = game.deck (self.mod_common.CommonDeck)
+        self.m_unique_deck = game.deck (self.mod_unique.UniqueDeck)
 
         class TerrorTrack_AHEvents (arkham.TrackEvent):
             def event (self, game, owner, level):
