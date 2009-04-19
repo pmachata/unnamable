@@ -137,9 +137,9 @@ class Investigator (ObjectWithLocation, GameplayObject):
         item.discard ()
 
     def find_wield (self, game, item, hands):
-        wants_wield = [(item, item.hands ())
-                       for item in  self.m_active_items.keys ()] \
-                       + [(item, hands)]
+        wants_wield = (list ((item, item.hands ())
+                             for item in  self.m_active_items.keys ())
+                       + [(item, hands)])
         if sum (hands for item, hands in wants_wield) > len (self.m_hands):
             return False
 
@@ -177,6 +177,7 @@ class Investigator (ObjectWithLocation, GameplayObject):
 
             if can_handle_all:
                 found_wield = wield
+                break
 
         return found_wield
 

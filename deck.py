@@ -41,9 +41,9 @@ class Deck:
 
     def draw (self, predicate = lambda arg: True):
         import random
-        i, card = random.choice (list (enumerate (card
-                                                  for card in self.m_deck
-                                                  if predicate (card))))
+        i, card = random.choice ([(i, card)
+                                  for i, card in enumerate (self.m_deck)
+                                  if predicate (card)])
         del self.m_deck[i]
         return self.m_ctor (card)
 

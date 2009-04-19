@@ -17,22 +17,34 @@ def build (game, module):
 
         return PlainItem ()
 
-    def tome (name, price, movement_points, check, success_action):
-        class Tome (arkham.InvestigatorItem):
+    class Tome (arkham.InvestigatorItem):
+        pass
+
+    def complex (klass, name, price, movement_points, harm, check, success_action):
+        class ComplexItem (klass):
             def __init__ (self):
-                arkham.InvestigatorItem.__init__ (self, name, price, 0)
+                klass.__init__ (self, name, price, 0)
 
             def movement (self, game, owner, item):
                 mp = owner.movement_points ()
+                # We don't check whether the investigator can sustain
+                # the harm before offering the action, because the
+                # player may wish to perform that action nonetheless.
+                # Besides the investigator can have a couple aces up
+                # his sleeve, such as a card that reduces caused
+                # damage by 1.  Checking accurately for that is not
+                # worth the trouble.
                 if mp != None and mp >= movement_points and not item.exhausted ():
                     """Exhaust and spend MOVEMENT_POINTS to make a
                     CHECK. If you pass, do ACTION and discard Ancient
                     Tome. If you fail, nothing happens."""
+                    harm_actions = [arkham.GameplayAction_CauseHarm (item, harm)] if harm else []
                     return [
                         arkham.GameplayAction_Multiple \
                             ([arkham.GameplayAction_Exhaust (item),
-                              arkham.GameplayAction_SpendMovementPoints (movement_points),
-                              arkham.GameplayAction_Conditional \
+                              arkham.GameplayAction_SpendMovementPoints (movement_points)]
+                             + harm_actions +
+                             [arkham.GameplayAction_Conditional \
                                   (game, owner, item, check,
                                    arkham.GameplayAction_Multiple \
                                        ([success_action,
@@ -41,7 +53,7 @@ def build (game, module):
                 else:
                     return []
 
-        return Tome ()
+        return ComplexItem ()
 
     # ---
 
@@ -217,7 +229,7 @@ def build (game, module):
             arkham.InvestigatorItem.__init__ (self, "Whiskey", 1, 0)
 
     @arkham.damage_correction_actions_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (Food),
+        (fun.any, fun.any, fun.any, arkham.match_proto (Whiskey),
          lambda damage: arkham.health_sanity in damage.aspects ())
     def do (game, investigator, subject, item, damage):
         return [arkham.GameplayAction_Multiple \
@@ -230,10 +242,10 @@ def build (game, module):
             (1, Derringer18 ()),
             (1, plain_item (".38 Revolver", 4, 1, combat=3)),
             (1, plain_item (".45 Automatic", 5, 1, combat=4)),
-            (1, tome ("Ancient Tome", 4, 2,
-                      arkham.SkillCheck ("lore", -1),
-                      # xxx should be spell deck
-                      arkham.GameplayAction_DrawItem (module.m_common_deck))),
+            (1, complex (Tome, "Ancient Tome", 4, 2, None,
+                         arkham.SkillCheck (arkham.skill_lore, -1),
+                         # xxx should be spell deck
+                         arkham.GameplayAction_DrawItem (module.m_common_deck))),
             (1, Axe ()),
             (1, Bullwhip ()),
             (1, plain_item ("Cavalry Saber", 3, 1, combat=2)),
@@ -246,9 +258,9 @@ def build (game, module):
             (1, LuckyCigaretteCase ()),
             (1, MapOfArkham ()),
             (1, Motorcycle ()),
-            (1, tome ("Old Journal", 1, 1,
-                      arkham.SkillCheck ("lore", -1),
-                      arkham.GameplayAction_GainClues (3))),
+            (1, complex (Tome, "Old Journal", 1, 1, None,
+                         arkham.SkillCheck (arkham.skill_lore, -1),
+                         arkham.GameplayAction_GainClues (3))),
             (1, ResearchMaterials ()),
             (1, plain_item ("Rifle", 6, 2, combat=5)),
             (1, Shotgun ()),

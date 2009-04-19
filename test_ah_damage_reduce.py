@@ -12,11 +12,11 @@ class ModuleProto (test_ah.ModuleProto):
 
         item = self.m_common_deck.draw (lambda arg: arg.name () == "Food")
         inv.take_item (game, item)
-        inv.wield_item (game, item)
+        assert inv.wield_item (game, item)
 
         item = self.m_common_deck.draw (lambda arg: arg.name () == "Whiskey")
         inv.take_item (game, item)
-        inv.wield_item (game, item)
+        assert inv.wield_item (game, item)
 
         return inv
 
