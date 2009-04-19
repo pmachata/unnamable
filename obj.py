@@ -82,3 +82,6 @@ class GameplayObject:
         return []
     def mythos (self, game):
         return []
+
+class Subject:
+    pass

@@ -55,7 +55,7 @@ class ModuleInstance:
     def investigator_dead (self, investigator):
         return self.m_type.investigator_dead (self.m_game, investigator)
 
-class Monster (ObjectWithLocation):
+class Monster (ObjectWithLocation, Subject):
     def __init__ (self, proto):
         ObjectWithLocation.__init__ (self, None)
         self.m_proto = proto
@@ -81,7 +81,7 @@ class Monster (ObjectWithLocation):
     def discard (self):
         return self.m_proto.discard ()
 
-class Item:
+class Item (Subject):
     def __init__ (self, proto):
         self.m_proto = proto
         self.m_exhausted = False

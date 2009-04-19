@@ -120,7 +120,8 @@ def build (game, module):
 
     @arkham.fight_hook.match (fun.any, fun.any, arkham.match_proto (TheBlackMan))
     def do (combat, investigator, monster):
-        if arkham.SkillCheck ("luck", -1).check (combat.game, investigator, monster):
+        if arkham.SkillCheck (arkham.checkbase_luck, -1) \
+                .check (combat.game, investigator, monster):
             investigator.gain_clues (2)
             raise arkham.EndCombat (True)
         else:
@@ -152,7 +153,8 @@ def build (game, module):
     def do (combat, investigator, monster):
         """Before making a Horror check, pass a Will(-2) check or
         or automatically fail the Horror check and the Combat check."""
-        if not arkham.SkillCheck ("will", -2).check (combat.game, investigator, monster):
+        if not arkham.SkillCheck (arkham.checkbase_will, -2) \
+                .check (combat.game, investigator, monster):
             arkham.horror_check_fail_hook (combat, investigator, monster)
             arkham.combat_check_fail_hook (combat, investigator, monster)
             arkham.combat_loop_hook (combat, investigator, monster)
@@ -253,7 +255,7 @@ def build (game, module):
                                  arkham.evade_check (-1),
                                  arkham.horror_check (-1),
                                  arkham.HarmSanity (1),
-                                 arkham.SkillCheck ("lore", -3, 2),
+                                 arkham.SkillCheck (arkham.checkbase_lore, -3, 2),
                                  arkham.HarmStamina (3),
                                  in_cup = False,
                                  mask = True,

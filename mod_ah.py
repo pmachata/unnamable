@@ -53,12 +53,11 @@ class ModuleProto (arkham.ModuleProto):
     def __init__ (self):
         arkham.ModuleProto.__init__ (self, "ah", "Arkham Horror")
         self.mod_ancient = None
-        self.mod_skills = None
         self.mod_terror = None
 
     def consistent (self, mod_index):
         decks = dict (("mod_" + id, mod_index.request (id))
-                      for id in ["ancient", "monster", "skills",
+                      for id in ["ancient", "monster",
                                  "terror", "common", "unique"])
         success = None not in decks.values ()
 
@@ -202,9 +201,9 @@ class ModuleProto (arkham.ModuleProto):
                 {arkham.health_sanity:4,
                  arkham.health_stamina: 6},
                 1, 3,
-                self.mod_skills.Skills (4,
-                                        3, 6, 5,
-                                        5, 3, 3),
+                arkham.SkillScales (4,
+                                    3, 6, 5,
+                                    5, 3, 3),
                 river_docks
             )
         )

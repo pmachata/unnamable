@@ -2,11 +2,10 @@ import fun
 from investigator import Investigator, HealthAspect
 from game import Game, Item
 from damage import Damage, Amount
+from obj import Subject
 import arkham
 
 import conf
-
-Subject = object # e.g. a monster, or a card that deals the damage
 
 damage_trace = conf.trace # whether we want to trace hooks
 

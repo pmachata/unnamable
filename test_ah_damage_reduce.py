@@ -23,12 +23,12 @@ class ModuleProto (test_ah.ModuleProto):
 class ModuleProto1 (ModuleProto):
     def turn_0 (self, game):
         inv = ModuleProto.turn_0 (self, game)
-        arkham.HarmStamina (_damage).deal (game, inv, None)
+        arkham.HarmStamina (_damage).deal (game, inv, arkham.Subject ())
 
 class ModuleProto2 (ModuleProto):
     def turn_0 (self, game):
         inv = ModuleProto.turn_0 (self, game)
-        arkham.HarmSanity (_damage).deal (game, inv, None)
+        arkham.HarmSanity (_damage).deal (game, inv, arkham.Subject ())
 
 class Test (tester.Controller):
     def __init__ (self, proto, aspect):

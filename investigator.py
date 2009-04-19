@@ -108,8 +108,8 @@ class Investigator (ObjectWithLocation, GameplayObject):
     def delayed (self):
         return self.m_delayed
 
-    def skill (self, skill_name):
-        return self.m_skills.check (skill_name)
+    def skill (self, skill):
+        return self.m_skills.skill (skill)
 
     def devour (self, game, monster):
         game.devour (self)
@@ -228,7 +228,7 @@ class Investigator (ObjectWithLocation, GameplayObject):
 
     def initial_movement_points (self):
         " not including bonuses for items "
-        return self.m_skills.check ("speed")
+        return self.m_skills.skill (arkham.skill_speed)
 
     # Combat phases.
     def item_actions (self):

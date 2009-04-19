@@ -1,4 +1,9 @@
 import arkham
+import fun
+from game import Game, Item
+from investigator import Investigator
+from obj import Subject
+import conf
 
 class Check:
     def check (self, game, investigator):
@@ -63,8 +68,10 @@ class SpecialCheck (Check):
 pass_check = ConstCheck (True)
 fail_check = ConstCheck (False)
 def evade_check (awareness):
-    return SkillCheck ("evade", awareness, 1)
+    return SkillCheck (arkham.checkbase_evade, awareness, 1)
 def horror_check (rating):
-    return SkillCheck ("horror", rating, 1)
+    return SkillCheck (arkham.checkbase_horror, rating, 1)
 def combat_check (rating, toughness):
-    return SkillCheck ("combat", rating, toughness)
+    return SkillCheck (arkham.checkbase_combat, rating, toughness)
+def spell_check (rating):
+    return SkillCheck (arkham.checkbase_spell, rating, 1)

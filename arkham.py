@@ -5,6 +5,7 @@ from loc import *
 from investigator import *
 from monster import *
 from actions import *
+from skills import *
 from checks import *
 from damage import *
 from track import *

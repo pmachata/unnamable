@@ -26,22 +26,22 @@ class TestUI (arkham.UI):
         return actions[0]
 
 class FixedSkills:
-    def __init__ (self, **skills):
+    def __init__ (self, skills):
         self.m_skills = dict (skills)
 
-    def check (self, skill):
+    def skill (self, skill):
         return self.m_skills[skill]
 
 class TestInvestigator (arkham.CommonInvestigator):
-    def __init__ (self, name, home,
+    def __init__ (self, name, home, skills={},
                   sanity=1, stamina=1,
-                  money=0, clues=0, **skills):
+                  money=0, clues=0):
         arkham.CommonInvestigator.__init__ \
             (self, name,
              {arkham.health_sanity: sanity,
               arkham.health_stamina: stamina},
              money, clues,
-             FixedSkills (**skills), home)
+             FixedSkills (skills), home)
 
     def initial_movement_points (self):
         return 0
@@ -74,9 +74,9 @@ class ModuleProto (arkham.ModuleProto):
             ret.append (loc)
         return ret
 
-    def add_investigator (self, game, name, location, **skills):
+    def add_investigator (self, game, name, location, skills):
         ret = TestInvestigator ("Inv" + name,
-                                self.m_locations[location], **skills)
+                                self.m_locations[location], skills)
         game.add_investigator (ret)
         return ret
 

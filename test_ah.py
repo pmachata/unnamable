@@ -3,10 +3,6 @@ import arkham
 import maps
 import mod_ah
 
-class Investigator1 (tester.TestInvestigator):
-    def __init__ (self, name, loc, **skills):
-        tester.TestInvestigator.__init__ (self, name, loc, **skills)
-
 class ModuleProto (mod_ah.ModuleProto):
     def mythos (self, game):
         # We don't want to do regular AH mythos phase.

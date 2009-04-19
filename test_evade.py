@@ -7,7 +7,9 @@ class Test1 (tester.Controller):
     def construct (self, game, module):
         maps.in_neighborhood (maps.neighborhood (game))
         module.add_locations ("A")
-        module.add_investigator (game, "1", "A", combat=1, evade=1)
+        module.add_investigator (game, "1", "A", {
+                arkham.skill_fight: 1,
+                arkham.skill_sneak: 1})
         module.add_monster (game, "A",
             arkham.SimpleMonster (
                 "M1",
