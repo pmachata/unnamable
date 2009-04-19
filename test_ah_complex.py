@@ -93,6 +93,22 @@ def test3 (test, name):
     assert test.inv.clues () == clues + 3
     raise tester.EndTest (True)
 
+def test4 (test, name):
+    items1 = set (item.proto () for item in test.inv.m_items)
+    yield action_bound_item_named (name)
+    clues = test.inv.clues ()
+    yield 1 # failure
+    assert test.inv.clues () == clues + 3
+    yield 5 # pass
+    items2 = set (item.proto () for item in test.inv.m_items)
+
+    # discarded Ancient Tablet, but gained another item from the deck
+    assert len (items1) == len (items2)
+    assert len (items1 - items2) == 1
+    assert len (items2 - items1) == 1
+    raise tester.EndTest (True)
+
 tester.run_test (test_ah.Game (Test (test_item ("Old Journal", test1))))
 tester.run_test (test_ah.Game (Test (test_item ("Ancient Tome", test2))))
 tester.run_test (test_ah.Game (Test (test_item ("Alien Statue", test3, mod_unique.UniqueDeck))))
+tester.run_test (test_ah.Game (Test (test_item ("Ancient Tablet", test4, mod_unique.UniqueDeck))))

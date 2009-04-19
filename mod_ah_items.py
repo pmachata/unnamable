@@ -273,6 +273,34 @@ def build (game, module):
         ]:
         module.m_common_deck.register (item_proto, count)
 
+    # -------------------------------------------------------------------------
+
+    class AncientTablet (arkham.InvestigatorItem):
+        def __init__ (self):
+            arkham.InvestigatorItem.__init__ (self, "Ancient Tablet", 8, 0)
+
+        def movement (self, game, owner, item):
+            movement_points = 3
+            mp = owner.movement_points ()
+            if mp != None and mp >= movement_points and not item.exhausted ():
+                """Spend 3 movement points and discard Ancient Tablet
+                to roll 2 dice.  For every success rolled, draw 1
+                Spell.  For every failure rolled, gain 2 Clue tokens."""
+                return [
+                    arkham.GameplayAction_Multiple \
+                        ([arkham.GameplayAction_SpendMovementPoints (movement_points),
+                          arkham.GameplayAction_Discard (item),
+                          arkham.GameplayAction_Repeat \
+                              (2, arkham.GameplayAction_Conditional \
+                                   (game, owner, item,
+                                    arkham.SkillCheck (arkham.CheckBase_Fixed (1), 0),
+                                    # xxx should be spell deck
+                                    arkham.GameplayAction_DrawItem (module.m_common_deck),
+                                    arkham.GameplayAction_GainClues (3)))])
+                    ]
+            else:
+                return []
+
     for count, item_proto in [
             (1, complex (arkham.InvestigatorItem, "Alien Statue", 5,
                          2, arkham.HarmSanity (1),
@@ -284,6 +312,7 @@ def build (game, module):
                                     arkham.GameplayAction_DrawItem (module.m_common_deck)])),
                          lambda game, owner, item: \
                              arkham.GameplayAction_CauseHarm \
-                                 (game, owner, item, arkham.HarmSanity (2))))
+                                 (game, owner, item, arkham.HarmSanity (2)))),
+            (1, AncientTablet ()),
         ]:
         module.m_unique_deck.register (item_proto, count)

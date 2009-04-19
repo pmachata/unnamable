@@ -88,16 +88,39 @@ class GameplayAction_Select (GameplayAction_Many):
     def perform (self, game, investigator):
         game.perform_selected_action (investigator, self.m_actions)
 
+class GameplayAction_Repeat (GameplayAction):
+    def __init__ (self, count, action):
+        assert count > 1
+        assert action
+        quantifier = "twice" if count == 2 else ("%d times" % count)
+        GameplayAction.__init__ (self, "%s do %s" % (quantifier,
+                                                     action.name ()))
+        self.m_count = count
+        self.m_action = action
+
+    def bound_location (self):
+        return self.m_action.bound_location ()
+
+    def bound_monster (self):
+        return self.m_action.bound_monster ()
+
+    def bound_item (self):
+        return self.m_action.bound_item ()
+
+    def perform (self, game, investigator):
+        for i in xrange (self.m_count):
+            self.m_action.perform (game, investigator)
+
 class GameplayAction_Conditional (GameplayAction):
     def __init__ (self, game, investigator, subject,
                   check, action_pass, action_fail = None):
+        assert action_pass
         GameplayAction.__init__ (self,
                                  "if %s passes then %s%s" \
                                      % (check.description (game, investigator),
                                         action_pass.name (),
                                         (", else %s" % action_fail.name () \
                                              if action_fail != None else "")))
-        assert action_pass
         self.m_check = check
         self.m_pass = action_pass
         self.m_fail = action_fail
