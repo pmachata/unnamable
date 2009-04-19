@@ -108,6 +108,9 @@ class Item (Subject):
     def discard (self):
         return self.m_proto.discard ()
 
+    def __repr__ (self):
+        return "<Item \"%s\">" % self.name ()
+
     # Game phases
     def upkeep (self, game, owner):
         self.m_exhausted = False

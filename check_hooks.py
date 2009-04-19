@@ -6,11 +6,15 @@ import conf
 import arkham
 
 class CheckBase:
-    def __init__ (self, name):
+    def __init__ (self, name, correctible):
         self.m_name = name
+        self.m_correctible = correctible
 
     def name (self):
         return self.m_name
+
+    def correctible (self):
+        return self.m_correctible
 
 skills_trace = conf.trace # whether we want to trace hooks
 
@@ -42,7 +46,7 @@ def do (game, investigator, subject, check_base, primary_list):
         # refactor that algorithm, clear up the nomenclature (what's
         # basic value, what's per-item bonus, what's modifier, etc.)
         # and just call it from here.
-        bonus += skill_value_bonus_hook (game, investigator, subject, item, check_base, primary_list)
+        value += skill_value_bonus_hook (game, investigator, subject, item, check_base, primary_list)
     return skill_value_mod_hook (game, investigator, subject, check_base, primary_list, value)
 
 @basic_skill_value_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
@@ -60,7 +64,7 @@ def do (game, investigator, subject, check_base, primary_list, bonus):
 
 class CheckBase_Skill (CheckBase):
     def __init__ (self, skill):
-        CheckBase.__init__ (self, skill.name ())
+        CheckBase.__init__ (self, skill.name (), True)
         self.m_skill = skill
 
 @basic_skill_value_hook.match \
@@ -77,7 +81,7 @@ checkbase_will = CheckBase_Skill (arkham.skill_will)
 
 class CheckBase_Fixed (CheckBase):
     def __init__ (self, value):
-        CheckBase.__init__ (self, str (value))
+        CheckBase.__init__ (self, str (value), False)
         self.m_value = value
 
 @basic_skill_value_hook.match \
@@ -87,7 +91,7 @@ def do (game, investigator, subject, check_base, primary_list):
 
 class CheckBase_Derived (CheckBase):
     def __init__ (self, name):
-        CheckBase.__init__ (self, name)
+        CheckBase.__init__ (self, name, True)
 
 @basic_skill_value_hook.match \
     (fun.any, fun.any, fun.any, fun.matchclass (CheckBase_Derived), fun.any)
@@ -304,7 +308,7 @@ def do (game, investigator, subject, check_base, modifier, difficulty):
                    # cute, that's just not practical.
                    ",".join (str (dice) for dice in roll.roll ()))
 
-            if successes >= difficulty:
+            if successes >= difficulty or not check_base.correctible ():
                 print "success"
                 # No need to modify the roll.
                 break

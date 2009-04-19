@@ -45,17 +45,13 @@ class ItemBoundGameplayAction (GameplayAction):
     def bound_item (self):
         return self.m_item
 
-class GameplayAction_Multiple (GameplayAction):
+# Base class for actions involving several sub-actions.
+class GameplayAction_Many (GameplayAction):
     def __init__ (self, actions):
-        GameplayAction.__init__ (self, ", ".join (action.name ()
-                                                  for action in actions))
+        actions = list (action for action in actions if action != None)
+        assert len (actions) > 0
+        GameplayAction.__init__ (self, self.initial_name (actions))
         self.m_actions = actions
-
-    def perform (self, game, investigator):
-        ret = None
-        for action in self.m_actions:
-            ret = action.perform (game, investigator) or ret
-        return ret
 
     def bound_location (self):
         ret = None
@@ -75,6 +71,23 @@ class GameplayAction_Multiple (GameplayAction):
             ret = action.bound_item () or ret
         return ret
 
+class GameplayAction_Multiple (GameplayAction_Many):
+    def initial_name (self, actions):
+        return ", ".join (action.name () for action in actions)
+
+    def perform (self, game, investigator):
+        ret = None
+        for action in self.m_actions:
+            ret = action.perform (game, investigator) or ret
+        return ret
+
+class GameplayAction_Select (GameplayAction_Many):
+    def initial_name (self, actions):
+        return " or ".join (action.name () for action in actions)
+
+    def perform (self, game, investigator):
+        game.perform_selected_action (investigator, self.m_actions)
+
 class GameplayAction_Conditional (GameplayAction):
     def __init__ (self, game, investigator, subject,
                   check, action_pass, action_fail = None):
@@ -82,7 +95,7 @@ class GameplayAction_Conditional (GameplayAction):
                                  "if %s passes then %s%s" \
                                      % (check.description (game, investigator),
                                         action_pass.name (),
-                                        ("else %s" % action_fail.name () \
+                                        (", else %s" % action_fail.name () \
                                              if action_fail != None else "")))
         assert action_pass
         self.m_check = check
@@ -173,13 +186,14 @@ class GameplayAction_SpendMovementPoints (GameplayAction):
         investigator.spend_movement_points (self.m_amount)
 
 class GameplayAction_CauseHarm (GameplayAction):
-    def __init__ (self, subject, harm):
-        GameplayAction.__init__ (self, harm.description ())
+    def __init__ (self, game, investigator, subject, harm):
+        GameplayAction.__init__ \
+            (self, harm.description (game, investigator, subject))
         self.m_subject = subject
         self.m_harm = harm
 
     def perform (self, game, investigator):
-        self.m_harm.deal (game, investigator, subject)
+        self.m_harm.deal (game, investigator, self.m_subject)
 
 # Combat actions
 

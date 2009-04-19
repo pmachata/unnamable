@@ -138,7 +138,7 @@ class Investigator (ObjectWithLocation, GameplayObject):
 
     def find_wield (self, game, item, hands):
         wants_wield = (list ((item, item.hands ())
-                             for item in  self.m_active_items.keys ())
+                             for item in self.m_active_items.keys ())
                        + [(item, hands)])
         if sum (hands for item, hands in wants_wield) > len (self.m_hands):
             return False
@@ -255,23 +255,23 @@ class Investigator (ObjectWithLocation, GameplayObject):
         return []
 
     # Other actions
-    def check_correction_actions (self, game, subject, skill_name, roll):
+    def check_correction_actions (self, game, subject, check_base, roll):
         ret = []
         if self.m_clues > 0:
             ret.append \
                 (arkham.GameplayAction_Multiple \
                      ([arkham.GameplayAction_SpendClue (),
-                       arkham.GameplayAction_AddRoll (subject, skill_name, roll)]))
+                       arkham.GameplayAction_AddRoll (subject, check_base, roll)]))
         # xxx apparently, clue tokens should simply be items.  The
         # downside of that is that the investigator could choose from
         # N identical "spend this clue token" actions, that would need
         # to be handled in some way.
         return ret + sum (([arkham.GameplayAction_Multiple \
                                 ([spend_clue_action,
-                                  arkham.GameplayAction_AddRoll (subject, skill_name, roll)])
+                                  arkham.GameplayAction_AddRoll (subject, check_base, roll)])
                             for spend_clue_action
                             in arkham.spend_clue_token_actions_hook \
-                                (game, self, subject, item, skill_name)]
+                                (game, self, subject, item, check_base)]
                            for item in self.m_active_items), [])
 
     def damage_correction_actions (self, game, subject, damage):

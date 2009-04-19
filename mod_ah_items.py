@@ -20,7 +20,8 @@ def build (game, module):
     class Tome (arkham.InvestigatorItem):
         pass
 
-    def complex (klass, name, price, movement_points, harm, check, success_action):
+    def complex (klass, name, price, movement_points, harm, check,
+                 success_action_ctor, fail_action_ctor = lambda game, owner, item: None):
         class ComplexItem (klass):
             def __init__ (self):
                 klass.__init__ (self, name, price, 0)
@@ -38,17 +39,17 @@ def build (game, module):
                     """Exhaust and spend MOVEMENT_POINTS to make a
                     CHECK. If you pass, do ACTION and discard Ancient
                     Tome. If you fail, nothing happens."""
-                    harm_actions = [arkham.GameplayAction_CauseHarm (item, harm)] if harm else []
                     return [
                         arkham.GameplayAction_Multiple \
                             ([arkham.GameplayAction_Exhaust (item),
-                              arkham.GameplayAction_SpendMovementPoints (movement_points)]
-                             + harm_actions +
-                             [arkham.GameplayAction_Conditional \
+                              arkham.GameplayAction_SpendMovementPoints (movement_points),
+                              arkham.GameplayAction_CauseHarm (game, owner, item, harm) if harm else None,
+                              arkham.GameplayAction_Conditional \
                                   (game, owner, item, check,
                                    arkham.GameplayAction_Multiple \
-                                       ([success_action,
-                                         arkham.GameplayAction_Discard (item)]))])
+                                       ([success_action_ctor (game, owner, item),
+                                         arkham.GameplayAction_Discard (item)]),
+                                   fail_action_ctor (game, owner, item))])
                         ]
                 else:
                     return []
@@ -238,14 +239,16 @@ def build (game, module):
 
     # ---
 
+    # xxx fix combat=3 etc. won't work!
     for count, item_proto in [
             (1, Derringer18 ()),
             (1, plain_item (".38 Revolver", 4, 1, combat=3)),
             (1, plain_item (".45 Automatic", 5, 1, combat=4)),
             (1, complex (Tome, "Ancient Tome", 4, 2, None,
-                         arkham.SkillCheck (arkham.skill_lore, -1),
+                         arkham.SkillCheck (arkham.checkbase_lore, -1),
                          # xxx should be spell deck
-                         arkham.GameplayAction_DrawItem (module.m_common_deck))),
+                         lambda game, owner, item: \
+                             arkham.GameplayAction_DrawItem (module.m_common_deck))),
             (1, Axe ()),
             (1, Bullwhip ()),
             (1, plain_item ("Cavalry Saber", 3, 1, combat=2)),
@@ -259,8 +262,9 @@ def build (game, module):
             (1, MapOfArkham ()),
             (1, Motorcycle ()),
             (1, complex (Tome, "Old Journal", 1, 1, None,
-                         arkham.SkillCheck (arkham.skill_lore, -1),
-                         arkham.GameplayAction_GainClues (3))),
+                         arkham.SkillCheck (arkham.checkbase_lore, -1),
+                         lambda game, owner, item: \
+                             arkham.GameplayAction_GainClues (3))),
             (1, ResearchMaterials ()),
             (1, plain_item ("Rifle", 6, 2, combat=5)),
             (1, Shotgun ()),
@@ -268,3 +272,18 @@ def build (game, module):
             (1, Whiskey ())
         ]:
         module.m_common_deck.register (item_proto, count)
+
+    for count, item_proto in [
+            (1, complex (arkham.InvestigatorItem, "Alien Statue", 5,
+                         2, arkham.HarmSanity (1),
+                         arkham.SkillCheck (arkham.CheckBase_Fixed (1), 0),
+                         lambda game, owner, item: \
+                             (arkham.GameplayAction_Select
+                                  ([arkham.GameplayAction_GainClues (3),
+                                    # xxx should be spell deck
+                                    arkham.GameplayAction_DrawItem (module.m_common_deck)])),
+                         lambda game, owner, item: \
+                             arkham.GameplayAction_CauseHarm \
+                                 (game, owner, item, arkham.HarmSanity (2))))
+        ]:
+        module.m_unique_deck.register (item_proto, count)
