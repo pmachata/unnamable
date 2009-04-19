@@ -48,6 +48,12 @@ def test_item (name, actions, deck = mod_common.CommonDeck):
 
     return ModuleProto1
 
+def discard_gain_new (items1, items2):
+    # discarded + gain new
+    assert len (items1) == len (items2)
+    assert len (items1 - items2) == 1
+    assert len (items2 - items1) == 1
+
 def test1 (test, name):
     yield action_bound_item_named (name)
     clues = test.inv.clues ()
@@ -60,11 +66,7 @@ def test2 (test, name):
     items1 = set (item.proto () for item in test.inv.m_items)
     for dice in 5,5: yield dice
     items2 = set (item.proto () for item in test.inv.m_items)
-
-    # discarded Ancient Tome, but gained another one from the deck
-    assert len (items1) == len (items2)
-    assert len (items1 - items2) == 1
-    assert len (items2 - items1) == 1
+    discard_gain_new (items1, items2)
     raise tester.EndTest (True)
 
 def test3 (test, name):
@@ -99,11 +101,24 @@ def test4 (test, name):
     assert test.inv.clues () == clues + 3
     yield 5 # pass
     items2 = set (item.proto () for item in test.inv.m_items)
+    discard_gain_new (items1, items2)
+    raise tester.EndTest (True)
 
-    # discarded Ancient Tablet, but gained another item from the deck
-    assert len (items1) == len (items2)
-    assert len (items1 - items2) == 1
-    assert len (items2 - items1) == 1
+def test5 (test, name):
+    items1 = set (item.proto () for item in test.inv.m_items)
+    yield action_bound_item_named (name)
+    yield 5
+    items2 = set (item.proto () for item in test.inv.m_items)
+    discard_gain_new (items1, items2)
+    raise tester.EndTest (True)
+
+def test6 (test, name):
+    items1 = set (item.proto () for item in test.inv.m_items)
+    yield action_bound_item_named (name)
+    yield 5
+    yield fun.matchclass (arkham.GameplayAction_IncurDamage)
+    items2 = set (item.proto () for item in test.inv.m_items)
+    discard_gain_new (items1, items2)
     raise tester.EndTest (True)
 
 if __name__ == "__main__":
@@ -111,3 +126,5 @@ if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_item ("Ancient Tome", test2))))
     tester.run_test (test_ah.Game (Test (test_item ("Alien Statue", test3, mod_unique.UniqueDeck))))
     tester.run_test (test_ah.Game (Test (test_item ("Ancient Tablet", test4, mod_unique.UniqueDeck))))
+    tester.run_test (test_ah.Game (Test (test_item ("Cabala of Saboth", test5, mod_unique.UniqueDeck))))
+    tester.run_test (test_ah.Game (Test (test_item ("Cultes des Goules", test6, mod_unique.UniqueDeck))))
