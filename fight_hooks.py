@@ -106,17 +106,20 @@ def do (combat, investigator, monster):
 def do (combat, investigator, monster):
     while True:
         try:
-            while True:
-                # Several actions can be performed before the
-                # combat continues.
-                combat.check_ends (investigator, monster)
-                combat.game.combat_turn (combat, investigator, monster)
+            try:
+                while True:
+                    # Several actions can be performed before the
+                    # combat continues.
+                    combat.check_ends (investigator, monster)
+                    combat.game.combat_turn (combat, investigator, monster)
 
-        except ContinueCombat:
-            combat.check_ends (investigator, monster)
-            combat_check_hook (combat, investigator, monster)
+            except ContinueCombat:
+                combat.check_ends (investigator, monster)
+                combat_check_hook (combat, investigator, monster)
 
         except SucceedCombat:
+            # We want to catch also SucceedCombat raised within
+            # combat_check_hook, hence this composed try block.
             combat_check_pass_hook (combat, investigator, monster)
 
 @combat_check_hook.match (fun.any, fun.any, fun.any)

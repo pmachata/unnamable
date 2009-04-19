@@ -320,6 +320,45 @@ def build (game, module):
                       arkham.GameplayAction_SucceedCombatCheck ()
                       ])
                 ]
+    @arkham.check_correction_actions_hook.match \
+        (fun.any, fun.any, fun.any,
+         arkham.match_proto (BlueWatcherOfThePyramid),
+         fun.matchvalue (arkham.checkbase_combat), fun.any)
+    def do (game, investigator, subject, item, skill_name, roll):
+        return item.combat_turn (game, investigator, subject)
+
+    class BookOfDzyan (arkham.InvestigatorItem):
+        def __init__ (self):
+            arkham.InvestigatorItem.__init__ \
+                (self, "Book of Dzyan", 3, 0)
+
+        def movement (self, game, owner, item):
+            """Movement: Exhaust and spend 2 movement points to make a
+            Lore (-1) check. If you pass, draw 1 Spell, lose 1 Sanity,
+            and put 1 Stamina token from the bank on Book of Dzyan. If
+            there are 2 Stamina tokens on it, discard Book of
+            Dzyan. If you fail, nothing happens. """
+            movement_points = 3
+            mp = owner.movement_points ()
+            if mp != None and mp >= movement_points and not item.exhausted ():
+                return [
+                    arkham.GameplayAction_Multiple \
+                        ([arkham.GameplayAction_Exhaust (item),
+                          arkham.GameplayAction_SpendMovementPoints (movement_points),
+                          arkham.GameplayAction_Conditional \
+                              (game, owner, item,
+                               arkham.SkillCheck (arkham.checkbase_lore, -1),
+                               arkham.GameplayAction_Multiple \
+                                   ([# xxx should be spell deck
+                                     arkham.GameplayAction_DrawItem (module.m_common_deck),
+                                     arkham.GameplayAction_CauseHarm \
+                                         (game, owner, item, arkham.HarmSanity (1)),
+                                     arkham.GameplayAction_MarkItem \
+                                         (item, 2,
+                                          arkham.GameplayAction_Discard (item))]))])
+                    ]
+            else:
+                return []
 
     for count, item_proto in [
             (1, complex (arkham.InvestigatorItem, "Alien Statue", 5,
@@ -335,5 +374,6 @@ def build (game, module):
                                  (game, owner, item, arkham.HarmSanity (2)))),
             (1, AncientTablet ()),
             (1, BlueWatcherOfThePyramid ()),
+            (1, BookOfDzyan ()),
         ]:
         module.m_unique_deck.register (item_proto, count)

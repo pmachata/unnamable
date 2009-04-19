@@ -22,6 +22,8 @@ class ModuleProto1 (ModuleProto):
                 arkham.MonsterProto.__init__ (self, "MyMonster")
             def horror_check (self):
                 return arkham.pass_check
+            def combat_check (self):
+                return arkham.SkillCheck (arkham.checkbase_combat, 0)
         game.add_monster (arkham.Monster (MyMonster ()), inv.location ())
 
     @classmethod
@@ -36,5 +38,20 @@ class ModuleProto1 (ModuleProto):
         assert len (test.inv.trophies ()) == trophies + 1
         raise tester.EndTest (True)
 
+class ModuleProto2 (ModuleProto1):
+    @classmethod
+    def actions (cls, test):
+        yield fun.matchclass (arkham.GameplayAction_Stay)
+        yield fun.matchclass (arkham.GameplayAction_DealWithMonster)
+        yield fun.matchclass (arkham.GameplayAction_Fight)
+        yield fun.matchclass (arkham.GameplayAction_Fight)
+        for die in 1, 1, 1, 1, 1: yield die
+        trophies = len (test.inv.trophies ())
+        yield action_bound_item_named (cls.item_name)
+        yield fun.matchclass (arkham.GameplayAction_IncurDamage) # use costs -2 sanity
+        assert len (test.inv.trophies ()) == trophies + 1
+        raise tester.EndTest (True)
+
 if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (ModuleProto1)))
+    tester.run_test (test_ah.Game (Test (ModuleProto2)))

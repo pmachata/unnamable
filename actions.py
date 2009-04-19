@@ -300,12 +300,30 @@ class GameplayAction_SpendClue (GameplayAction):
 
 class GameplayAction_DrawItem (GameplayAction):
     def __init__ (self, deck):
-        GameplayAction.__init__ (self, "draw from %s" % deck.name ())
         assert deck != None
+        GameplayAction.__init__ (self, "draw from %s" % deck.name ())
         self.m_deck = deck
 
     def perform (self, game, investigator):
         investigator.take_item (game, self.m_deck.draw ())
+
+class GameplayAction_MarkItem (GameplayAction):
+    def __init__ (self, item, max, when_exhausted):
+        assert when_exhausted
+        assert max > 0
+        assert item
+        GameplayAction.__init__ \
+            (self,
+             "put a token on the card (when there are %d, %s)" \
+                 % (max, when_exhausted.name ()))
+        self.m_when_exhausted = when_exhausted
+        self.m_max = max
+        self.m_item = item
+
+    def perform (self, game, investigator):
+        self.m_item.tokens = self.m_item.__dict__.get ("tokens", 0) + 1
+        if self.m_item.tokens == self.m_max:
+            self.m_when_exhausted.perform (game, investigator)
 
 # Roll correction actions
 
