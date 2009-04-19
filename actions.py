@@ -338,6 +338,15 @@ class GameplayAction_FailRoll (GameplayAction):
     def perform (self, game, investigator):
         raise arkham.EndPhase ()
 
+class GameplayAction_SucceedCombatCheck (GameplayAction):
+    """Special action tightly bound into combat loop causes immediate
+    success in enclosing combat check."""
+    def __init__ (self):
+        GameplayAction.__init__ (self, "automatically succeed")
+
+    def perform (self, game, investigator):
+        raise arkham.SucceedCombat ()
+
 # Damage correction actions
 
 class GameplayAction_ReduceDamage (GameplayAction):

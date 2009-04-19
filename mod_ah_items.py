@@ -301,6 +301,26 @@ def build (game, module):
             else:
                 return []
 
+    # xxx implement Gate-closing checks
+    # xxx this cannot be used against ancient one
+    class BlueWatcherOfThePyramid (arkham.InvestigatorItem):
+        def __init__ (self):
+            arkham.InvestigatorItem.__init__ \
+                (self, "Blue Watcher of the Pyramid", 4, 0)
+
+        def combat_turn (self, game, owner, monster, item):
+            """Lose 2 Stamina and discard Blue Watcher of the Pyramid
+            to automatically succeed at a Combat check or a Fight
+            check or Lore check made to close a gate."""
+            return [
+                arkham.GameplayAction_Multiple \
+                    ([arkham.GameplayAction_CauseHarm (game, owner, monster,
+                                                       arkham.HarmSanity (2)),
+                      arkham.GameplayAction_Discard (item),
+                      arkham.GameplayAction_SucceedCombatCheck ()
+                      ])
+                ]
+
     for count, item_proto in [
             (1, complex (arkham.InvestigatorItem, "Alien Statue", 5,
                          2, arkham.HarmSanity (1),
@@ -314,5 +334,6 @@ def build (game, module):
                              arkham.GameplayAction_CauseHarm \
                                  (game, owner, item, arkham.HarmSanity (2)))),
             (1, AncientTablet ()),
+            (1, BlueWatcherOfThePyramid ()),
         ]:
         module.m_unique_deck.register (item_proto, count)

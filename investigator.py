@@ -248,6 +248,8 @@ class Investigator (ObjectWithLocation, GameplayObject):
     def combat_turn (self, combat, monster):
         return ([arkham.GameplayAction_Evade_Combat (combat, monster),
                  arkham.GameplayAction_Fight (monster)]
+                + sum ((item.combat_turn (combat, self, monster)
+                        for item in self.wields_items ()), [])
                 + self.item_actions ())
 
     # Unconscious/Insane actions.

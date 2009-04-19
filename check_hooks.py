@@ -67,6 +67,9 @@ class CheckBase_Skill (CheckBase):
         CheckBase.__init__ (self, skill.name (), True)
         self.m_skill = skill
 
+    def __repr__ (self):
+        return "<CheckBase_Skill \"%s\">" % self.m_skill
+
 @basic_skill_value_hook.match \
     (fun.any, fun.any, fun.any, fun.matchclass (CheckBase_Skill), fun.any)
 def do (game, investigator, subject, check_base, primary_list):
@@ -84,6 +87,9 @@ class CheckBase_Fixed (CheckBase):
         CheckBase.__init__ (self, str (value), False)
         self.m_value = value
 
+    def __repr__ (self):
+        return "<CheckBase_Fixed %s>" % self.m_value
+
 @basic_skill_value_hook.match \
     (fun.any, fun.any, fun.any, fun.matchclass (CheckBase_Fixed), fun.any)
 def do (game, investigator, subject, check_base, primary_list):
@@ -92,6 +98,9 @@ def do (game, investigator, subject, check_base, primary_list):
 class CheckBase_Derived (CheckBase):
     def __init__ (self, name):
         CheckBase.__init__ (self, name, True)
+
+    def __repr__ (self):
+        return "<CheckBase_Derived \"%s\">" % self.name ()
 
 @basic_skill_value_hook.match \
     (fun.any, fun.any, fun.any, fun.matchclass (CheckBase_Derived), fun.any)
@@ -142,9 +151,6 @@ class Roll:
 
     def roll (self):
         return list (self.m_roll)
-
-    def update_roll (self, roll):
-        self.m_roll = list (roll)
 
 check_trace = conf.trace # whether we want to trace hooks
 
@@ -302,7 +308,8 @@ def do (game, investigator, subject, check_base, modifier, difficulty):
             # xxx This needs to be passed over to UI as some sort of
             # event description object.
             print "%s check %s, %s/%s successes with roll %s"\
-                % (check_base, "passed" if ret else "failed",
+                % (check_base.name (),
+                   "passed" if ret else "failed",
                    successes, difficulty,
                    # I'd love to use unicode die faces, but while
                    # cute, that's just not practical.

@@ -16,6 +16,9 @@ class EndCombat (Exception):
 class ContinueCombat (Exception):
     pass
 
+class SucceedCombat (Exception):
+    pass
+
 # Combat context.  Hooks can put there arbitrary info, and it will get
 # preserved throughout the whole combat.
 class Combat:
@@ -112,6 +115,9 @@ def do (combat, investigator, monster):
         except ContinueCombat:
             combat.check_ends (investigator, monster)
             combat_check_hook (combat, investigator, monster)
+
+        except SucceedCombat:
+            combat_check_pass_hook (combat, investigator, monster)
 
 @combat_check_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):

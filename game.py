@@ -119,6 +119,9 @@ class Item (Subject):
     def movement (self, game, owner):
         return self.m_proto.movement (game, owner, self)
 
+    def combat_turn (self, game, owner, monster):
+        return self.m_proto.combat_turn (game, owner, monster, self)
+
 class Game:
     def __init__ (self, modules, ui):
         self.m_modules = [ModuleInstance (self, mod) for mod in modules]

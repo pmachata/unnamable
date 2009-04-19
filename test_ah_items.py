@@ -6,8 +6,6 @@ import arkham
 import mod_common
 import mod_unique
 
-_damage = 3
-
 class ModuleProto (test_ah.ModuleProto):
     def turn_0 (self, game):
         inv, = game.investigators ()
@@ -108,7 +106,8 @@ def test4 (test, name):
     assert len (items2 - items1) == 1
     raise tester.EndTest (True)
 
-tester.run_test (test_ah.Game (Test (test_item ("Old Journal", test1))))
-tester.run_test (test_ah.Game (Test (test_item ("Ancient Tome", test2))))
-tester.run_test (test_ah.Game (Test (test_item ("Alien Statue", test3, mod_unique.UniqueDeck))))
-tester.run_test (test_ah.Game (Test (test_item ("Ancient Tablet", test4, mod_unique.UniqueDeck))))
+if __name__ == "__main__":
+    tester.run_test (test_ah.Game (Test (test_item ("Old Journal", test1))))
+    tester.run_test (test_ah.Game (Test (test_item ("Ancient Tome", test2))))
+    tester.run_test (test_ah.Game (Test (test_item ("Alien Statue", test3, mod_unique.UniqueDeck))))
+    tester.run_test (test_ah.Game (Test (test_item ("Ancient Tablet", test4, mod_unique.UniqueDeck))))
