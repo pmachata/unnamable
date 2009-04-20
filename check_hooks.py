@@ -1,7 +1,7 @@
 import fun
 from investigator import Investigator
 from game import Game, Item
-from obj import Subject
+from obj import Subject, match_attribute
 import conf
 import arkham
 

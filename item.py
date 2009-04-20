@@ -1,4 +1,4 @@
-from obj import *
+from obj import ObjectWithAttributes
 
 class ItemProto (ObjectWithAttributes):
     def __init__ (self, name, **attributes):

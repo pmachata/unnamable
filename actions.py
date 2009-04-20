@@ -1,5 +1,4 @@
 import fun
-from loc import *
 import arkham
 
 class GameplayAction:

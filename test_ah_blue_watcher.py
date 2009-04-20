@@ -67,8 +67,6 @@ class ModuleProto3 (ModuleProto):
                 arkham.MonsterProto.__init__ (self, "MyMonster")
             def horror_check (self):
                 return arkham.pass_check
-            def combat_check (self):
-                return arkham.SkillCheck (arkham.checkbase_combat, 0)
 
         for i in range (5):
             game.add_monster (arkham.Monster (MyMonster ()), inv.location ())
@@ -82,6 +80,9 @@ class ModuleProto3 (ModuleProto):
         yield fun.matchclass (arkham.GameplayAction_IncurDamage)
         assert len (test.inv.trophies ()) == 5
         raise tester.EndTest (True)
+
+class TestEnchantedBlade (ModuleProto):
+    item_name = "Enchanted Blade"
 
 if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (ModuleProto1)))

@@ -1,4 +1,5 @@
-from deck import *
+import arkham
+from deck import DeckItem
 
 class MonsterProto (DeckItem):
     def __init__ (self, name, **attributes):
@@ -67,12 +68,9 @@ class SimpleMonster (BasicMonster):
                   (combat_rating, combat_damage),
                   **attributes):
         BasicMonster.__init__ (self, name,
-                               evade_check (awareness),
-                               horror_check (horror_rating),
-                               HarmSanity (horror_damage),
-                               combat_check (combat_rating, toughness),
-                               HarmStamina (combat_damage),
+                               arkham.evade_check (awareness),
+                               arkham.horror_check (horror_rating),
+                               arkham.HarmSanity (horror_damage),
+                               arkham.combat_check (combat_rating, toughness),
+                               arkham.HarmStamina (combat_damage),
                                **attributes)
-
-from damage import *
-from checks import *

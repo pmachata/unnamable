@@ -1,4 +1,5 @@
-from loc import *
+from loc import ObjectWithLocation
+from obj import GameplayObject
 import arkham
 
 class Hand:

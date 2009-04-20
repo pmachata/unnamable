@@ -17,11 +17,6 @@ from fight_hooks import *
 from check_hooks import *
 from damage_hooks import *
 
-def match_proto (klass):
-    def match (arg):
-        return fun.matchclass (klass) (arg.proto ())
-    return match
-
 class ModuleIndex:
     def __init__ (self):
         self.m_module_idx = {}

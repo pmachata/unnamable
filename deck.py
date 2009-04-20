@@ -1,4 +1,4 @@
-from item import *
+from item import ItemProto
 
 # There are two parts of a deck: potential cards, and cards that
 # actually end up being in the deck.  Potential cards are all cards

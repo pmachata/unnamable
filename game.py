@@ -1,11 +1,21 @@
+import fun
 import arkham
-from loc import *
+from loc import ObjectWithLocation
+from obj import Subject
 
 class EndGame (Exception):
     pass
 
 class EndPhase (Exception):
     pass
+
+def with_proto (pred):
+    def match (arg):
+        return pred (arg.proto ())
+    return match
+
+def match_proto (cls):
+    return with_proto (fun.matchclass (cls))
 
 class ModuleInstance:
     def __init__ (self, game, type):
@@ -80,6 +90,7 @@ class Monster (ObjectWithLocation, Subject):
 
     def discard (self):
         return self.m_proto.discard ()
+
 
 class Item (Subject):
     def __init__ (self, proto):
@@ -427,7 +438,7 @@ class Game:
             monsters.update (i_monsters)
 
             for monster in i_monsters:
-                action = GameplayAction_DealWithMonster (monster)
+                action = arkham.GameplayAction_DealWithMonster (monster)
                 monster_actions[monster] = action
                 actions.add (action)
 
@@ -467,6 +478,3 @@ class Game:
     def devour (self, investigator):
         # XXX not implemented
         print "NYI: %s should be devoured" % investigator.name ()
-
-from monster import *
-from actions import *

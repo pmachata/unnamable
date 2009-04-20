@@ -1,3 +1,5 @@
+import fun
+
 class Attributes:
     def __init__ (self):
         self.m_attributes = {}
@@ -39,10 +41,16 @@ def match_attribute (**kwargs):
     key, = kwargs.keys ()
     value, = kwargs.values ()
     def match (arg):
-        if not arg.has (key):
+        try:
+            has = arg.has (key)
+        except AttributeError:
+            has = False
+
+        if not has:
             return False
         else:
             return arg.get (key) == value
+
     return match
 
 def match_flag (flag):
@@ -56,7 +64,6 @@ def get_flag (flag):
     return match
 
 def cond_bind_attrib (attrib):
-    import fun
     return fun.if_else (match_flag (attrib), get_flag (attrib))
 
 class ObjectWithAttributes:
