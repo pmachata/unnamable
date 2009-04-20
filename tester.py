@@ -21,7 +21,8 @@ class TestUI (arkham.UI):
         selector = self.m_controller.next ()
         actions = [action for action in actions if selector (action)]
         if len (actions) != 1:
-            self.m_controller.throw (AssertionError ("need exactly one action"))
+            self.m_controller.throw (AssertionError ("need one action, got %d"
+                                                     % len (actions)))
         print "=> " + actions[0].name ()
         return actions[0]
 

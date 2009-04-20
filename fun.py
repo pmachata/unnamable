@@ -176,6 +176,19 @@ def if_else (pred, if_match, if_mismatch = val (None)):
             return if_mismatch (arg)
     return match
 
+class take_first:
+    def __init__ (self, such_that = any):
+        self.taken = False
+        self.such_that = such_that
+    def __call__ (self, arg):
+        if self.taken:
+            return False
+        if self.such_that (arg):
+            self.taken = True
+            return True
+        else:
+            return False
+
 if __name__ == "__main__":
     def test1 ():
         class B:

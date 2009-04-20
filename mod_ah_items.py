@@ -4,14 +4,15 @@ import fun
 
 def build (game, module):
 
-    def plain_item (name, price, hands, **bonuses):
+    def plain_item (name, price, hands, bonuses):
         class PlainItem (arkham.InvestigatorItem):
             def __init__ (self):
                 arkham.InvestigatorItem.__init__ (self, name, price, hands)
 
         for key, value in bonuses.iteritems ():
             @arkham.bonus_hook.match \
-                (fun.any, fun.any, fun.any, arkham.match_proto (PlainItem), fun.matchvalue (key))
+                (fun.any, fun.any, fun.any,
+                 arkham.match_proto (PlainItem), fun.matchvalue (key))
             def do (game, investigator, subject, item, skill_name):
                 return value
 
@@ -20,11 +21,12 @@ def build (game, module):
     class Tome (arkham.InvestigatorItem):
         pass
 
-    def complex (klass, name, price, movement_points, harm, check,
-                 success_action_ctor, fail_action_ctor = lambda game, owner, item: None):
-        class ComplexItem (klass):
+    def complex (cls, name, price, movement_points, harm, check,
+                 success_action_ctor,
+                 fail_action_ctor = lambda game, owner, item: None):
+        class ComplexItem (cls):
             def __init__ (self):
-                klass.__init__ (self, name, price, 0)
+                cls.__init__ (self, name, price, 0)
 
             def movement (self, game, owner, item):
                 mp = owner.movement_points ()
@@ -35,20 +37,25 @@ def build (game, module):
                 # his sleeve, such as a card that reduces caused
                 # damage by 1.  Checking accurately for that is not
                 # worth the trouble.
-                if mp != None and mp >= movement_points and not item.exhausted ():
+                if mp != None and mp >= movement_points \
+                        and not item.exhausted ():
                     """Exhaust and spend MOVEMENT_POINTS to make a
                     CHECK. If you pass, do ACTION and discard Ancient
                     Tome. If you fail, nothing happens."""
                     return [
                         arkham.GameplayAction_Multiple \
                             ([arkham.GameplayAction_Exhaust (item),
-                              arkham.GameplayAction_SpendMovementPoints (movement_points),
-                              arkham.GameplayAction_CauseHarm (game, owner, item, harm) if harm else None,
+                              arkham.GameplayAction_SpendMovementPoints \
+                                  (movement_points),
+                              arkham.GameplayAction_CauseHarm \
+                                  (game, owner, item, harm) if harm else None,
                               arkham.GameplayAction_Conditional \
                                   (game, owner, item, check,
                                    arkham.GameplayAction_Multiple \
-                                       ([success_action_ctor (game, owner, item),
-                                         arkham.GameplayAction_Discard (item)]),
+                                       ([success_action_ctor \
+                                             (game, owner, item),
+                                         arkham.GameplayAction_Discard \
+                                             (item)]),
                                    fail_action_ctor (game, owner, item))])
                         ]
                 else:
@@ -105,7 +112,8 @@ def build (game, module):
         if not item.exhausted ():
             return [arkham.GameplayAction_Multiple \
                         ([arkham.GameplayAction_Exhaust (item),
-                          arkham.GameplayAction_Reroll (subject, skill_name, roll)])]
+                          arkham.GameplayAction_Reroll \
+                              (subject, skill_name, roll)])]
         else:
             return []
 
@@ -159,20 +167,24 @@ def build (game, module):
     def do (game, investigator, subject, item, damage):
         return [arkham.GameplayAction_Multiple \
                     ([arkham.GameplayAction_Discard (item),
-                      arkham.GameplayAction_ReduceDamage (damage, arkham.health_stamina, 1)])]
+                      arkham.GameplayAction_ReduceDamage \
+                          (damage, arkham.health_stamina, 1)])]
 
     # ---
 
     class LuckyCigaretteCase (arkham.InvestigatorItem):
         def __init__ (self):
-            arkham.InvestigatorItem.__init__ (self, "Lucky Cigarette Case", 1, 0)
+            arkham.InvestigatorItem.__init__ \
+                (self, "Lucky Cigarette Case", 1, 0)
 
     @arkham.check_correction_actions_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (LuckyCigaretteCase), fun.any, fun.any)
+        (fun.any, fun.any, fun.any,
+         arkham.match_proto (LuckyCigaretteCase), fun.any, fun.any)
     def do (game, investigator, subject, item, skill_name, roll):
         return [arkham.GameplayAction_Multiple \
                     ([arkham.GameplayAction_Discard (item),
-                      arkham.GameplayAction_Reroll (subject, skill_name, roll)])]
+                      arkham.GameplayAction_Reroll \
+                          (subject, skill_name, roll)])]
 
     # ---
 
@@ -211,7 +223,8 @@ def build (game, module):
             arkham.InvestigatorItem.__init__ (self, "Research Materials", 1, 0)
 
     @arkham.spend_clue_token_actions_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (ResearchMaterials), fun.any)
+        (fun.any, fun.any, fun.any,
+         arkham.match_proto (ResearchMaterials), fun.any)
     def do (game, investigator, subject, item, skill_name):
         return [arkham.GameplayAction_Discard (item)]
 
@@ -245,29 +258,33 @@ def build (game, module):
     def do (game, investigator, subject, item, damage):
         return [arkham.GameplayAction_Multiple \
                     ([arkham.GameplayAction_Discard (item),
-                      arkham.GameplayAction_ReduceDamage (damage, arkham.health_sanity, 1)])]
+                      arkham.GameplayAction_ReduceDamage \
+                          (damage, arkham.health_sanity, 1)])]
 
     # ---
 
-    # xxx fix combat=3 etc. won't work!
     for count, item_proto in [
             (1, Derringer18 ()),
-            (1, plain_item (".38 Revolver", 4, 1, combat=3)),
-            (1, plain_item (".45 Automatic", 5, 1, combat=4)),
+            (1, plain_item (".38 Revolver", 4, 1,
+                            {arkham.checkbase_combat: 3})),
+            (1, plain_item (".45 Automatic", 5, 1,
+                            {arkham.checkbase_combat: 4})),
             (1, complex (Tome, "Ancient Tome", 4, 2, None,
                          arkham.SkillCheck (arkham.checkbase_lore, -1),
                          # xxx should be spell deck
                          lambda game, owner, item: \
-                             arkham.GameplayAction_DrawItem (module.m_common_deck))),
+                             arkham.GameplayAction_DrawItem \
+                                (module.m_common_deck))),
             (1, Axe ()),
             (1, Bullwhip ()),
-            (1, plain_item ("Cavalry Saber", 3, 1, combat=2)),
+            (1, plain_item ("Cavalry Saber", 3, 1,
+                            {arkham.checkbase_combat: 2})),
             (1, Cross ()),
-            (1, plain_item ("Dark Cloak", 2, 0, evade=1)),
+            (1, plain_item ("Dark Cloak", 2, 0, {arkham.checkbase_evade: 1})),
             (1, Dynamite ()),
             (1, Food ()),
-            (1, plain_item ("Knife", 2, 1, combat=1)),
-            (1, plain_item ("Lantern", 3, 0, luck=1)),
+            (1, plain_item ("Knife", 2, 1, {arkham.checkbase_combat: 1})),
+            (1, plain_item ("Lantern", 3, 0, {arkham.checkbase_luck: 1})),
             (1, LuckyCigaretteCase ()),
             (1, MapOfArkham ()),
             (1, Motorcycle ()),
@@ -276,9 +293,9 @@ def build (game, module):
                          lambda game, owner, item: \
                              arkham.GameplayAction_GainClues (3))),
             (1, ResearchMaterials ()),
-            (1, plain_item ("Rifle", 6, 2, combat=5)),
+            (1, plain_item ("Rifle", 6, 2, {arkham.checkbase_combat: 5})),
             (1, Shotgun ()),
-            (1, plain_item ("Tommy Gun", 7, 2, combat=6)),
+            (1, plain_item ("Tommy Gun", 7, 2, {arkham.checkbase_combat: 6})),
             (1, Whiskey ())
         ]:
         module.m_common_deck.register (item_proto, count)
@@ -298,14 +315,17 @@ def build (game, module):
                 Spell.  For every failure rolled, gain 2 Clue tokens."""
                 return [
                     arkham.GameplayAction_Multiple \
-                        ([arkham.GameplayAction_SpendMovementPoints (movement_points),
+                        ([arkham.GameplayAction_SpendMovementPoints \
+                              (movement_points),
                           arkham.GameplayAction_Discard (item),
                           arkham.GameplayAction_Repeat \
                               (2, arkham.GameplayAction_Conditional \
                                    (game, owner, item,
-                                    arkham.SkillCheck (arkham.CheckBase_Fixed (1), 0),
+                                    arkham.SkillCheck \
+                                        (arkham.CheckBase_Fixed (1), 0),
                                     # xxx should be spell deck
-                                    arkham.GameplayAction_DrawItem (module.m_common_deck),
+                                    arkham.GameplayAction_DrawItem \
+                                        (module.m_common_deck),
                                     arkham.GameplayAction_GainClues (3)))])
                     ]
             else:
@@ -318,24 +338,33 @@ def build (game, module):
             arkham.InvestigatorItem.__init__ \
                 (self, "Blue Watcher of the Pyramid", 4, 0)
 
-        def combat_turn (self, game, owner, monster, item):
+        def combat_turn (self, combat, owner, monster, item):
             """Lose 2 Stamina and discard Blue Watcher of the Pyramid
             to automatically succeed at a Combat check or a Fight
             check or Lore check made to close a gate."""
             return [
                 arkham.GameplayAction_Multiple \
-                    ([arkham.GameplayAction_CauseHarm (game, owner, monster,
-                                                       arkham.HarmSanity (2)),
+                    ([arkham.GameplayAction_CauseHarm \
+                          (combat.game, owner, monster, arkham.HarmSanity (2)),
                       arkham.GameplayAction_Discard (item),
                       arkham.GameplayAction_SucceedCombatCheck ()
                       ])
                 ]
+
     @arkham.check_correction_actions_hook.match \
         (fun.any, fun.any, fun.any,
          arkham.match_proto (BlueWatcherOfThePyramid),
          fun.matchvalue (arkham.checkbase_combat), fun.any)
     def do (game, investigator, subject, item, skill_name, roll):
-        return item.combat_turn (game, investigator, subject)
+        # xxx ugly almost-duplication
+        return [
+            arkham.GameplayAction_Multiple \
+                ([arkham.GameplayAction_CauseHarm (game, investigator, subject,
+                                                   arkham.HarmSanity (2)),
+                  arkham.GameplayAction_Discard (item),
+                  arkham.GameplayAction_SucceedCombatCheck ()
+                  ])
+            ]
 
     class BookOfDzyan (arkham.InvestigatorItem):
         def __init__ (self):
@@ -354,21 +383,73 @@ def build (game, module):
                 return [
                     arkham.GameplayAction_Multiple \
                         ([arkham.GameplayAction_Exhaust (item),
-                          arkham.GameplayAction_SpendMovementPoints (movement_points),
+                          arkham.GameplayAction_SpendMovementPoints \
+                              (movement_points),
                           arkham.GameplayAction_Conditional \
                               (game, owner, item,
                                arkham.SkillCheck (arkham.checkbase_lore, -1),
                                arkham.GameplayAction_Multiple \
                                    ([# xxx should be spell deck
-                                     arkham.GameplayAction_DrawItem (module.m_common_deck),
+                                     arkham.GameplayAction_DrawItem \
+                                         (module.m_common_deck),
                                      arkham.GameplayAction_CauseHarm \
-                                         (game, owner, item, arkham.HarmSanity (1)),
+                                         (game, owner, item,
+                                          arkham.HarmSanity (1)),
                                      arkham.GameplayAction_MarkItem \
                                          (item, 2,
-                                          arkham.GameplayAction_Discard (item))]))])
+                                          arkham.GameplayAction_Discard \
+                                              (item))]))])
                     ]
             else:
                 return []
+
+    class xxxDragonsEye (arkham.InvestigatorItem):
+        """Any phase: Exhaust and lose 1 Sanity after drawing a gate
+        or location card to draw a new card in its place"""
+        pass
+
+    class xxxElderSign (arkham.InvestigatorItem):
+        """Any Phase: When sealing a gate, lose 1 Stamina and 1 Sanity
+        and return this card to the box. You do not need to make a
+        skill check or spend any Clue tokens to seal the gate. In
+        addition, remove one doom token from the Ancient One's doom
+        track."""
+        pass
+
+    # xxx this cannot be used against ancient one
+    class FluteOfTheOuterGods (arkham.InvestigatorItem):
+        def __init__ (self):
+            arkham.InvestigatorItem.__init__ \
+                (self, "Flute of the Outer Gods", 8, 0)
+
+        def combat_turn (self, combat, owner, monster, item):
+            """Any Phase: Lose 3 Sanity and 3 Stamina and discard
+            Flute of the Outer Gods before making a Combat check to
+            defeat all monsters in your current area. This does not
+            affect Ancient Ones."""
+
+            class GameplayAction_DefeatAllOnLocation \
+                    (arkham.LocationBoundGameplayAction):
+                def __init__ (self):
+                    arkham.LocationBoundGameplayAction.__init__ \
+                        (self, owner.location (),
+                         "defeat all monsters in location")
+
+                def perform (self, game, investigator):
+                    for monster in game.monsters_at (owner.location ()):
+                        arkham.combat_won_hook (combat, owner, monster)
+
+            return [
+                arkham.GameplayAction_Multiple \
+                    ([arkham.GameplayAction_CauseHarm \
+                          (game, owner, item,
+                           arkham.HarmDamage (
+                                arkham.Damage (
+                                    {arkham.health_sanity: 3,
+                                     arkham.health_stamina: 3}))),
+                      GameplayAction_DefeatAllOnLocation (),
+                      arkham.GameplayAction_Discard (item)])
+                ]
 
     for count, item_proto in [
             (1, complex (arkham.InvestigatorItem, "Alien Statue", 5,
@@ -378,7 +459,8 @@ def build (game, module):
                              (arkham.GameplayAction_Select
                                   ([arkham.GameplayAction_GainClues (3),
                                     # xxx should be spell deck
-                                    arkham.GameplayAction_DrawItem (module.m_common_deck)])),
+                                    arkham.GameplayAction_DrawItem \
+                                        (module.m_common_deck)])),
                          lambda game, owner, item: \
                              arkham.GameplayAction_CauseHarm \
                                  (game, owner, item, arkham.HarmSanity (2)))),
@@ -390,16 +472,20 @@ def build (game, module):
                          arkham.SkillCheck (arkham.checkbase_lore, -2),
                          # xxx should be SKILL deck
                          lambda game, owner, item: \
-                             arkham.GameplayAction_DrawItem (module.m_common_deck))),
+                             arkham.GameplayAction_DrawItem \
+                                (module.m_common_deck))),
             (1, complex (arkham.InvestigatorItem, "Cultes des Goules", 3,
                          2, None,
                          arkham.SkillCheck (arkham.checkbase_lore, -2),
                          lambda game, owner, item: \
                              arkham.GameplayAction_Multiple ([
                                 # xxx should be spell deck
-                                arkham.GameplayAction_DrawItem (module.m_common_deck),
+                                arkham.GameplayAction_DrawItem \
+                                    (module.m_common_deck),
                                 arkham.GameplayAction_GainClues (1),
                                 arkham.GameplayAction_CauseHarm \
-                                    (game, owner, item, arkham.HarmSanity (2))]))),
+                                    (game, owner, item,
+                                     arkham.HarmSanity (2))]))),
+            (1, FluteOfTheOuterGods ()),
         ]:
         module.m_unique_deck.register (item_proto, count)

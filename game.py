@@ -119,8 +119,11 @@ class Item (Subject):
     def movement (self, game, owner):
         return self.m_proto.movement (game, owner, self)
 
-    def combat_turn (self, game, owner, monster):
-        return self.m_proto.combat_turn (game, owner, monster, self)
+    def deal_with (self, game, owner):
+        return self.m_proto.deal_with (game, owner, self)
+
+    def combat_turn (self, combat, owner, monster):
+        return self.m_proto.combat_turn (combat, owner, monster, self)
 
 class Game:
     def __init__ (self, modules, ui):
@@ -433,7 +436,8 @@ class Game:
                 if action in actions:
                     actions.remove (action)
 
-            action = self.perform_selected_action (investigator, list (actions))
+            actions = list (actions) + investigator.deal_with (self)
+            action = self.perform_selected_action (investigator, actions)
             if action == None:
                 break
             actions.remove (action)

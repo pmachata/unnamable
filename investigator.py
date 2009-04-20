@@ -240,6 +240,10 @@ class Investigator (ObjectWithLocation, GameplayObject):
                 for item in self.m_items
                 if item in self.m_active_items]
 
+    def deal_with (self, game):
+        return sum ((item.deal_with (game, self)
+                     for item in self.wields_items ()), [])
+
     def pre_combat (self, combat, monster):
         return ([arkham.GameplayAction_Evade_PreCombat (combat, monster),
                  arkham.GameplayAction_Fight (monster)]

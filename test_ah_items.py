@@ -35,6 +35,15 @@ def action_bound_item_named (name):
             return item.name () == name
     return match
 
+def action_bound_monster_named (name):
+    def match (arg):
+        item = arg.bound_monster ()
+        if not item:
+            return False
+        else:
+            return item.name () == name
+    return match
+
 def test_item (name, actions, deck = mod_common.CommonDeck):
     class ModuleProto1 (ModuleProto):
         def setup_investigator (self, game, inv):

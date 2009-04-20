@@ -15,8 +15,8 @@ class Amount:
 
 class Damage:
     def __init__ (self, aspects):
-        self.m_aspects = aspects
-
+        self.m_aspects = dict ((aspect, Amount (amount))
+                               for aspect, amount in aspects.iteritems ())
 
     def amount (self, aspect):
         return self.m_aspects[aspect]
@@ -27,6 +27,10 @@ class Damage:
     def inflict (self, investigator):
         for aspect, amount in self.m_aspects.iteritems ():
             investigator.health (aspect).reduce (amount.amount ())
+
+    def description (self):
+        return ", ".join ("%s %+d" % (aspect.name (), -amount.amount ())
+                          for aspect, amount in self.m_aspects.iteritems ())
 
 class Harm:
     def deal (self, game, investigator, monster):
@@ -42,17 +46,19 @@ class HarmNone (Harm):
     def description (self, game, investigator, monster):
         return "-"
 
-class HarmHealth (Harm):
-    def __init__ (self, aspect, amount):
-        self.m_aspect = aspect
-        self.m_amount = amount
+class HarmDamage (Harm):
+    def __init__ (self, damage):
+        self.m_damage = damage
 
     def description (self, game, investigator, monster):
-        return "%s %+d" % (self.m_aspect.name (), -self.m_amount)
+        return self.m_damage.description ()
 
     def deal (self, game, investigator, monster):
-        arkham.damage_hook (game, investigator, monster,
-                            Damage ({self.m_aspect: Amount (self.m_amount)}))
+        arkham.damage_hook (game, investigator, monster, self.m_damage)
+
+class HarmHealth (HarmDamage):
+    def __init__ (self, aspect, amount):
+        HarmDamage.__init__ (self, Damage ({aspect: amount}))
 
 class HarmSanity (HarmHealth):
     def __init__ (self, amount):

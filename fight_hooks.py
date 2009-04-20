@@ -3,6 +3,7 @@ import conf
 from investigator import Investigator
 from game import Monster
 from obj import cond_bind_attrib, match_flag
+import arkham
 
 class EndCombat (Exception):
     # Success is True if the investigator killed the monster, False if

@@ -18,5 +18,8 @@ class ItemProto (ObjectWithAttributes):
     def movement (self, game, owner, item):
         return []
 
-    def combat_turn (self, game, owner, monster, item):
+    def combat_turn (self, combat, owner, monster, item):
+        return []
+
+    def deal_with (self, game, owner, item):
         return []
