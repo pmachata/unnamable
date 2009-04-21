@@ -1,7 +1,7 @@
 import fun
 from investigator import Investigator
-from game import Game, Item
-from obj import Subject, match_attribute
+from game import Game, Item, with_proto
+from obj import Subject, match_attribute, match_flag
 import conf
 import arkham
 
@@ -115,22 +115,22 @@ checkbase_combat = CheckBase_Derived ("combat")
 checkbase_spell = CheckBase_Derived ("spell")
 
 @basic_skill_hook.match (fun.any, fun.any, fun.any,
-                         fun.matchvalue (checkbase_evade))
+                         fun.val == checkbase_evade)
 def do (game, investigator, subject, check_base):
     return arkham.checkbase_sneak
 
 @basic_skill_hook.match (fun.any, fun.any, fun.any,
-                         fun.matchvalue (checkbase_horror))
+                         fun.val == checkbase_horror)
 def do (game, investigator, subject, check_base):
     return arkham.checkbase_will
 
 @basic_skill_hook.match (fun.any, fun.any, fun.any,
-                         fun.matchvalue (checkbase_combat))
+                         fun.val == checkbase_combat)
 def do (game, investigator, subject, check_base):
     return arkham.checkbase_fight
 
 @basic_skill_hook.match (fun.any, fun.any, fun.any,
-                         fun.matchvalue (checkbase_spell))
+                         fun.val == checkbase_spell)
 def do (game, investigator, subject, check_base):
     return arkham.checkbase_lore
 
@@ -160,6 +160,49 @@ Die = int # number of die to roll
 Dice = int # result on a given dice
 Successes = int
 
+class Family:
+    def __init__ (self, name):
+        self.m_name = name
+
+    def name (self):
+        return self.m_name
+
+family_indifferent = Family ("indifferent")
+family_physical = Family ("physical")
+family_magical = Family ("magical")
+
+class Bonus:
+    def __init__ (self, value, family):
+        self.m_value = value
+        self.m_family = family
+
+    def value (self):
+        return self.m_value
+
+    def family (self):
+        return self.m_family
+
+    @classmethod
+    def match_family (cls, family):
+        def match (bonus):
+            return bonus.family () == family
+        return match
+
+class ResistanceLevel:
+    def __init__ (self, name, modifier):
+        self.m_name = name
+        self.m_modifier = modifier
+
+    def name (self):
+        return self.m_name
+
+    def modify (self, bonus):
+        return Bonus (self.m_modifier (bonus.value ()), bonus.family ())
+
+reslev_none = ResistanceLevel ("none", lambda val: val)
+reslev_resistance = ResistanceLevel ("resistance", lambda val: val / 2)
+reslev_immunity = ResistanceLevel ("immunity", lambda val: 0)
+
 die_count_hook = fun.Function \
     (Game, Investigator, Subject, CheckBase, Modifier,
      name="die_count_hook", trace=check_trace)
@@ -170,9 +213,6 @@ normal_die_count_hook = fun.Function \
 perform_check_hook = fun.Function \
     (Game, Investigator, Subject, CheckBase, Modifier, Difficulty,
      name="perform_check_hook", trace=check_trace)
-normal_perform_check_hook = fun.Function \
-    (Game, Investigator, Subject, CheckBase, Modifier, Difficulty,
-     name="normal_perform_check_hook", trace=check_trace)
 
 base_die_mod_hook = fun.Function \
     (Game, Investigator, Subject, CheckBase, Modifier,
@@ -188,11 +228,11 @@ difficulty_mod_hook = fun.Function \
 
 bonus_hook = fun.Function \
     (Game, Investigator, Subject, Item, CheckBase,
-     name="bonus_hook", trace=check_trace)
+     name="bonus_hook", trace=check_trace, returns=Bonus)
 
 bonus_mod_hook = fun.Function \
-    (Game, Investigator, Subject, Item, CheckBase, Modifier,
-     name="bonus_mod_hook", trace=check_trace)
+    (Game, Investigator, Subject, Item, CheckBase, Bonus,
+     name="bonus_mod_hook", trace=check_trace, returns=Bonus)
 
 total_bonus_mod_hook = fun.Function \
     (Game, Investigator, Subject, CheckBase, Modifier,
@@ -263,8 +303,10 @@ def do (game, investigator, subject, check_base, modifier):
 
     bonus = 0
     for item in investigator.wields_items (): # includes skill cards, spells, weapons, etc.
-        i_bonus = bonus_hook (game, investigator, subject, item, check_base)
-        bonus += bonus_mod_hook (game, investigator, subject, item, check_base, i_bonus)
+        i_bonus = bonus_hook \
+            (game, investigator, subject, item, check_base)
+        bonus += bonus_mod_hook \
+            (game, investigator, subject, item, check_base, i_bonus).value ()
 
     modifier += total_bonus_mod_hook (game, investigator, subject, check_base, bonus)
     modifier = total_modifier_mod_hook (game, investigator, subject, check_base, modifier)
@@ -279,13 +321,15 @@ def do (game, investigator, subject, check_base, modifier, difficulty):
     roll = Roll (game, investigator, subject, check_base, modifier)
     roll.reroll (game, investigator, subject, check_base)
 
-    difficulty = difficulty_mod_hook (game, investigator, subject, check_base, difficulty)
+    difficulty = difficulty_mod_hook \
+        (game, investigator, subject, check_base, difficulty)
 
     try:
         while True:
             successes = 0
             for dice in roll.roll ():
-                r_successes = dice_roll_successes_hook (game, investigator, subject, check_base, dice)
+                r_successes = dice_roll_successes_hook \
+                    (game, investigator, subject, check_base, dice)
 
                 # xxx Note: by having bonus_hook and bonus_mod_hook,
                 # we make it possible for items to override the first
@@ -293,15 +337,21 @@ def do (game, investigator, subject, check_base, modifier, difficulty):
                 # other hand, this doesn't allow item x item
                 # influences.  Perhaps should be fixed.
                 for item in investigator.wields_items ():
-                    b_successes = dice_roll_successes_bonus_hook (game, investigator, subject, item, check_base, dice)
-                    r_successes += dice_roll_successes_bonus_mod_hook (game, investigator, subject, item, check_base, b_successes)
+                    b_successes = dice_roll_successes_bonus_hook \
+                        (game, investigator, subject, item, check_base, dice)
+                    r_successes += dice_roll_successes_bonus_mod_hook \
+                        (game, investigator, subject, item,
+                         check_base, b_successes)
 
-                successes += dice_roll_successes_mod_hook (game, investigator, subject, check_base, r_successes)
+                successes += dice_roll_successes_mod_hook \
+                    (game, investigator, subject, check_base, r_successes)
 
-            successes = total_dice_roll_successes_mod_hook (game, investigator, subject, check_base, successes)
+            successes = total_dice_roll_successes_mod_hook \
+                (game, investigator, subject, check_base, successes)
 
             for item in investigator.wields_items ():
-                item_after_use_hook (game, investigator, subject, item, check_base)
+                item_after_use_hook (game, investigator,
+                                     subject, item, check_base)
 
             ret = successes >= difficulty
 
@@ -346,11 +396,11 @@ def do (game, investigator, subject, check_base, difficulty):
 
 @bonus_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, item, check_base):
-    return 0
+    return Bonus (0, family_indifferent)
 
 @bonus_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)
-def do (game, investigator, subject, item, check_base, modifier):
-    return modifier
+def do (game, investigator, subject, item, check_base, bonus):
+    return bonus
 
 @total_bonus_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, check_base, modifier):
@@ -422,3 +472,18 @@ def do (game, investigator, subject, item, check_base, roll):
 @spend_clue_token_actions_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, item, check_base):
     return []
+
+
+# Resistances and immunities
+
+@bonus_mod_hook.match (fun.any, fun.any,
+                       lambda subject: len (subject.resistances ()) > 0,
+                       fun.any, fun.any,
+                       fun.not_ (Bonus.match_family (family_indifferent)))
+def do (game, investigator, subject, item, check_base, bonus):
+    fam = bonus.family ()
+    ress = subject.resistances ()
+    if fam in ress:
+        return ress[fam].modify (bonus)
+    else:
+        return bonus

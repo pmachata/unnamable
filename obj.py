@@ -91,4 +91,5 @@ class GameplayObject:
         return []
 
 class Subject:
-    pass
+    def resistances (self):
+        return self.m_proto.resistances ()

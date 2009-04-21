@@ -1,12 +1,10 @@
-def any (arg):
-    return True
-
 class Function (object):
     def __init__ (self, *args, **kwargs):
         self.m_prototype = tuple (args)
         self.m_variants = []
         self.m_name = kwargs.get ("name", str (self))
         self.m_trace = kwargs.get ("trace", False)
+        self.m_returns = kwargs.get ("returns", object)
 
     def match (self, *args, **kwargs):
         def decorator (function):
@@ -45,7 +43,7 @@ class Function (object):
         # Check sanity of arguments.
         for i, (a, p) in enumerate (zip (args, self.m_prototype)):
             assert isinstance (a, p),\
-                "%s: argument #%s (`%s') should be of type `%s'" \
+                "%s: argument #%s (`%s') has to be of type `%s'" \
                 % (self.m_name, i, a, p)
 
         # Find matching variants.
@@ -120,6 +118,10 @@ class Function (object):
         if options.trace:
             print "%s returning" % self.m_name, retval
 
+        assert isinstance (retval, self.m_returns),\
+            "%s: return value (`%s') has to be of type `%s'" \
+            % (self.m_name, retval, self.m_returns)
+
         return retval
 
 def bind (**kwargs):
@@ -158,15 +160,20 @@ def matchattr (**kwargs):
         return arg.__dict__[key] == value
     return catch (match)
 
-def matchvalue (value):
-    def match (arg):
-        return arg == value
-    return match
+class Val:
+    def __call__ (self, value):
+        def match (arg):
+            return value
+        return match
 
-def val (value):
-    def match (arg):
-        return value
-    return match
+    def __eq__ (self, other):
+        return lambda arg: arg == other
+
+    def __ne__ (self, other):
+        return lambda arg: arg != other
+
+val = Val ()
+any = val (True)
 
 def if_else (pred, if_match, if_mismatch = val (None)):
     def match (arg):
@@ -178,6 +185,15 @@ def if_else (pred, if_match, if_mismatch = val (None)):
 
 def not_ (pred):
     return if_else (pred, val (False), val (True))
+
+def or_ (pred1, *preds):
+    return if_else (pred1, val (True),
+                    or_ (*preds) if len (preds) > 0 else val (False))
+
+def and_ (pred1, *preds):
+    return if_else (pred1,
+                    and_ (*preds) if len (preds) > 0 else val (True),
+                    val (False))
 
 class take_first:
     def __init__ (self, such_that = any):

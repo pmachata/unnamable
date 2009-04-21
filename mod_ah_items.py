@@ -4,15 +4,15 @@ import fun
 
 def build (game, module):
 
-    def plain_item (name, price, hands, bonuses):
+    def plain_item (name, price, hands, bonuses, **attributes):
         class PlainItem (arkham.InvestigatorItem):
             def __init__ (self):
-                arkham.InvestigatorItem.__init__ (self, name, price, hands)
+                arkham.InvestigatorItem.__init__ (self, name, price, hands, **attributes)
 
         for key, value in bonuses.iteritems ():
             @arkham.bonus_hook.match \
                 (fun.any, fun.any, fun.any,
-                 arkham.match_proto (PlainItem), fun.matchvalue (key))
+                 arkham.match_proto (PlainItem), fun.val == key)
             def do (game, investigator, subject, item, skill_name):
                 return value
 
@@ -24,6 +24,7 @@ def build (game, module):
     def complex (cls, name, price, movement_points, harm, check,
                  success_action_ctor,
                  fail_action_ctor = lambda game, owner, item: None):
+
         class ComplexItem (cls):
             def __init__ (self):
                 cls.__init__ (self, name, price, 0)
@@ -73,7 +74,7 @@ def build (game, module):
 
     @arkham.bonus_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Derringer18),
-         fun.matchvalue (arkham.checkbase_combat))
+         fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
         return 2
 
@@ -85,7 +86,7 @@ def build (game, module):
 
     @arkham.bonus_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Axe),
-         fun.matchvalue (arkham.checkbase_combat))
+         fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
         # Do we have one extra hand capable of holding this axe?
         if investigator.find_wield (game, item, 1):
@@ -101,13 +102,13 @@ def build (game, module):
 
     @arkham.bonus_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Bullwhip),
-         fun.matchvalue (arkham.checkbase_combat))
+         fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
         return 1
 
     @arkham.check_correction_actions_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Bullwhip),
-         fun.matchvalue (arkham.checkbase_combat), fun.any)
+         fun.val == arkham.checkbase_combat, fun.any)
     def do (game, investigator, subject, item, skill_name, roll):
         if not item.exhausted ():
             return [arkham.GameplayAction_Multiple \
@@ -126,13 +127,13 @@ def build (game, module):
     @arkham.bonus_hook.match \
         (fun.any, fun.any, arkham.match_flag ("undead"),
          arkham.match_proto (Cross),
-         fun.matchvalue (arkham.checkbase_combat))
+         fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
         return 3
 
     @arkham.bonus_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Cross),
-         fun.matchvalue (arkham.checkbase_horror))
+         fun.val == arkham.checkbase_horror)
     def do (game, investigator, subject, item, skill_name):
         return 1
 
@@ -145,13 +146,13 @@ def build (game, module):
 
     @arkham.bonus_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Dynamite),
-         fun.matchvalue (arkham.checkbase_combat))
+         fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
         return 8
 
     @arkham.item_after_use_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Dynamite),
-         fun.matchvalue (arkham.checkbase_combat))
+         fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
         investigator.discard_item (item)
 
@@ -236,13 +237,14 @@ def build (game, module):
 
     @arkham.bonus_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Shotgun),
-         fun.matchvalue (arkham.checkbase_combat))
+         fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
         return 4
 
     @arkham.dice_roll_successes_bonus_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Shotgun),
-         fun.matchvalue (arkham.checkbase_combat), fun.matchvalue (6))
+         fun.val == arkham.checkbase_combat,
+         fun.val == 6)
     def do (game, investigator, subject, item, skill_name, dice):
         return 1
 
@@ -338,33 +340,31 @@ def build (game, module):
             arkham.InvestigatorItem.__init__ \
                 (self, "Blue Watcher of the Pyramid", 4, 0)
 
-        def combat_turn (self, combat, owner, monster, item):
+        @classmethod
+        def bonus_action (cls, game, owner, monster, item):
             """Lose 2 Stamina and discard Blue Watcher of the Pyramid
             to automatically succeed at a Combat check or a Fight
             check or Lore check made to close a gate."""
             return [
                 arkham.GameplayAction_Multiple \
                     ([arkham.GameplayAction_CauseHarm \
-                          (combat.game, owner, monster, arkham.HarmSanity (2)),
+                          (game, owner, monster, arkham.HarmSanity (2)),
                       arkham.GameplayAction_Discard (item),
                       arkham.GameplayAction_SucceedCombatCheck ()
                       ])
                 ]
 
+        def combat_turn (self, combat, owner, monster, item):
+            return BlueWatcherOfThePyramid.bonus_action \
+                (combat.game, owner, monster, item)
+
     @arkham.check_correction_actions_hook.match \
         (fun.any, fun.any, fun.any,
          arkham.match_proto (BlueWatcherOfThePyramid),
-         fun.matchvalue (arkham.checkbase_combat), fun.any)
+         fun.val == arkham.checkbase_combat, fun.any)
     def do (game, investigator, subject, item, skill_name, roll):
-        # xxx ugly almost-duplication
-        return [
-            arkham.GameplayAction_Multiple \
-                ([arkham.GameplayAction_CauseHarm (game, investigator, subject,
-                                                   arkham.HarmSanity (2)),
-                  arkham.GameplayAction_Discard (item),
-                  arkham.GameplayAction_SucceedCombatCheck ()
-                  ])
-            ]
+        return BlueWatcherOfThePyramid.bonus_action \
+            (game, investigator, subject, item)
 
     class BookOfDzyan (arkham.InvestigatorItem):
         def __init__ (self):
@@ -414,6 +414,26 @@ def build (game, module):
         skill check or spend any Clue tokens to seal the gate. In
         addition, remove one doom token from the Ancient One's doom
         track."""
+        pass
+
+    class xxxEnchantedBlade (arkham.InvestigatorItem):
+        """ Type: Magical weapon
+        Bonus: +4 Combat check
+        Hands: 1
+        Price: $6 """
+        pass
+
+    class xxxEnchantedJewelry (arkham.InvestigatorItem):
+        """ Any Phase: Put 1 Stamina token from the bank on Enchanted
+        Jewelry to avoid losing 1 Stamina. If there are 3 Stamina
+        tokens on it, discard Enchanted Jewelry.  Price: $3"""
+        pass
+
+    class xxxEnchantedKnife (arkham.InvestigatorItem):
+        """ Type: Magical weapon
+        Bonus: +3 Combat check
+        Hands: 1
+        Price: $5"""
         pass
 
     # xxx this cannot be used against ancient one

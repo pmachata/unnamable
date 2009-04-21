@@ -17,7 +17,7 @@ def test1 ():
         return "divisible by 3"
 
 
-    @classify.match (fun.matchvalue (0), priority=1)
+    @classify.match (fun.val == 0, priority=1)
     def classify_zero (a):
         return "zero"
 
@@ -97,7 +97,7 @@ def test3 ():
     def do (i, j):
         return "some B, %s" % j
 
-    @x.match (fun.any, fun.matchvalue (5))
+    @x.match (fun.any, fun.val == 5)
     def do (i, j):
         return "%s, value 5" % i
 
@@ -138,7 +138,7 @@ def test5 ():
     def do (i):
         return 1
 
-    @x.match (fun.not_ (fun.matchvalue (3)))
+    @x.match (fun.val != 3)
     def do (i):
         return 2
 
@@ -150,8 +150,71 @@ def test5 ():
     assert x (5) == 2
     assert x (6) == 2
 
+def test6 ():
+    x = fun.Function (object)
+
+    @x.match (fun.any)
+    def do (i):
+        return 1
+
+    @x.match (fun.take_first (fun.val == 2))
+    def do (i):
+        return 2
+
+    assert x (0) == 1
+    assert x (0) == 1
+    assert x (1) == 1
+    assert x (1) == 1
+    assert x (2) == 2
+    assert x (2) == 1
+    assert x (3) == 1
+    assert x (3) == 1
+
+def test7 ():
+    x = fun.Function (object)
+
+    @x.match (fun.any)
+    def do (i):
+        return 1
+
+    @x.match (fun.or_ (fun.val == 1, fun.val == 2))
+    def do (i):
+        return 2
+
+    assert x (0) == 1
+    assert x (0) == 1
+    assert x (1) == 2
+    assert x (1) == 2
+    assert x (2) == 2
+    assert x (2) == 2
+    assert x (3) == 1
+    assert x (3) == 1
+
+def test8 ():
+    x = fun.Function (object)
+
+    @x.match (fun.any)
+    def do (i):
+        return 1
+
+    @x.match (fun.and_ (fun.val != 1, fun.val != 2))
+    def do (i):
+        return 2
+
+    assert x (0) == 2
+    assert x (0) == 2
+    assert x (1) == 1
+    assert x (1) == 1
+    assert x (2) == 1
+    assert x (2) == 1
+    assert x (3) == 2
+    assert x (3) == 2
+
 test1 ()
 test2 ()
 test3 ()
 test4 ()
 test5 ()
+test6 ()
+test7 ()
+test8 ()

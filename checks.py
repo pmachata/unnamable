@@ -26,9 +26,9 @@ class ConstCheck (Check):
             return "fail"
 
 class SkillCheck (Check):
-    def __init__ (self, check_base, modifier, difficulty = 1):
+    def __init__ (self, check_base, base_modifier, difficulty = 1):
         self.m_check_base = check_base
-        self.m_modifier = modifier
+        self.m_base_modifier = base_modifier
         self.m_difficulty = difficulty
         assert difficulty >= 1
 
@@ -36,11 +36,11 @@ class SkillCheck (Check):
         print "%s check:" % self.m_check_base.name ()
         return arkham.perform_check_hook \
             (game, investigator, subject,
-             self.m_check_base, self.m_modifier, self.m_difficulty)
+             self.m_check_base, self.m_base_modifier, self.m_difficulty)
 
     def description (self, game, investigator):
         return "%s(%+d)%s" % (self.m_check_base.name (),
-                              self.m_modifier,
+                              self.m_base_modifier,
                                ("[%d]" % self.m_difficulty
                                 if self.m_difficulty > 1 else ""))
 

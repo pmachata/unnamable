@@ -23,3 +23,8 @@ class ItemProto (ObjectWithAttributes):
 
     def deal_with (self, game, owner, item):
         return []
+
+    def resistances (self):
+        # Items in general have no resistances, so don't insist on
+        # overriding this.
+        return {}

@@ -24,6 +24,8 @@ class ModuleProto1 (ModuleProto):
                 return arkham.pass_check
             def combat_check (self):
                 return arkham.SkillCheck (arkham.checkbase_combat, 0)
+            def resistances (self):
+                return {}
         game.add_monster (arkham.Monster (MyMonster ()), inv.location ())
 
     @classmethod
