@@ -83,9 +83,6 @@ class ModuleProto3 (ModuleProto):
         assert len (test.inv.trophies ()) == 5
         raise tester.EndTest (True)
 
-class TestEnchantedBlade (ModuleProto):
-    item_name = "Enchanted Blade"
-
 if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (ModuleProto1)))
     tester.run_test (test_ah.Game (Test (ModuleProto2)))

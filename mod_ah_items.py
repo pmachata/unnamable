@@ -268,9 +268,11 @@ def build (game, module):
     for count, item_proto in [
             (1, Derringer18 ()),
             (1, plain_item (".38 Revolver", 4, 1,
-                            {arkham.checkbase_combat: 3})),
+                            {arkham.checkbase_combat:
+                                 arkham.Bonus (3, arkham.family_physical)})),
             (1, plain_item (".45 Automatic", 5, 1,
-                            {arkham.checkbase_combat: 4})),
+                            {arkham.checkbase_combat:
+                                 arkham.Bonus (4, arkham.family_physical)})),
             (1, complex (Tome, "Ancient Tome", 4, 2, None,
                          arkham.SkillCheck (arkham.checkbase_lore, -1),
                          # xxx should be spell deck
@@ -280,13 +282,20 @@ def build (game, module):
             (1, Axe ()),
             (1, Bullwhip ()),
             (1, plain_item ("Cavalry Saber", 3, 1,
-                            {arkham.checkbase_combat: 2})),
+                            {arkham.checkbase_combat:
+                                 arkham.Bonus (2, arkham.family_physical)})),
             (1, Cross ()),
-            (1, plain_item ("Dark Cloak", 2, 0, {arkham.checkbase_evade: 1})),
+            (1, plain_item ("Dark Cloak", 2, 0,
+                            {arkham.checkbase_evade:
+                                 arkham.Bonus (1, arkham.family_indifferent)})),
             (1, Dynamite ()),
             (1, Food ()),
-            (1, plain_item ("Knife", 2, 1, {arkham.checkbase_combat: 1})),
-            (1, plain_item ("Lantern", 3, 0, {arkham.checkbase_luck: 1})),
+            (1, plain_item ("Knife", 2, 1,
+                            {arkham.checkbase_combat:
+                                 arkham.Bonus (1, arkham.family_physical)})),
+            (1, plain_item ("Lantern", 3, 0,
+                            {arkham.checkbase_luck:
+                                 arkham.Bonus (1, arkham.family_indifferent)})),
             (1, LuckyCigaretteCase ()),
             (1, MapOfArkham ()),
             (1, Motorcycle ()),
@@ -295,9 +304,13 @@ def build (game, module):
                          lambda game, owner, item: \
                              arkham.GameplayAction_GainClues (3))),
             (1, ResearchMaterials ()),
-            (1, plain_item ("Rifle", 6, 2, {arkham.checkbase_combat: 5})),
+            (1, plain_item ("Rifle", 6, 2,
+                            {arkham.checkbase_combat:
+                                 arkham.Bonus (5, arkham.family_physical)})),
             (1, Shotgun ()),
-            (1, plain_item ("Tommy Gun", 7, 2, {arkham.checkbase_combat: 6})),
+            (1, plain_item ("Tommy Gun", 7, 2,
+                            {arkham.checkbase_combat:
+                                 arkham.Bonus (6, arkham.family_physical)})),
             (1, Whiskey ())
         ]:
         module.m_common_deck.register (item_proto, count)
@@ -416,25 +429,22 @@ def build (game, module):
         track."""
         pass
 
-    class xxxEnchantedBlade (arkham.InvestigatorItem):
-        """ Type: Magical weapon
-        Bonus: +4 Combat check
-        Hands: 1
-        Price: $6 """
-        pass
-
-    class xxxEnchantedJewelry (arkham.InvestigatorItem):
+    class EnchantedJewelry (arkham.InvestigatorItem):
         """ Any Phase: Put 1 Stamina token from the bank on Enchanted
         Jewelry to avoid losing 1 Stamina. If there are 3 Stamina
         tokens on it, discard Enchanted Jewelry.  Price: $3"""
-        pass
+        def __init__ (self):
+            arkham.InvestigatorItem.__init__ (self, "Enchanted Jewelry", 3, 0)
 
-    class xxxEnchantedKnife (arkham.InvestigatorItem):
-        """ Type: Magical weapon
-        Bonus: +3 Combat check
-        Hands: 1
-        Price: $5"""
-        pass
+    @arkham.damage_correction_actions_hook.match \
+        (fun.any, fun.any, fun.any, arkham.match_proto (EnchantedJewelry),
+         lambda damage: arkham.health_stamina in damage.aspects ())
+    def do (game, investigator, subject, item, damage):
+        return [arkham.GameplayAction_Multiple \
+                    ([arkham.GameplayAction_ReduceDamage \
+                          (damage, arkham.health_stamina, 1),
+                      arkham.GameplayAction_MarkItem \
+                          (item, 3, arkham.GameplayAction_Discard (item))])]
 
     # xxx this cannot be used against ancient one
     class FluteOfTheOuterGods (arkham.InvestigatorItem):
@@ -471,6 +481,12 @@ def build (game, module):
                       arkham.GameplayAction_Discard (item)])
                 ]
 
+    class xxxGateBox (arkham.InvestigatorItem):
+        """Any Phase: When you return to Arkham from an Other World,
+        you can return to any location with an open gate, not just
+        those leading to the Other World you were in."""
+        pass
+
     for count, item_proto in [
             (1, complex (arkham.InvestigatorItem, "Alien Statue", 5,
                          2, arkham.HarmSanity (1),
@@ -506,6 +522,13 @@ def build (game, module):
                                 arkham.GameplayAction_CauseHarm \
                                     (game, owner, item,
                                      arkham.HarmSanity (2))]))),
+            (1, plain_item ("Enchanted Blade", 6, 1,
+                            {arkham.checkbase_combat:
+                                 arkham.Bonus (4, arkham.family_magical)})),
+            (1, EnchantedJewelry ()),
+            (1, plain_item ("Enchanted Knife", 5, 1,
+                            {arkham.checkbase_combat:
+                                 arkham.Bonus (3, arkham.family_magical)})),
             (1, FluteOfTheOuterGods ()),
         ]:
         module.m_unique_deck.register (item_proto, count)

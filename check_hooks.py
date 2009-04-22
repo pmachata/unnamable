@@ -474,11 +474,12 @@ def do (game, investigator, subject, item, check_base):
     return []
 
 
-# Resistances and immunities
+# Resistances and immunities -- combat check only
 
 @bonus_mod_hook.match (fun.any, fun.any,
                        lambda subject: len (subject.resistances ()) > 0,
-                       fun.any, fun.any,
+                       fun.any,
+                       fun.val == checkbase_combat,
                        fun.not_ (Bonus.match_family (family_indifferent)))
 def do (game, investigator, subject, item, check_base, bonus):
     fam = bonus.family ()

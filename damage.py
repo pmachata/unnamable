@@ -1,7 +1,8 @@
 import arkham
 
 class Amount:
-    def __init__ (self, amount):
+    def __init__ (self, parent, amount):
+        self.m_parent = parent
         self.m_amount = amount
 
     def reduce (self, amount):
@@ -9,14 +10,17 @@ class Amount:
         self.m_amount -= amount
         if self.m_amount < 0:
             self.m_amount == 0
+        if self.m_amount == 0:
+            self.m_parent.reduced_out (self)
 
     def amount (self):
         return self.m_amount
 
 class Damage:
     def __init__ (self, aspects):
-        self.m_aspects = dict ((aspect, Amount (amount))
-                               for aspect, amount in aspects.iteritems ())
+        self.m_aspects = dict ((aspect, Amount (self, amount))
+                               for aspect, amount in aspects.iteritems ()
+                               if amount > 0)
 
     def amount (self, aspect):
         return self.m_aspects[aspect]
@@ -31,6 +35,12 @@ class Damage:
     def description (self):
         return ", ".join ("%s %+d" % (aspect.name (), -amount.amount ())
                           for aspect, amount in self.m_aspects.iteritems ())
+
+    def reduced_out (self, amount):
+        key, = [key
+                for key, value in self.m_aspects.iteritems ()
+                if value == amount]
+        del self.m_aspects[key]
 
 class Harm:
     def deal (self, game, investigator, monster):

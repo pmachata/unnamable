@@ -21,6 +21,11 @@ damage_correction_actions_hook = fun.Function \
 def do (game, investigator, subject, damage):
     try:
         while True:
+            if len (damage.aspects ()) == 0:
+                # i.e. the damage was probably reduced out, or was
+                # zero to begin with
+                break
+
             actions = sum ((damage_correction_actions_hook (game, investigator, subject, item, damage)
                             for item in investigator.wields_items ()), []) \
                             + investigator.damage_correction_actions (game, subject, damage)
