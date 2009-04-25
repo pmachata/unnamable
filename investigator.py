@@ -9,8 +9,12 @@ class Hand:
 class HealthAspect:
     def __init__ (self, name):
         self.m_name = name
+
     def name (self):
         return self.m_name
+
+    def __repr__ (self):
+        return "<HealthAspect \"%s\">" % self.m_name
 
 health_stamina = HealthAspect ("stamina")
 health_sanity = HealthAspect ("sanity")

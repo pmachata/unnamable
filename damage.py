@@ -16,6 +16,12 @@ class Amount:
     def amount (self):
         return self.m_amount
 
+    def cancel (self):
+        self.reduce (self.m_amount)
+
+    def __repr__ (self):
+        return "<Amount %d>" % self.m_amount
+
 class ImpactHealth:
     def __init__ (self, aspects):
         self.m_aspects = dict ((aspect, Amount (self, amount))

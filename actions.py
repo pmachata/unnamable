@@ -406,6 +406,16 @@ class GameplayAction_ReduceDamage (GameplayAction):
     def perform (self, game, investigator):
         self.m_damage.amount (self.m_aspect).reduce (self.m_amount)
 
+class GameplayAction_CancelDamage (GameplayAction):
+    def __init__ (self, damage, aspect):
+        GameplayAction.__init__ \
+            (self, "cancel %s damage" % aspect.name ())
+        self.m_damage = damage
+        self.m_aspect = aspect
+
+    def perform (self, game, investigator):
+        self.m_damage.amount (self.m_aspect).cancel ()
+
 class GameplayAction_IncurDamage (GameplayAction):
     def __init__ (self):
         GameplayAction.__init__ (self, "incur damage")

@@ -19,6 +19,9 @@ class ModuleProto (test_ah.ModuleProto):
     def heal_action_times (self):
         return 1
 
+    def expected_increment (self, x):
+        return x
+
 class ModuleProto1 (ModuleProto):
     def turn_0 (self, game):
         inv = ModuleProto.do_turn_0 \
@@ -46,6 +49,17 @@ class ModuleProto3 (ModuleProto):
     def heal_action_times (self):
         return 3
 
+class ModuleProto4 (ModuleProto):
+    def turn_0 (self, game):
+        inv = ModuleProto.do_turn_0 \
+            (self, game,
+             self.m_unique_deck.draw \
+                 (lambda arg: arg.name () == "Obsidian Statue"))
+        arkham.HarmStamina (_damage).cause (game, inv, arkham.Subject ())
+
+    def expected_increment (self, x):
+        return _damage
+
 class Test (tester.Controller):
     def __init__ (self, proto, aspect):
         tester.Controller.__init__ (self)
@@ -60,13 +74,16 @@ class Test (tester.Controller):
 
     def actions (self):
         x = self.module.heal_action_times ()
+        y = self.module.expected_increment (x)
         for i in range (x):
             yield fun.matchclass (arkham.GameplayAction_Multiple)
         h = self.inv.health (self.aspect).cur ()
-        yield fun.matchclass (arkham.GameplayAction_IncurDamage)
-        assert self.inv.health (self.aspect).cur () == h - _damage + x
+        if y != _damage:
+            yield fun.matchclass (arkham.GameplayAction_IncurDamage)
+        assert self.inv.health (self.aspect).cur () == h - _damage + y
         raise tester.EndTest (True)
 
 tester.run_test (test_ah.Game (Test (ModuleProto1, arkham.health_stamina)))
 tester.run_test (test_ah.Game (Test (ModuleProto2, arkham.health_sanity)))
 tester.run_test (test_ah.Game (Test (ModuleProto3, arkham.health_stamina)))
+tester.run_test (test_ah.Game (Test (ModuleProto4, arkham.health_stamina)))

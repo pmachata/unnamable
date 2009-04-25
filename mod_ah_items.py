@@ -334,6 +334,7 @@ def build (game, module):
             else:
                 return []
 
+
     # xxx implement Gate-closing checks
     # xxx this cannot be used against ancient one
     class BlueWatcherOfThePyramid (arkham.InvestigatorItem):
@@ -366,6 +367,7 @@ def build (game, module):
     def do (game, investigator, subject, item, skill_name, roll):
         return BlueWatcherOfThePyramid.bonus_action \
             (game, investigator, subject, item)
+
 
     class BookOfDzyan (arkham.InvestigatorItem):
         def __init__ (self):
@@ -404,10 +406,12 @@ def build (game, module):
             else:
                 return []
 
+
     class xxxDragonsEye (arkham.InvestigatorItem):
         """Any phase: Exhaust and lose 1 Sanity after drawing a gate
         or location card to draw a new card in its place"""
         pass
+
 
     class xxxElderSign (arkham.InvestigatorItem):
         """Any Phase: When sealing a gate, lose 1 Stamina and 1 Sanity
@@ -416,6 +420,7 @@ def build (game, module):
         addition, remove one doom token from the Ancient One's doom
         track."""
         pass
+
 
     class EnchantedJewelry (arkham.InvestigatorItem):
         """ Any Phase: Put 1 Stamina token from the bank on Enchanted
@@ -433,6 +438,7 @@ def build (game, module):
                           (damage, arkham.health_stamina, 1),
                       arkham.GameplayAction_MarkItem \
                           (item, 3, arkham.GameplayAction_Discard (item))])]
+
 
     # xxx this cannot be used against ancient one
     class FluteOfTheOuterGods (arkham.InvestigatorItem):
@@ -469,11 +475,13 @@ def build (game, module):
                       arkham.GameplayAction_Discard (item)])
                 ]
 
+
     class xxxGateBox (arkham.InvestigatorItem):
         """Any Phase: When you return to Arkham from an Other World,
         you can return to any location with an open gate, not just
         those leading to the Other World you were in."""
         pass
+
 
     class HealingStone (arkham.InvestigatorItem):
         """Upkeep: You may gain 1 Stamina or 1 Sanity.
@@ -502,6 +510,7 @@ def build (game, module):
                                  (arkham.Heal ({aspect: 1})))
             return ret
 
+
     class HolyWater (arkham.InvestigatorItem):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, "Holy Water", 4, 2)
@@ -518,6 +527,31 @@ def build (game, module):
          fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
         investigator.discard_item (item)
+
+
+    class ObsidianStatue (arkham.InvestigatorItem):
+        """Any Phase: Discard Obsidian Statue to cancel all Stamina or
+        Sanity loss being dealt to you from one source. """
+        def __init__ (self):
+            arkham.InvestigatorItem.__init__ (self, "Obsidian Statue", 4, 0)
+
+    @arkham.damage_correction_actions_hook.match \
+        (fun.any, fun.any, fun.any,
+         arkham.match_proto (ObsidianStatue), fun.any)
+    def do (game, investigator, subject, item, damage):
+        has_stamina = arkham.health_stamina in damage.aspects ()
+        has_sanity = arkham.health_sanity in damage.aspects ()
+        if has_stamina or has_sanity:
+            mul = [arkham.GameplayAction_Discard (item)]
+            if has_stamina:
+                mul.append (arkham.GameplayAction_CancelDamage \
+                              (damage, arkham.health_stamina))
+            if has_sanity:
+                mul.append (arkham.GameplayAction_CancelDamage \
+                              (damage, arkham.health_stamina))
+            return [arkham.GameplayAction_Multiple (mul)]
+        else:
+            return []
 
     for count, item_proto in [
             (1, complex (arkham.InvestigatorItem, "Alien Statue", 5,
@@ -589,5 +623,6 @@ def build (game, module):
                                 arkham.GameplayAction_CauseHarm \
                                     (game, owner, item,
                                      arkham.HarmSanity (2))]))),
+            (1, ObsidianStatue ()),
         ]:
         module.m_unique_deck.register (item_proto, count)
