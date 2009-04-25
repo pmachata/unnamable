@@ -158,6 +158,26 @@ def test7 (test, name):
     yield fun.matchclass (arkham.GameplayAction_Stay)
     raise tester.EndTest (True)
 
+def test8 (test, name):
+    items1 = set (item.proto () for item in test.inv.m_items)
+    yield fun.and_ (action_bound_item_named (name),
+                    fun.matchclass (arkham.GameplayAction_Multiple))
+    yield 5; yield 5
+    yield fun.matchclass (arkham.GameplayAction_IncurDamage)
+    items2 = set (item.proto () for item in test.inv.m_items)
+    discard_gain_new (items1, items2)
+    raise tester.EndTest (True)
+
+def test9 (test, name):
+    items1 = set (item.proto () for item in test.inv.m_items)
+    yield fun.and_ (action_bound_item_named (name),
+                    fun.matchclass (arkham.GameplayAction_Multiple))
+    yield 5
+    yield fun.matchclass (arkham.GameplayAction_IncurDamage)
+    items2 = set (item.proto () for item in test.inv.m_items)
+    discard_gain_new (items1, items2)
+    raise tester.EndTest (True)
+
 if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_item ("Old Journal", test1))))
     tester.run_test (test_ah.Game (Test (test_item ("Ancient Tome", test2))))
@@ -166,3 +186,5 @@ if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_item ("Cabala of Saboth", test5, mod_unique.UniqueDeck))))
     tester.run_test (test_ah.Game (Test (test_item ("Cultes des Goules", test6, mod_unique.UniqueDeck))))
     tester.run_test (test_ah.Game (Test (test_item ("Healing Stone", test7, mod_unique.UniqueDeck))))
+    tester.run_test (test_ah.Game (Test (test_item ("Nameless Cults", test8, mod_unique.UniqueDeck))))
+    tester.run_test (test_ah.Game (Test (test_item ("Necronomicon", test9, mod_unique.UniqueDeck))))

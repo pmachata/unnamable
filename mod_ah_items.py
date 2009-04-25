@@ -78,7 +78,6 @@ def build (game, module):
     def do (game, investigator, subject, item, skill_name):
         return 2
 
-    # ---
 
     class Axe (arkham.InvestigatorItem):
         def __init__ (self):
@@ -94,7 +93,6 @@ def build (game, module):
         else:
             return 2
 
-    # ---
 
     class Bullwhip (arkham.InvestigatorItem):
         def __init__ (self):
@@ -118,7 +116,6 @@ def build (game, module):
         else:
             return []
 
-    # ---
 
     class Cross (arkham.InvestigatorItem):
         def __init__ (self):
@@ -137,7 +134,6 @@ def build (game, module):
     def do (game, investigator, subject, item, skill_name):
         return 1
 
-    # ---
 
     class Dynamite (arkham.InvestigatorItem):
         def __init__ (self):
@@ -156,7 +152,6 @@ def build (game, module):
     def do (game, investigator, subject, item, skill_name):
         investigator.discard_item (item)
 
-    # ---
 
     class Food (arkham.InvestigatorItem):
         def __init__ (self):
@@ -171,7 +166,6 @@ def build (game, module):
                       arkham.GameplayAction_ReduceDamage \
                           (damage, arkham.health_stamina, 1)])]
 
-    # ---
 
     class LuckyCigaretteCase (arkham.InvestigatorItem):
         def __init__ (self):
@@ -187,7 +181,6 @@ def build (game, module):
                       arkham.GameplayAction_Reroll \
                           (subject, skill_name, roll)])]
 
-    # ---
 
     class MapOfArkham (arkham.InvestigatorItem):
         def __init__ (self):
@@ -202,7 +195,6 @@ def build (game, module):
             else:
                 return []
 
-    # ---
 
     class Motorcycle (arkham.InvestigatorItem):
         def __init__ (self):
@@ -217,7 +209,6 @@ def build (game, module):
             else:
                 return []
 
-    # ---
 
     class ResearchMaterials (arkham.InvestigatorItem):
         def __init__ (self):
@@ -229,7 +220,6 @@ def build (game, module):
     def do (game, investigator, subject, item, skill_name):
         return [arkham.GameplayAction_Discard (item)]
 
-    # ---
 
     class Shotgun (arkham.InvestigatorItem):
         def __init__ (self):
@@ -248,7 +238,6 @@ def build (game, module):
     def do (game, investigator, subject, item, skill_name, dice):
         return 1
 
-    # ---
 
     class Whiskey (arkham.InvestigatorItem):
         def __init__ (self):
@@ -263,7 +252,6 @@ def build (game, module):
                       arkham.GameplayAction_ReduceDamage \
                           (damage, arkham.health_sanity, 1)])]
 
-    # ---
 
     for count, item_proto in [
             (1, Derringer18 ()),
@@ -489,7 +477,7 @@ def build (game, module):
 
     class HealingStone (arkham.InvestigatorItem):
         """Upkeep: You may gain 1 Stamina or 1 Sanity.
-        Discard Healing Stone if the Ancient One awakens."""
+        xxx: Discard Healing Stone if the Ancient One awakens."""
         def __init__ (self):
             arkham.InvestigatorItem.__init__ \
                 (self, "Healing Stone", 8, 0)
@@ -513,6 +501,23 @@ def build (game, module):
                             (arkham.GameplayAction_Heal \
                                  (arkham.Heal ({aspect: 1})))
             return ret
+
+    class HolyWater (arkham.InvestigatorItem):
+        def __init__ (self):
+            arkham.InvestigatorItem.__init__ (self, "Holy Water", 4, 2)
+            """Bonus: +6 Combat check (Discard after use)"""
+
+    @arkham.bonus_hook.match \
+        (fun.any, fun.any, fun.any, arkham.match_proto (HolyWater),
+         fun.val == arkham.checkbase_combat)
+    def do (game, investigator, subject, item, skill_name):
+        return 6
+
+    @arkham.item_after_use_hook.match \
+        (fun.any, fun.any, fun.any, arkham.match_proto (HolyWater),
+         fun.val == arkham.checkbase_combat)
+    def do (game, investigator, subject, item, skill_name):
+        investigator.discard_item (item)
 
     for count, item_proto in [
             (1, complex (arkham.InvestigatorItem, "Alien Statue", 5,
@@ -558,5 +563,31 @@ def build (game, module):
                                  arkham.Bonus (3, arkham.family_magical)})),
             (1, FluteOfTheOuterGods ()),
             (1, HealingStone ()),
+            (1, HolyWater ()),
+            (1, plain_item ("Lamp of Alhazred", 7, 2,
+                            {arkham.checkbase_combat:
+                                 arkham.Bonus (5, arkham.family_magical)})),
+            (1, complex (arkham.InvestigatorItem, "Nameless Cults", 3,
+                         1, None,
+                         arkham.SkillCheck (arkham.checkbase_lore, -1),
+                         lambda game, owner, item: \
+                             arkham.GameplayAction_Multiple ([
+                                # xxx should be spell deck
+                                arkham.GameplayAction_DrawItem \
+                                    (module.m_common_deck),
+                                arkham.GameplayAction_CauseHarm \
+                                    (game, owner, item,
+                                     arkham.HarmSanity (1))]))),
+            (1, complex (arkham.InvestigatorItem, "Necronomicon", 6,
+                         2, None,
+                         arkham.SkillCheck (arkham.checkbase_lore, -2),
+                         lambda game, owner, item: \
+                             arkham.GameplayAction_Multiple ([
+                                # xxx should be spell deck
+                                arkham.GameplayAction_DrawItem \
+                                    (module.m_common_deck),
+                                arkham.GameplayAction_CauseHarm \
+                                    (game, owner, item,
+                                     arkham.HarmSanity (2))]))),
         ]:
         module.m_unique_deck.register (item_proto, count)
