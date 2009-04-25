@@ -487,6 +487,33 @@ def build (game, module):
         those leading to the Other World you were in."""
         pass
 
+    class HealingStone (arkham.InvestigatorItem):
+        """Upkeep: You may gain 1 Stamina or 1 Sanity.
+        Discard Healing Stone if the Ancient One awakens."""
+        def __init__ (self):
+            arkham.InvestigatorItem.__init__ \
+                (self, "Healing Stone", 8, 0)
+
+        def upkeep (self, game, owner, item):
+            # Only allow one action per upkeep.  We can't exhaust,
+            # since upkeep is where the card should be refreshed.
+            item_turn = getattr (item, "turn", -1)
+            cur_turn = game.turn_number ()
+            item.turn = cur_turn
+            if cur_turn <= item_turn:
+                return []
+
+            aspects = owner.health_aspects ()
+            ret = []
+            for aspect in (arkham.health_sanity, arkham.health_stamina):
+                if aspect in aspects:
+                    health = owner.health (aspect)
+                    if health.cur () < health.max ():
+                        ret.append \
+                            (arkham.GameplayAction_Heal \
+                                 (arkham.Heal ({aspect: 1})))
+            return ret
+
     for count, item_proto in [
             (1, complex (arkham.InvestigatorItem, "Alien Statue", 5,
                          2, arkham.HarmSanity (1),
@@ -530,5 +557,6 @@ def build (game, module):
                             {arkham.checkbase_combat:
                                  arkham.Bonus (3, arkham.family_magical)})),
             (1, FluteOfTheOuterGods ()),
+            (1, HealingStone ()),
         ]:
         module.m_unique_deck.register (item_proto, count)

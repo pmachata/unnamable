@@ -16,7 +16,7 @@ class Amount:
     def amount (self):
         return self.m_amount
 
-class Damage:
+class ImpactHealth:
     def __init__ (self, aspects):
         self.m_aspects = dict ((aspect, Amount (self, amount))
                                for aspect, amount in aspects.iteritems ()
@@ -28,6 +28,13 @@ class Damage:
     def aspects (self):
         return self.m_aspects.keys ()
 
+    def reduced_out (self, amount):
+        key, = [key
+                for key, value in self.m_aspects.iteritems ()
+                if value == amount]
+        del self.m_aspects[key]
+
+class Damage (ImpactHealth):
     def inflict (self, investigator):
         for aspect, amount in self.m_aspects.iteritems ():
             investigator.health (aspect).reduce (amount.amount ())
@@ -36,21 +43,24 @@ class Damage:
         return ", ".join ("%s %+d" % (aspect.name (), -amount.amount ())
                           for aspect, amount in self.m_aspects.iteritems ())
 
-    def reduced_out (self, amount):
-        key, = [key
-                for key, value in self.m_aspects.iteritems ()
-                if value == amount]
-        del self.m_aspects[key]
+class Heal (ImpactHealth):
+    def heal (self, investigator):
+        for aspect, amount in self.m_aspects.iteritems ():
+            investigator.health (aspect).add (amount.amount ())
+
+    def description (self):
+        return ", ".join ("%s %+d" % (aspect.name (), amount.amount ())
+                          for aspect, amount in self.m_aspects.iteritems ())
 
 class Harm:
-    def deal (self, game, investigator, monster):
+    def cause (self, game, investigator, monster):
         raise NotImplementedError ()
 
     def description (self, game, investigator, monster):
         raise NotImplementedError ()
 
 class HarmNone (Harm):
-    def deal (self, game, investigator, monster):
+    def cause (self, game, investigator, monster):
         pass
 
     def description (self, game, investigator, monster):
@@ -63,7 +73,7 @@ class HarmDamage (Harm):
     def description (self, game, investigator, monster):
         return self.m_damage.description ()
 
-    def deal (self, game, investigator, monster):
+    def cause (self, game, investigator, monster):
         arkham.damage_hook (game, investigator, monster, self.m_damage)
 
 class HarmHealth (HarmDamage):
@@ -79,7 +89,7 @@ class HarmStamina (HarmHealth):
         HarmHealth.__init__ (self, arkham.health_stamina, amount)
 
 class HarmDevour (Harm):
-    def deal (self, game, investigator, monster):
+    def cause (self, game, investigator, monster):
         investigator.devour (game, monster)
 
     def description (self, game, investigator, monster):
@@ -91,11 +101,11 @@ class ConditionalHarm (Harm):
         self.m_pass = harm_pass
         self.m_fail = harm_fail
 
-    def deal (self, game, investigator, monster):
+    def cause (self, game, investigator, monster):
         if self.m_pred (game, investigator, monster):
-            return self.m_pass.deal (game, investigator, monster)
+            return self.m_pass.cause (game, investigator, monster)
         else:
-            return self.m_fail.deal (game, investigator, monster)
+            return self.m_fail.cause (game, investigator, monster)
 
     def description (self, game, investigator, monster):
         if self.m_pred (game, investigator, monster):

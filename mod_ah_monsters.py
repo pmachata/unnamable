@@ -33,7 +33,7 @@ def build (game, module):
         print """XXX When you fail a Combat check against Elder
         Thing, you must discard 1 of your Weapons or Spells (your
         choice), if able."""
-        arkham.deal_combat_damage_hook (game, investigator, monster)
+        arkham.cause_combat_harm_hook (game, investigator, monster)
 
     class Maniac (arkham.BasicMonster):
         def __init__ (self, mod_terror):
@@ -112,10 +112,10 @@ def build (game, module):
         def combat_check (self):
             return arkham.SpecialCheck ()
 
-        def horror_damage (self):
+        def horror_harm (self):
             return arkham.SpecialHarm ()
 
-        def combat_damage (self):
+        def combat_harm (self):
             return arkham.SpecialHarm ()
 
     @arkham.fight_hook.match (fun.any, fun.any, arkham.match_proto (TheBlackMan))
@@ -128,7 +128,7 @@ def build (game, module):
             investigator.devour (combat.game, monster)
             raise arkham.EndCombat (False)
 
-    @arkham.deal_combat_damage_hook.match (fun.any, fun.any, arkham.match_proto (TheBlackMan))
+    @arkham.cause_combat_harm_hook.match (fun.any, fun.any, arkham.match_proto (TheBlackMan))
     def do (combat, investigator, monster):
         pass
 

@@ -24,6 +24,9 @@ class Health:
     def cur (self):
         return self.m_cur
 
+    def max (self):
+        return self.m_max
+
     def reduce (self, amount):
         assert amount >= 0
         print "reduce %s by %s" % (self.m_aspect.name (), amount),
@@ -208,6 +211,14 @@ class Investigator (ObjectWithLocation, GameplayObject):
     def prepare_pass_2 (self, game):
         pass
 
+    def item_actions (self):
+        return [arkham.GameplayAction_WieldItem (item)
+                for item in self.m_items
+                if item not in self.m_active_items] \
+             + [arkham.GameplayAction_ReleseItem (item)
+                for item in self.m_items
+                if item in self.m_active_items]
+
     # Game play phases.
     def upkeep (self, game):
         self.m_movement_points = self.initial_movement_points ()
@@ -226,21 +237,14 @@ class Investigator (ObjectWithLocation, GameplayObject):
 
         return [arkham.GameplayAction_Stay (self.m_location)] + dest_actions \
             + sum ((item.movement (game, self)
-                    for item in self.m_active_items), [])
+                    for item in self.m_active_items),
+                   self.item_actions ())
 
     def initial_movement_points (self):
         " not including bonuses for items "
         return self.m_skills.skill (arkham.skill_speed)
 
     # Combat phases.
-    def item_actions (self):
-        return [arkham.GameplayAction_WieldItem (item)
-                for item in self.m_items
-                if item not in self.m_active_items] \
-             + [arkham.GameplayAction_ReleseItem (item)
-                for item in self.m_items
-                if item in self.m_active_items]
-
     def deal_with (self, game):
         return sum ((item.deal_with (game, self)
                      for item in self.wields_items ()), [])

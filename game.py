@@ -165,6 +165,9 @@ class Game:
 
         assert self.m_ui != None
 
+    def turn_number (self):
+        return self.m_turn
+
     def add_neighborhood (self, neighborhood):
         assert neighborhood not in self.m_neighborhoods
         self.m_neighborhoods.append (neighborhood)
@@ -289,8 +292,19 @@ class Game:
                 actions = sum ((modi.upkeep ()
                                 for modi in self.m_modules), [])
                 for investigator in self.m_investigators:
-                    self.perform_selected_action \
-                        (investigator, actions + investigator.upkeep (self))
+                    try:
+                        while True:
+                            upkeep_actions = \
+                                actions + investigator.upkeep (self)
+                            if len (upkeep_actions) == 0:
+                                break
+                            upkeep_actions.append \
+                                (arkham.GameplayAction_DoNothing ())
+                            self.perform_selected_action \
+                                (investigator, upkeep_actions)
+
+                    except EndPhase:
+                        pass
 
                 print "-- movement --"
 

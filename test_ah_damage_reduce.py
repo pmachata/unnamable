@@ -25,7 +25,7 @@ class ModuleProto1 (ModuleProto):
             (self, game,
              self.m_common_deck.draw \
                  (lambda arg: arg.name () == "Food"))
-        arkham.HarmStamina (_damage).deal (game, inv, arkham.Subject ())
+        arkham.HarmStamina (_damage).cause (game, inv, arkham.Subject ())
 
 class ModuleProto2 (ModuleProto):
     def turn_0 (self, game):
@@ -33,7 +33,7 @@ class ModuleProto2 (ModuleProto):
             (self, game,
              self.m_common_deck.draw \
                  (lambda arg: arg.name () == "Whiskey"))
-        arkham.HarmSanity (_damage).deal (game, inv, arkham.Subject ())
+        arkham.HarmSanity (_damage).cause (game, inv, arkham.Subject ())
 
 class ModuleProto3 (ModuleProto):
     def turn_0 (self, game):
@@ -41,7 +41,7 @@ class ModuleProto3 (ModuleProto):
             (self, game,
              self.m_unique_deck.draw \
                  (lambda arg: arg.name () == "Enchanted Jewelry"))
-        arkham.HarmStamina (_damage).deal (game, inv, arkham.Subject ())
+        arkham.HarmStamina (_damage).cause (game, inv, arkham.Subject ())
 
     def heal_action_times (self):
         return 3

@@ -44,8 +44,10 @@ class ItemBoundGameplayAction (GameplayAction):
     def bound_item (self):
         return self.m_item
 
-# Base class for actions involving several sub-actions.
+# Generic actions.
+
 class GameplayAction_Many (GameplayAction):
+    """Base class for actions involving several sub-actions."""
     def __init__ (self, actions):
         actions = list (action for action in actions if action != None)
         assert len (actions) > 0
@@ -172,6 +174,13 @@ class GameplayAction_Stay (LocationBoundGameplayAction):
         investigator.lose_movement_points ()
         raise arkham.EndPhase ()
 
+class GameplayAction_DoNothing (GameplayAction):
+    def __init__ (self):
+        GameplayAction.__init__ (self, "do nothing")
+
+    def perform (self, game, investigator):
+        raise arkham.EndPhase ()
+
 # Investigator actions
 
 class GameplayAction_GainClues (GameplayAction):
@@ -215,7 +224,16 @@ class GameplayAction_CauseHarm (GameplayAction):
         self.m_harm = harm
 
     def perform (self, game, investigator):
-        self.m_harm.deal (game, investigator, self.m_subject)
+        self.m_harm.cause (game, investigator, self.m_subject)
+
+class GameplayAction_Heal (GameplayAction):
+    def __init__ (self, heal):
+        GameplayAction.__init__ (self, heal.description ())
+        self.m_heal = heal
+
+    def perform (self, game, investigator):
+        self.m_heal.heal (investigator)
+
 
 # Combat actions
 

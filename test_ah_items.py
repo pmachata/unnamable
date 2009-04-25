@@ -64,14 +64,16 @@ def discard_gain_new (items1, items2):
     assert len (items2 - items1) == 1
 
 def test1 (test, name):
-    yield action_bound_item_named (name)
+    yield fun.and_ (action_bound_item_named (name),
+                    fun.matchclass (arkham.GameplayAction_Multiple))
     clues = test.inv.clues ()
     for dice in 5,5: yield dice
     assert test.inv.clues () == clues + 3
     raise tester.EndTest (True)
 
 def test2 (test, name):
-    yield action_bound_item_named (name)
+    yield fun.and_ (action_bound_item_named (name),
+                    fun.matchclass (arkham.GameplayAction_Multiple))
     items1 = set (item.proto () for item in test.inv.m_items)
     for dice in 5,5: yield dice
     items2 = set (item.proto () for item in test.inv.m_items)
@@ -80,7 +82,8 @@ def test2 (test, name):
 
 def test3 (test, name):
     # turn 1
-    yield action_bound_item_named (name)
+    yield fun.and_ (action_bound_item_named (name),
+                    fun.matchclass (arkham.GameplayAction_Multiple))
     sanity = test.inv.health (arkham.health_sanity).cur ()
     yield fun.matchclass (arkham.GameplayAction_IncurDamage)
     assert test.inv.health (arkham.health_sanity).cur () == sanity - 1
@@ -92,7 +95,8 @@ def test3 (test, name):
     yield fun.matchclass (arkham.GameplayAction_Stay)
 
     # turn 2
-    yield action_bound_item_named (name)
+    yield fun.and_ (action_bound_item_named (name),
+                    fun.matchclass (arkham.GameplayAction_Multiple))
     sanity = test.inv.health (arkham.health_sanity).cur ()
     yield fun.matchclass (arkham.GameplayAction_IncurDamage)
     assert test.inv.health (arkham.health_sanity).cur () == sanity - 1
@@ -104,7 +108,8 @@ def test3 (test, name):
 
 def test4 (test, name):
     items1 = set (item.proto () for item in test.inv.m_items)
-    yield action_bound_item_named (name)
+    yield fun.and_ (action_bound_item_named (name),
+                    fun.matchclass (arkham.GameplayAction_Multiple))
     clues = test.inv.clues ()
     yield 1 # failure
     assert test.inv.clues () == clues + 3
@@ -115,7 +120,8 @@ def test4 (test, name):
 
 def test5 (test, name):
     items1 = set (item.proto () for item in test.inv.m_items)
-    yield action_bound_item_named (name)
+    yield fun.and_ (action_bound_item_named (name),
+                    fun.matchclass (arkham.GameplayAction_Multiple))
     yield 5
     items2 = set (item.proto () for item in test.inv.m_items)
     discard_gain_new (items1, items2)
@@ -123,11 +129,33 @@ def test5 (test, name):
 
 def test6 (test, name):
     items1 = set (item.proto () for item in test.inv.m_items)
-    yield action_bound_item_named (name)
+    yield fun.and_ (action_bound_item_named (name),
+                    fun.matchclass (arkham.GameplayAction_Multiple))
     yield 5
     yield fun.matchclass (arkham.GameplayAction_IncurDamage)
     items2 = set (item.proto () for item in test.inv.m_items)
     discard_gain_new (items1, items2)
+    raise tester.EndTest (True)
+
+def test7 (test, name):
+    h = []
+    for aspect in arkham.health_sanity, arkham.health_stamina:
+        health = test.inv.health (aspect)
+        health.reduce (1)
+        h.append (health.cur ())
+
+    yield fun.matchclass (arkham.GameplayAction_Stay)
+    yield lambda arg: arg.name ().find ("sanity") >= 0
+    assert test.inv.health (arkham.health_sanity).cur () == h[0] + 1
+
+    yield fun.matchclass (arkham.GameplayAction_Stay)
+
+    # Use matchclass now to make sure that we have only one available
+    # match: to heal stamina.
+    yield fun.matchclass (arkham.GameplayAction_Heal)
+    assert test.inv.health (arkham.health_stamina).cur () == h[1] + 1
+
+    yield fun.matchclass (arkham.GameplayAction_Stay)
     raise tester.EndTest (True)
 
 if __name__ == "__main__":
@@ -137,3 +165,4 @@ if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_item ("Ancient Tablet", test4, mod_unique.UniqueDeck))))
     tester.run_test (test_ah.Game (Test (test_item ("Cabala of Saboth", test5, mod_unique.UniqueDeck))))
     tester.run_test (test_ah.Game (Test (test_item ("Cultes des Goules", test6, mod_unique.UniqueDeck))))
+    tester.run_test (test_ah.Game (Test (test_item ("Healing Stone", test7, mod_unique.UniqueDeck))))

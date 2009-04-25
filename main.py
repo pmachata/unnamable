@@ -60,11 +60,11 @@ class TUI (arkham.UI):
                 print "%s  horror: %s/%s" \
                     % (prefix,
                        monster.proto ().horror_check ().description (game, investigator),
-                       monster.proto ().horror_damage ().description (game, investigator, monster))
+                       monster.proto ().horror_harm ().description (game, investigator, monster))
                 print "%s  combat: %s/%s" \
                     % (prefix,
                        monster.proto ().combat_check ().description (game, investigator),
-                       monster.proto ().combat_damage ().description (game, investigator, monster))
+                       monster.proto ().combat_harm ().description (game, investigator, monster))
                 print "%s  location: %s" % (prefix, monster.location ().name ())
 
         def dump_location_info (location, level):

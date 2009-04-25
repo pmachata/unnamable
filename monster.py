@@ -26,10 +26,10 @@ class MonsterProto (DeckItem):
     def combat_check (self):
         raise NotImplementedError ()
 
-    def horror_damage (self):
+    def horror_harm (self):
         raise NotImplementedError ()
 
-    def combat_damage (self):
+    def combat_harm (self):
         raise NotImplementedError ()
 
     # Resistances.  See check_hooks.py for definitions.
@@ -42,8 +42,8 @@ class MonsterProto (DeckItem):
 class BasicMonster (MonsterProto):
     def __init__ (self, name,
                   evade_check,
-                  horror_check, horror_damage,
-                  combat_check, combat_damage,
+                  horror_check, horror_harm,
+                  combat_check, combat_harm,
                   **attributes):
 
         res = {}
@@ -59,9 +59,9 @@ class BasicMonster (MonsterProto):
 
         self.m_evade_check = evade_check
         self.m_horror_check = horror_check
-        self.m_horror_damage = horror_damage
+        self.m_horror_harm = horror_harm
         self.m_combat_check = combat_check
-        self.m_combat_damage = combat_damage
+        self.m_combat_harm = combat_harm
 
         self.m_resistances \
             = dict (({"physical": arkham.family_physical,
@@ -79,11 +79,11 @@ class BasicMonster (MonsterProto):
     def combat_check (self):
         return self.m_combat_check
 
-    def horror_damage (self):
-        return self.m_horror_damage
+    def horror_harm (self):
+        return self.m_horror_harm
 
-    def combat_damage (self):
-        return self.m_combat_damage
+    def combat_harm (self):
+        return self.m_combat_harm
 
     def resistances (self):
         return self.m_resistances

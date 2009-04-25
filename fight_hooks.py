@@ -43,7 +43,7 @@ horror_check_hook = fun.Function (name="horror_check_hook", trace=trace, *fight_
 normal_horror_check_hook = fun.Function (name="normal_horror_check_hook", trace=trace, *fight_args)
 horror_check_pass_hook = fun.Function (name="horror_check_pass_hook", trace=trace, *fight_args)
 horror_check_fail_hook = fun.Function (name="horror_check_fail_hook", trace=trace, *fight_args)
-deal_horror_damage_hook = fun.Function (name="deal_horror_damage_hook", trace=trace, *fight_args)
+cause_horror_harm_hook = fun.Function (name="cause_horror_harm_hook", trace=trace, *fight_args)
 combat_loop_hook = fun.Function (name="combat_loop_hook", trace=trace, *fight_args)
 combat_check_hook = fun.Function (name="combat_check_hook", trace=trace, *fight_args)
 normal_combat_check_hook = fun.Function (name="normal_combat_check_hook", trace=trace, *fight_args)
@@ -51,7 +51,7 @@ combat_check_pass_hook = fun.Function (name="combat_check_pass_hook", trace=trac
 normal_combat_check_pass_hook = fun.Function (name="normal_combat_check_pass_hook", trace=trace, *fight_args)
 combat_check_fail_hook = fun.Function (name="combat_check_fail_hook", trace=trace, *fight_args)
 normal_combat_check_fail_hook = fun.Function (name="normal_combat_check_fail_hook", trace=trace, *fight_args)
-deal_combat_damage_hook = fun.Function (name="deal_combat_damage_hook", trace=trace, *fight_args)
+cause_combat_harm_hook = fun.Function (name="cause_combat_harm_hook", trace=trace, *fight_args)
 
 # Evade check hooks.
 evade_check_hook = fun.Function (name="evade_check_hook", trace=trace, *fight_args)
@@ -97,11 +97,11 @@ def do (combat, investigator, monster):
 
 @horror_check_fail_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
-    deal_horror_damage_hook (combat, investigator, monster)
+    cause_horror_harm_hook (combat, investigator, monster)
 
-@deal_horror_damage_hook.match (fun.any, fun.any, fun.any)
+@cause_horror_harm_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
-    monster.proto ().horror_damage ().deal (combat.game, investigator, monster)
+    monster.proto ().horror_harm ().cause (combat.game, investigator, monster)
 
 @combat_loop_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
@@ -148,11 +148,11 @@ def do (combat, investigator, monster):
 
 @normal_combat_check_fail_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
-    deal_combat_damage_hook (combat, investigator, monster)
+    cause_combat_harm_hook (combat, investigator, monster)
 
-@deal_combat_damage_hook.match (fun.any, fun.any, fun.any)
+@cause_combat_harm_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
-    monster.proto ().combat_damage ().deal (combat.game, investigator, monster)
+    monster.proto ().combat_harm ().cause (combat.game, investigator, monster)
 
 @combat_won_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
@@ -197,7 +197,7 @@ def do (combat, investigator, monster):
 
 @normal_fail_evade_check_hook.match  (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
-    deal_combat_damage_hook (combat, investigator, monster)
+    cause_combat_harm_hook (combat, investigator, monster)
     # Don't raise ContinueCombat, that should only be done if we want
     # to continue with combat check hook.  This should be done
     # externally in a (transitive) caller of this hook.
