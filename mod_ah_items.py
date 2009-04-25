@@ -5,16 +5,31 @@ import fun
 def build (game, module):
 
     def plain_item (name, price, hands, bonuses, **attributes):
+        def pop_attrib (attr, default):
+            if attr not in attributes:
+                return default
+            ret = attributes[attr]
+            del attributes[attr]
+            return ret
+        after_use = pop_attrib ("after_use", None)
+
         class PlainItem (arkham.InvestigatorItem):
             def __init__ (self):
                 arkham.InvestigatorItem.__init__ (self, name, price, hands, **attributes)
 
-        for key, value in bonuses.iteritems ():
+        for check_base, bonus in bonuses.iteritems ():
             @arkham.bonus_hook.match \
                 (fun.any, fun.any, fun.any,
-                 arkham.match_proto (PlainItem), fun.val == key)
-            def do (game, investigator, subject, item, skill_name):
-                return value
+                 arkham.match_proto (PlainItem), fun.val == check_base)
+            def do (game, investigator, subject, item, check_base):
+                return bonus
+
+            if after_use:
+                @arkham.item_after_use_hook.match \
+                    (fun.any, fun.any, fun.any,
+                     arkham.match_proto (PlainItem), fun.val == check_base)
+                def do (game, investigator, subject, item, check_base):
+                    return after_use (game, investigator, item)
 
         return PlainItem ()
 
@@ -76,7 +91,7 @@ def build (game, module):
         (fun.any, fun.any, fun.any, arkham.match_proto (Derringer18),
          fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
-        return 2
+        return arkham.Bonus (2, arkham.family_physical)
 
 
     class Axe (arkham.InvestigatorItem):
@@ -89,9 +104,9 @@ def build (game, module):
     def do (game, investigator, subject, item, skill_name):
         # Do we have one extra hand capable of holding this axe?
         if investigator.find_wield (game, item, 1):
-            return 3
+            return arkham.Bonus (3, arkham.family_physical)
         else:
-            return 2
+            return arkham.Bonus (2, arkham.family_physical)
 
 
     class Bullwhip (arkham.InvestigatorItem):
@@ -102,7 +117,7 @@ def build (game, module):
         (fun.any, fun.any, fun.any, arkham.match_proto (Bullwhip),
          fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
-        return 1
+        return arkham.Bonus (1, arkham.family_physical)
 
     @arkham.check_correction_actions_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Bullwhip),
@@ -126,13 +141,13 @@ def build (game, module):
          arkham.match_proto (Cross),
          fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
-        return 3
+        return arkham.Bonus (3, arkham.family_magical)
 
     @arkham.bonus_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Cross),
          fun.val == arkham.checkbase_horror)
     def do (game, investigator, subject, item, skill_name):
-        return 1
+        return arkham.Bonus (1, arkham.family_magical)
 
 
     class Dynamite (arkham.InvestigatorItem):
@@ -144,13 +159,13 @@ def build (game, module):
         (fun.any, fun.any, fun.any, arkham.match_proto (Dynamite),
          fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
-        return 8
+        return arkham.Bonus (8, arkham.family_physical)
 
     @arkham.item_after_use_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Dynamite),
          fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
-        investigator.discard_item (item)
+        return arkham.GameplayAction_Discard (item)
 
 
     class Food (arkham.InvestigatorItem):
@@ -229,7 +244,7 @@ def build (game, module):
         (fun.any, fun.any, fun.any, arkham.match_proto (Shotgun),
          fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
-        return 4
+        return arkham.Bonus (4, arkham.family_physical)
 
     @arkham.dice_roll_successes_bonus_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Shotgun),
@@ -624,5 +639,17 @@ def build (game, module):
                                     (game, owner, item,
                                      arkham.HarmSanity (2))]))),
             (1, ObsidianStatue ()),
+            (1, plain_item ("Pallid Mask", 4, 0,
+                            {arkham.checkbase_evade:
+                                 arkham.Bonus (2, arkham.family_indifferent)})),
+            (1, plain_item ("Powder of Ibn-Ghazi", 6, 2,
+                            {arkham.checkbase_combat:
+                                 arkham.Bonus (9, arkham.family_magical)},
+                            after_use = lambda game, owner, item: \
+                                arkham.GameplayAction_Multiple ([
+                                    arkham.GameplayAction_CauseHarm \
+                                        (game, owner, item,
+                                         arkham.HarmSanity (1)),
+                                    arkham.GameplayAction_Discard (item)]))),
         ]:
         module.m_unique_deck.register (item_proto, count)

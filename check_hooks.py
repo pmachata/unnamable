@@ -281,7 +281,8 @@ total_dice_roll_successes_mod_hook = fun.Function \
 
 item_after_use_hook = fun.Function \
     (Game, Investigator, Subject, Item, CheckBase,
-     name="item_after_use_hook", trace=check_trace)
+     name="item_after_use_hook", trace=check_trace,
+     returns=arkham.GameplayAction)
 
 check_correction_actions_hook = fun.Function \
     (Game, Investigator, Subject, Item, CheckBase, Roll,
@@ -350,8 +351,9 @@ def do (game, investigator, subject, check_base, modifier, difficulty):
                 (game, investigator, subject, check_base, successes)
 
             for item in investigator.wields_items ():
-                item_after_use_hook (game, investigator,
-                                     subject, item, check_base)
+                item_after_use_hook (game, investigator, subject,
+                                     item, check_base) \
+                    .perform (game, investigator)
 
             ret = successes >= difficulty
 
@@ -463,7 +465,7 @@ def do (game, investigator, subject, check_base, successes):
 
 @item_after_use_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, item, check_base):
-    pass
+    return arkham.GameplayAction ("")
 
 @check_correction_actions_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, item, check_base, roll):
