@@ -150,24 +150,6 @@ def build (game, module):
         return arkham.Bonus (1, arkham.family_magical)
 
 
-    class Dynamite (arkham.InvestigatorItem):
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ (self, "Dynamite", 4, 2)
-            """Bonus: +8 Combat check (Discard after use)"""
-
-    @arkham.bonus_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (Dynamite),
-         fun.val == arkham.checkbase_combat)
-    def do (game, investigator, subject, item, skill_name):
-        return arkham.Bonus (8, arkham.family_physical)
-
-    @arkham.item_after_use_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (Dynamite),
-         fun.val == arkham.checkbase_combat)
-    def do (game, investigator, subject, item, skill_name):
-        return arkham.GameplayAction_Discard (item)
-
-
     class Food (arkham.InvestigatorItem):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, "Food", 1, 0)
@@ -291,7 +273,11 @@ def build (game, module):
             (1, plain_item ("Dark Cloak", 2, 0,
                             {arkham.checkbase_evade:
                                  arkham.Bonus (1, arkham.family_indifferent)})),
-            (1, Dynamite ()),
+            (1, plain_item ("Dynamite", 4, 2,
+                            {arkham.checkbase_combat:
+                                 arkham.Bonus (8, arkham.family_physical)},
+                            after_use = lambda game, owner, item: \
+                                arkham.GameplayAction_Discard (item))),
             (1, Food ()),
             (1, plain_item ("Knife", 2, 1,
                             {arkham.checkbase_combat:
