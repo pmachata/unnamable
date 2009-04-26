@@ -16,5 +16,8 @@ def discover_modules (idx):
     import mod_unique
     idx.add_module (mod_unique.ModuleProto ())
 
+    import mod_spell
+    idx.add_module (mod_spell.ModuleProto ())
+
     import mod_terror
     idx.add_module (mod_terror.ModuleProto ())

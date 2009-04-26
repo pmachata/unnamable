@@ -57,8 +57,8 @@ class ModuleProto (arkham.ModuleProto):
 
     def consistent (self, mod_index):
         decks = dict (("mod_" + id, mod_index.request (id))
-                      for id in ["ancient", "monster",
-                                 "terror", "common", "unique"])
+                      for id in ["ancient", "monster", "terror",
+                                 "common", "unique", "spell"])
         success = None not in decks.values ()
 
         if success:
@@ -72,6 +72,7 @@ class ModuleProto (arkham.ModuleProto):
         self.m_monster_cup = game.deck (self.mod_monster.MonsterCup)
         self.m_common_deck = game.deck (self.mod_common.CommonDeck)
         self.m_unique_deck = game.deck (self.mod_unique.UniqueDeck)
+        self.m_spell_deck = game.deck (self.mod_spell.SpellDeck)
 
         class TerrorTrack_AHEvents (arkham.TrackEvent):
             def event (self, game, owner, level):

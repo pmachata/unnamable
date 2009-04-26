@@ -703,3 +703,50 @@ def build (game, module):
             (1, WardingStatue ()),
         ]:
         module.m_unique_deck.register (item_proto, count)
+
+    # -------------------------------------------------------------------------
+
+    class DreadCurseOfAzathoth (module.mod_spell.SpellItem):
+        class Instance (module.mod_spell.SpellInst):
+            def __init__ (self, parent):
+                module.mod_spell.SpellInst.__init__ \
+                    (self, parent.name (), 0, 2)
+
+        def __init__ (self):
+            module.mod_spell.SpellItem.__init__ \
+                (self, "Dread Curse of Azathoth", 0, 0)
+
+        def combat_turn (self, combat, owner, monster, item):
+            if item.exhausted ():
+                return []
+
+            inst = arkham.Item (DreadCurseOfAzathoth.Instance (self))
+            if not owner.find_wield (combat.game, inst, inst.hands ()):
+                return []
+
+            return [arkham.GameplayAction_Multiple \
+                        ([arkham.GameplayAction_Exhaust (item),
+                          arkham.GameplayAction_CauseHarm \
+                              (game, owner, item, arkham.HarmSanity (2)),
+                          arkham.GameplayAction_Conditional \
+                              (game, owner, item,
+                               arkham.SkillCheck (arkham.checkbase_lore, -2),
+                               arkham.GameplayAction_Multiple \
+                                   ([arkham.GameplayAction_WieldItem \
+                                         (inst, True),
+                                     arkham.GameplayAction_WhenCombatEnds \
+                                         (combat,
+                                          arkham.GameplayAction_Discard (inst))
+                                     ]))])]
+
+    @arkham.bonus_hook.match \
+        (fun.any, fun.any, fun.any,
+         arkham.match_proto (DreadCurseOfAzathoth.Instance),
+         fun.val == arkham.checkbase_combat)
+    def do (game, investigator, subject, item, check_base):
+        return arkham.Bonus (9, arkham.family_magical)
+
+    for count, item_proto in [
+            (1, DreadCurseOfAzathoth ()),
+        ]:
+        module.m_spell_deck.register (item_proto, count)

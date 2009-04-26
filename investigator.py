@@ -67,6 +67,7 @@ class Investigator (ObjectWithLocation, GameplayObject):
         self.m_hands = set ()
 
         self.m_items = []
+        self.m_temporary_items = []
         self.m_active_items = {} # item->[hands]
 
     def name (self):
@@ -136,13 +137,21 @@ class Investigator (ObjectWithLocation, GameplayObject):
     def take_item (self, game, item):
         self.m_items.append (item)
 
+    def take_temporary_item (self, game, item):
+        self.m_temporary_items.append (item)
+
     def discard_item (self, item):
         # xxx ugly linear lookup
         if item in self.m_active_items:
             self.release_item (item)
-        assert item in self.m_items
-        del self.m_items[self.m_items.index (item)]
-        item.discard ()
+
+        for cont in [self.m_temporary_items, self.m_items]:
+            if item in cont:
+                del cont[cont.index (item)]
+                item.discard ()
+                return
+
+        assert False, "Item not found!"
 
     def find_wield (self, game, item, hands):
         wants_wield = (list ((item, item.hands ())
@@ -190,6 +199,7 @@ class Investigator (ObjectWithLocation, GameplayObject):
         return found_wield
 
     def wield_item (self, game, item):
+        assert item in self.m_items or item in self.m_temporary_items
         found_wield = self.find_wield (game, item, item.hands ())
         if found_wield != None:
             self.m_active_items = found_wield

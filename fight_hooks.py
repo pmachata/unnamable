@@ -25,16 +25,28 @@ class EndCauseHarm (Exception):
     pass
 
 # Combat context.  Hooks can put there arbitrary info, and it will get
-# preserved throughout the whole combat.
+# preserved throughout the whole combat.  On-combat-end actions can be
+# registered here, and they are called when the combat ends.
 class Combat:
     def __init__ (self, game):
         self.game = game
+        self.m_ended = False
+        self.m_on_end = []
 
     def check_ends (self, investigator, monster):
         if investigator.location () != monster.location ():
             raise EndCombat (None)
         if not investigator.alive ():
             raise EndCombat (False)
+
+    def on_end (self, cb):
+        self.m_on_end.append (cb)
+
+    def end (self):
+        assert self.m_ended == False
+        self.m_ended = True
+        for cb in self.m_on_end:
+            cb ()
 
 # Combat hooks.  Monsters or investigators override these to achieve
 # fine-grained customization of combat process.

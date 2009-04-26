@@ -34,7 +34,9 @@ def gen_test (item_fam, *roll, **resist):
             def do (game, investigator, subject, item, check_base):
                 return arkham.Bonus (2, item_fam)
 
-            assert self.inv.wield_item (game, arkham.Item (MyItem ()))
+            item = arkham.Item (MyItem ())
+            self.inv.take_item (game, item)
+            assert self.inv.wield_item (game, item)
 
         def actions (self):
             yield fun.matchclass (arkham.GameplayAction_Stay)

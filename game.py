@@ -402,7 +402,6 @@ class Game:
 
     def fight (self, investigator, monster):
         combat = arkham.Combat (self)
-        print "game.fight"
         try:
             try:
                 while True:
@@ -425,6 +424,8 @@ class Game:
                 arkham.combat_won_hook (combat, investigator, monster)
             else:
                 arkham.combat_lost_hook (combat, investigator, monster)
+
+        combat.end ()
 
     def move_monster (self, monster, location):
         if location not in self.m_loc_monsters:

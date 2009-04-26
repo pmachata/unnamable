@@ -78,7 +78,8 @@ class DeckItem (ItemProto):
         self.m_parental_deck = None
 
     def discard (self):
-        self.m_parental_deck.give_back (self)
+        if self.m_parental_deck:
+            self.m_parental_deck.give_back (self)
 
     def set_parental_deck (self, parental_deck):
         assert self.m_parental_deck == None

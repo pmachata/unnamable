@@ -307,13 +307,35 @@ class GameplayAction_EndCauseHarmLoop (GameplayAction):
         self.m_action.perform (game, investigator)
         raise arkham.EndCauseHarm ()
 
+class GameplayAction_WhenCombatEnds (GameplayAction):
+    def __init__ (self, combat, action):
+        GameplayAction.__init__ (self, "when combat ends, %s" % action.name ())
+        self.m_action = action
+        self.m_combat = combat
+
+    def perform (self, game, investigator):
+        self.m_combat.on_end (lambda: self.m_action.perform (game, investigator))
+
+    def bound_location (self):
+        return self.m_action.bound_location ()
+
+    def bound_monster (self):
+        return self.m_action.bound_monster ()
+
+    def bound_item (self):
+        return self.m_action.bound_item ()
+
+
 # Item manipulation actions
 
 class GameplayAction_WieldItem (ItemBoundGameplayAction):
-    def __init__ (self, item):
+    def __init__ (self, item, temporary = False):
         ItemBoundGameplayAction.__init__ (self, item, "wield")
+        self.m_temporary = temporary
 
     def perform (self, game, investigator):
+        if self.m_temporary:
+            investigator.take_temporary_item (investigator, self.m_item)
         investigator.wield_item (game, self.m_item)
 
 class GameplayAction_ReleseItem (ItemBoundGameplayAction):

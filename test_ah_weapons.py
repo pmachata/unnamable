@@ -5,6 +5,7 @@ import fun
 import arkham
 import mod_common
 import mod_unique
+import mod_spell
 from test_ah_items import *
 
 def test_weapon (name, actions, deck = mod_common.CommonDeck):
@@ -28,12 +29,15 @@ def test_weapon (name, actions, deck = mod_common.CommonDeck):
 
     return ModuleProto1
 
-def test1 (test, name):
+def fight_and_horror_check (*roll):
     yield fun.matchclass (arkham.GameplayAction_Stay)
     yield fun.matchclass (arkham.GameplayAction_DealWithMonster)
     yield fun.matchclass (arkham.GameplayAction_Fight)
     yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
-    yield 5; yield 5 # pass horror check
+    for i in roll: yield i
+
+def test1 (test, name):
+    for y in fight_and_horror_check (5, 5): yield y
     yield fun.matchclass (arkham.GameplayAction_Fight)
     yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
     for i in xrange (13): yield 1 # fail combat hook
@@ -47,11 +51,7 @@ def test1 (test, name):
     raise tester.EndTest (True)
 
 def test2 (test, name):
-    yield fun.matchclass (arkham.GameplayAction_Stay)
-    yield fun.matchclass (arkham.GameplayAction_DealWithMonster)
-    yield fun.matchclass (arkham.GameplayAction_Fight)
-    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
-    yield 5; yield 5 # pass horror check
+    for y in fight_and_horror_check (5, 5): yield y
     yield fun.matchclass (arkham.GameplayAction_Fight)
     yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
     for i in xrange (14): yield 1 # fail combat hook
@@ -74,11 +74,7 @@ def test3 (test, name):
     raise tester.EndTest (True)
 
 def test4 (test, name):
-    yield fun.matchclass (arkham.GameplayAction_Stay)
-    yield fun.matchclass (arkham.GameplayAction_DealWithMonster)
-    yield fun.matchclass (arkham.GameplayAction_Fight)
-    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
-    yield 5; yield 5 # pass horror check
+    for y in fight_and_horror_check (5, 5): yield y
     yield fun.matchclass (arkham.GameplayAction_Fight)
     yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
     for i in xrange (5): yield 1 # fail combat hook
@@ -89,8 +85,28 @@ def test4 (test, name):
     yield fun.matchclass (arkham.GameplayAction_Fight)
     raise tester.EndTest (True)
 
+def test5 (test, name):
+    for y in fight_and_horror_check (5, 5): yield y
+    yield fun.matchclass (arkham.GameplayAction_Multiple) # cast spell
+    yield fun.matchclass (arkham.GameplayAction_IncurDamage) # spell damage
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook) # lore check
+    yield 5 # pass
+    yield fun.matchclass (arkham.GameplayAction_Fight)
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook) # combat check
+    for i in xrange (14): yield 1 # fail combat hook
+    yield fun.matchclass (arkham.GameplayAction_FailRoll)
+    yield fun.matchclass (arkham.GameplayAction_EndCauseHarmLoop)
+    yield fun.matchclass (arkham.GameplayAction_IncurDamage) # monster hit
+    yield fun.matchclass (arkham.GameplayAction_Fight)
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook) # combat check
+    for i in xrange (14): yield 5 # check we still have the bonus
+    yield fun.matchclass (arkham.GameplayAction_Stay)
+    assert test.inv.m_temporary_items == [] # check the spell didn't get stuck
+    raise tester.EndTest (True)
+
 if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_weapon ("Dynamite", test1))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Powder of Ibn-Ghazi", test2, mod_unique.UniqueDeck))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Silver Key", test3, mod_unique.UniqueDeck))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Warding Statue", test4, mod_unique.UniqueDeck))))
+    tester.run_test (test_ah.Game (Test (test_weapon ("Dread Curse of Azathoth", test5, mod_spell.SpellDeck))))
