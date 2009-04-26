@@ -38,6 +38,7 @@ def test1 (test, name):
     yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
     for i in xrange (13): yield 1 # fail combat hook
     yield fun.matchclass (arkham.GameplayAction_FailRoll)
+    yield fun.matchclass (arkham.GameplayAction_EndCauseHarmLoop)
     yield fun.matchclass (arkham.GameplayAction_IncurDamage)
     yield fun.matchclass (arkham.GameplayAction_Fight)
     yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
@@ -56,6 +57,7 @@ def test2 (test, name):
     for i in xrange (14): yield 1 # fail combat hook
     yield fun.matchclass (arkham.GameplayAction_IncurDamage) # after-use damage
     yield fun.matchclass (arkham.GameplayAction_FailRoll)
+    yield fun.matchclass (arkham.GameplayAction_EndCauseHarmLoop)
     yield fun.matchclass (arkham.GameplayAction_IncurDamage) # monster hit
     yield fun.matchclass (arkham.GameplayAction_Fight)
     yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
@@ -71,7 +73,24 @@ def test3 (test, name):
     yield fun.matchclass (arkham.GameplayAction_Stay)
     raise tester.EndTest (True)
 
+def test4 (test, name):
+    yield fun.matchclass (arkham.GameplayAction_Stay)
+    yield fun.matchclass (arkham.GameplayAction_DealWithMonster)
+    yield fun.matchclass (arkham.GameplayAction_Fight)
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
+    yield 5; yield 5 # pass horror check
+    yield fun.matchclass (arkham.GameplayAction_Fight)
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
+    for i in xrange (5): yield 1 # fail combat hook
+    yield fun.matchclass (arkham.GameplayAction_FailRoll)
+    stamina = test.inv.health (arkham.health_stamina).cur ()
+    yield fun.matchclass (arkham.GameplayAction_Multiple) # cancel stamina, discard
+    assert stamina == test.inv.health (arkham.health_stamina).cur ()
+    yield fun.matchclass (arkham.GameplayAction_Fight)
+    raise tester.EndTest (True)
+
 if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_weapon ("Dynamite", test1))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Powder of Ibn-Ghazi", test2, mod_unique.UniqueDeck))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Silver Key", test3, mod_unique.UniqueDeck))))
+    tester.run_test (test_ah.Game (Test (test_weapon ("Warding Statue", test4, mod_unique.UniqueDeck))))

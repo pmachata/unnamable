@@ -254,6 +254,9 @@ class Investigator (ObjectWithLocation, GameplayObject):
     def perform_check_actions (self, game, subject, check_base):
         return []
 
+    def cause_combat_harm_actions (self, combat, subject, harm):
+        return []
+
     # Combat phases.
     def deal_with (self, game):
         return sum ((item.deal_with (game, self)

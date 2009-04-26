@@ -1,8 +1,9 @@
 import fun
 import conf
 from investigator import Investigator
-from game import Monster
+from game import Monster, Item
 from obj import cond_bind_attrib, match_flag
+from damage import Harm
 import arkham
 
 class EndCombat (Exception):
@@ -18,6 +19,9 @@ class ContinueCombat (Exception):
     pass
 
 class SucceedCombat (Exception):
+    pass
+
+class EndCauseHarm (Exception):
     pass
 
 # Combat context.  Hooks can put there arbitrary info, and it will get
@@ -52,6 +56,9 @@ normal_combat_check_pass_hook = fun.Function (name="normal_combat_check_pass_hoo
 combat_check_fail_hook = fun.Function (name="combat_check_fail_hook", trace=trace, *fight_args)
 normal_combat_check_fail_hook = fun.Function (name="normal_combat_check_fail_hook", trace=trace, *fight_args)
 cause_combat_harm_hook = fun.Function (name="cause_combat_harm_hook", trace=trace, *fight_args)
+cause_combat_harm_actions_hook = fun.Function \
+    (Combat, Investigator, Monster, Item, Harm,
+     name="cause_combat_harm_actions_hook", trace=trace)
 
 # Evade check hooks.
 evade_check_hook = fun.Function (name="evade_check_hook", trace=trace, *fight_args)
@@ -152,7 +159,32 @@ def do (combat, investigator, monster):
 
 @cause_combat_harm_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):
-    monster.proto ().combat_harm ().cause (combat.game, investigator, monster)
+    harm = monster.proto ().combat_harm ()
+
+    try:
+        while True:
+            if harm.nil (combat.game, investigator, monster):
+                # Either no harm to begin with, or reduced out.
+                break
+
+            actions = sum ((cause_combat_harm_actions_hook \
+                                (combat, investigator, monster, item, harm)
+                            for item in investigator.wields_items ()),
+                           investigator.cause_combat_harm_actions \
+                               (combat, monster, harm))
+            actions.append (arkham.GameplayAction_EndCauseHarmLoop (
+                    arkham.GameplayAction_CauseHarm (combat.game, investigator,
+                                                     monster, harm)))
+            if not combat.game.perform_selected_action (investigator, actions):
+                break
+
+    except EndCauseHarm:
+        pass
+
+@cause_combat_harm_actions_hook.match \
+    (fun.any, fun.any, fun.any, fun.any, fun.any)
+def do (combat, investigator, monster, item, harm):
+    return []
 
 @combat_won_hook.match (fun.any, fun.any, fun.any)
 def do (combat, investigator, monster):

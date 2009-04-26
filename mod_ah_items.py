@@ -582,6 +582,27 @@ def build (game, module):
                   arkham.GameplayAction_MarkItem \
                       (item, 3, arkham.GameplayAction_Discard (item))])]
 
+
+    class WardingStatue (arkham.InvestigatorItem):
+        def __init__ (self):
+            arkham.InvestigatorItem.__init__ (self, "Warding Statue", 6, 0)
+
+    @arkham.cause_combat_harm_actions_hook.match \
+        (fun.any, fun.any, fun.any,
+         arkham.match_proto (WardingStatue),
+         fun.and_ (fun.matchclass (arkham.HarmDamage),
+                   lambda harm: \
+                       arkham.health_stamina in harm.damage ().aspects ()))
+    def do (combat, investigator, monster, item, harm):
+        """Any Phase: Discard Warding Statue after failing a Combat
+        check to reduce the monster's combat damage to 0 Stamina.
+        xxx This can also be used to cancel an Ancient One's entire
+        attack for 1 turn."""
+        return [arkham.GameplayAction_Multiple \
+                    ([arkham.GameplayAction_CancelDamage \
+                          (harm.damage (), arkham.health_stamina),
+                      arkham.GameplayAction_Discard (item)])]
+
     for count, item_proto in [
             (1, complex (arkham.InvestigatorItem, "Alien Statue", 5,
                          2, arkham.HarmSanity (1),
@@ -679,5 +700,6 @@ def build (game, module):
                                 arkham.GameplayAction_CauseHarm \
                                     (game, owner, item,
                                      arkham.HarmSanity (1))]))),
+            (1, WardingStatue ()),
         ]:
         module.m_unique_deck.register (item_proto, count)

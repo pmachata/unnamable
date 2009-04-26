@@ -298,6 +298,15 @@ class GameplayAction_DealWithMonster (MonsterBoundGameplayAction):
         game.fight (investigator, self.m_monster)
         print "combat finished"
 
+class GameplayAction_EndCauseHarmLoop (GameplayAction):
+    def __init__ (self, action):
+        GameplayAction.__init__ (self, action.name ())
+        self.m_action = action
+
+    def perform (self, game, investigator):
+        self.m_action.perform (game, investigator)
+        raise arkham.EndCauseHarm ()
+
 # Item manipulation actions
 
 class GameplayAction_WieldItem (ItemBoundGameplayAction):

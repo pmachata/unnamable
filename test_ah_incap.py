@@ -37,6 +37,7 @@ class Test1 (tester.Controller):
             yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
             for roll in 1,1,1: yield roll
             yield fun.matchclass (arkham.GameplayAction_FailRoll)
+            yield fun.matchclass (arkham.GameplayAction_EndCauseHarmLoop)
             yield fun.matchclass (arkham.GameplayAction_IncurDamage)
         yield fun.matchclass (mod_ah.GameplayAction_Incapacitated)
         assert self.inv.location ().attributes ().flag ("hospital")

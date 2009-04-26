@@ -40,6 +40,9 @@ class ImpactHealth:
                 if value == amount]
         del self.m_aspects[key]
 
+    def nil (self):
+        return len (self.m_aspects) == 0
+
 class Damage (ImpactHealth):
     def inflict (self, investigator):
         for aspect, amount in self.m_aspects.iteritems ():
@@ -65,12 +68,18 @@ class Harm:
     def description (self, game, investigator, monster):
         raise NotImplementedError ()
 
+    def nil (self, game, investigator, monster):
+        raise NotImplementedError ()
+
 class HarmNone (Harm):
     def cause (self, game, investigator, monster):
         pass
 
     def description (self, game, investigator, monster):
         return "-"
+
+    def nil (self, game, investigator, monster):
+        return True
 
 class HarmDamage (Harm):
     def __init__ (self, damage):
@@ -79,8 +88,14 @@ class HarmDamage (Harm):
     def description (self, game, investigator, monster):
         return self.m_damage.description ()
 
+    def damage (self):
+        return self.m_damage
+
     def cause (self, game, investigator, monster):
         arkham.damage_hook (game, investigator, monster, self.m_damage)
+
+    def nil (self, game, investigator, monster):
+        return self.m_damage.nil ()
 
 class HarmHealth (HarmDamage):
     def __init__ (self, aspect, amount):
@@ -101,6 +116,9 @@ class HarmDevour (Harm):
     def description (self, game, investigator, monster):
         return "devour"
 
+    def nil (self, game, investigator, monster):
+        return False
+
 class ConditionalHarm (Harm):
     def __init__ (self, predicate, harm_pass, harm_fail = Harm ()):
         self.m_pred = predicate
@@ -118,6 +136,12 @@ class ConditionalHarm (Harm):
             return self.m_pass.description (game, investigator, monster)
         else:
             return self.m_fail.description (game, investigator, monster)
+
+    def nil (self, game, investigator, monster):
+        if self.m_pred (game, investigator, monster):
+            return self.m_pass.nil (game, investigator, monster)
+        else:
+            return self.m_fail.nil (game, investigator, monster)
 
 class SpecialHarm (Harm):
     def description (self, game, investigator, monster):
