@@ -193,6 +193,15 @@ def test10 (test, name):
     yield fun.matchclass (arkham.GameplayAction_Stay)
     raise tester.EndTest (True)
 
+def test11 (test, name):
+    yield fun.and_ (action_bound_item_named (name),
+                    fun.matchclass (arkham.GameplayAction_Multiple))
+    clues = test.inv.clues ()
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
+    yield 5
+    assert test.inv.clues () == clues + 4
+    raise tester.EndTest (True)
+
 if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_item ("Old Journal", test1))))
     tester.run_test (test_ah.Game (Test (test_item ("Ancient Tome", test2))))
@@ -204,3 +213,4 @@ if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_item ("Nameless Cults", test8, mod_unique.UniqueDeck))))
     tester.run_test (test_ah.Game (Test (test_item ("Necronomicon", test9, mod_unique.UniqueDeck))))
     tester.run_test (test_ah.Game (Test (test_item ("Ruby of R'lyeh", test10, mod_unique.UniqueDeck))))
+    tester.run_test (test_ah.Game (Test (test_item ("The King in Yellow", test11, mod_unique.UniqueDeck))))

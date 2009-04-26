@@ -667,5 +667,17 @@ def build (game, module):
                                     arkham.GameplayAction_Discard (item)]))),
             (1, RubyOfRlyeh ()),
             (1, SilverKey ()),
+            (1, plain_item ("Sword of Glory", 8, 2,
+                            {arkham.checkbase_combat:
+                                 arkham.Bonus (6, arkham.family_magical)})),
+            (1, complex (arkham.InvestigatorItem, "The King in Yellow", 2,
+                         2, None,
+                         arkham.SkillCheck (arkham.checkbase_lore, -2),
+                         lambda game, owner, item: \
+                             arkham.GameplayAction_Multiple ([
+                                arkham.GameplayAction_GainClues (4),
+                                arkham.GameplayAction_CauseHarm \
+                                    (game, owner, item,
+                                     arkham.HarmSanity (1))]))),
         ]:
         module.m_unique_deck.register (item_proto, count)
