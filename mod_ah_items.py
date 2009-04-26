@@ -351,7 +351,7 @@ def build (game, module):
             return [
                 arkham.GameplayAction_Multiple \
                     ([arkham.GameplayAction_CauseHarm \
-                          (game, owner, monster, arkham.HarmSanity (2)),
+                          (game, owner, item, arkham.HarmSanity (2)),
                       arkham.GameplayAction_Discard (item),
                       arkham.GameplayAction_SucceedCombatCheck ()
                       ])
@@ -706,6 +706,32 @@ def build (game, module):
 
     # -------------------------------------------------------------------------
 
+    class BindMonster (arkham.InvestigatorItem):
+        def __init__ (self):
+            arkham.InvestigatorItem.__init__ \
+                (self, "Bind Monster", 0, 0)
+
+        def combat_turn (self, combat, owner, monster, item):
+            """Cast and Discard this spell to pass one Combat
+            check. You must roll successes equal to the monster's
+            toughness to cast this spell.
+            xxx This spell doesn't work on Ancient Ones."""
+            cc = monster.proto ().combat_check ()
+            if fun.matchclass (arkham.SkillCheck) (cc):
+                d = cc.difficulty ()
+                return [
+                    arkham.GameplayAction_Multiple \
+                        ([arkham.GameplayAction_CauseHarm \
+                              (combat.game, owner, item, arkham.HarmSanity (2)),
+                          arkham.GameplayAction_Conditional \
+                              (combat.game, owner, item,
+                               arkham.SkillCheck (arkham.checkbase_lore, +4, d),
+                               arkham.GameplayAction_Multiple \
+                                   ([arkham.GameplayAction_Discard (item),
+                                     arkham.GameplayAction_SucceedCombatCheck ()]))
+                          ])]
+
+
     class DreadCurseOfAzathoth (module.mod_spell.SpellItem):
         class Instance (module.mod_spell.SpellInst):
             def __init__ (self, parent):
@@ -727,9 +753,10 @@ def build (game, module):
             return [arkham.GameplayAction_Multiple \
                         ([arkham.GameplayAction_Exhaust (item),
                           arkham.GameplayAction_CauseHarm \
-                              (game, owner, item, arkham.HarmSanity (2)),
+                              (combat.game, owner, item,
+                               arkham.HarmSanity (2)),
                           arkham.GameplayAction_Conditional \
-                              (game, owner, item,
+                              (combat.game, owner, item,
                                arkham.SkillCheck (arkham.checkbase_lore, -2),
                                arkham.GameplayAction_Multiple \
                                    ([arkham.GameplayAction_WieldItem \
@@ -746,7 +773,9 @@ def build (game, module):
     def do (game, investigator, subject, item, check_base):
         return arkham.Bonus (9, arkham.family_magical)
 
+
     for count, item_proto in [
+            (1, BindMonster ()),
             (1, DreadCurseOfAzathoth ()),
         ]:
         module.m_spell_deck.register (item_proto, count)

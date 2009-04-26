@@ -38,6 +38,9 @@ class SkillCheck (Check):
             (game, investigator, subject,
              self.m_check_base, self.m_base_modifier, self.m_difficulty)
 
+    def difficulty (self):
+        return self.m_difficulty
+
     def description (self, game, investigator):
         return "%s(%+d)%s" % (self.m_check_base.name (),
                               self.m_base_modifier,
