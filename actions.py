@@ -235,6 +235,30 @@ class GameplayAction_Heal (GameplayAction):
         self.m_heal.heal (investigator)
 
 
+# Checks
+
+class GameplayAction_NormalCheckHook (GameplayAction):
+    def __init__ (self, game, investigator, subject,
+                  check_base, modifier, difficulty):
+        GameplayAction.__init__ (self, "perform %s check" % check_base.name ())
+        self.m_subject = subject
+        self.m_check_base = check_base
+        self.m_modifier = modifier
+        self.m_difficulty = difficulty
+
+    def perform (self, game, investigator):
+        raise arkham.EndCheck (arkham.normal_perform_check_hook \
+                                   (game, investigator, self.m_subject,
+                                    self.m_check_base, self.m_modifier,
+                                    self.m_difficulty))
+
+class GameplayAction_SucceedCheck (GameplayAction):
+    def __init__ (self, check_base):
+        GameplayAction.__init__ (self, "pass %s check" % check_base.name ())
+
+    def perform (self, game, investigator):
+        raise arkham.EndCheck (True)
+
 # Combat actions
 
 class GameplayAction_Evade (MonsterBoundGameplayAction):
@@ -247,8 +271,7 @@ class GameplayAction_Evade_PreCombat (GameplayAction_Evade):
         GameplayAction_Evade.__init__ (self, *args)
 
     def perform (self, game, investigator):
-        monster = self.m_monster
-        arkham.evade_check_hook (self.m_combat, investigator, monster)
+        arkham.evade_check_hook (self.m_combat, investigator, self.m_monster)
         investigator.lose_movement_points ()
         raise arkham.ContinueCombat () # Proceed with the combat.
 
@@ -257,8 +280,7 @@ class GameplayAction_Evade_Combat (GameplayAction_Evade):
         GameplayAction_Evade.__init__ (self, *args)
 
     def perform (self, game, investigator):
-        monster = self.m_monster
-        arkham.evade_check_hook (self.m_combat, investigator, monster)
+        arkham.evade_check_hook (self.m_combat, investigator, self.m_monster)
 
 class GameplayAction_Fight (MonsterBoundGameplayAction):
     def __init__ (self, monster):
@@ -387,6 +409,7 @@ class GameplayAction_FailRoll (GameplayAction):
 class GameplayAction_SucceedCombatCheck (GameplayAction):
     """Special action tightly bound into combat loop causes immediate
     success in enclosing combat check."""
+    # xxx perhaps can be replaced with simple GameplayAction_SucceedCheck
     def __init__ (self):
         GameplayAction.__init__ (self, "automatically succeed")
 

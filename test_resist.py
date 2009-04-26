@@ -40,8 +40,10 @@ def gen_test (item_fam, *roll, **resist):
             yield fun.matchclass (arkham.GameplayAction_Stay)
             yield fun.matchclass (arkham.GameplayAction_DealWithMonster)
             yield fun.matchclass (arkham.GameplayAction_Fight)
+            yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
             yield 5 # pass horror check
             yield fun.matchclass (arkham.GameplayAction_Fight)
+            yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
             for die in roll: yield die
             yield fun.matchclass (arkham.GameplayAction_Stay)
             raise tester.EndTest (True)

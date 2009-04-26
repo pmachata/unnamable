@@ -554,6 +554,34 @@ def build (game, module):
         else:
             return []
 
+
+    class RubyOfRlyeh (arkham.InvestigatorItem):
+        def __init__ (self):
+            arkham.InvestigatorItem.__init__ (self, "Ruby of R'lyeh", 8, 0)
+
+        def movement_points_bonus (self, game, owner, item):
+            return 3
+
+
+    class SilverKey (arkham.InvestigatorItem):
+        def __init__ (self):
+            arkham.InvestigatorItem.__init__ (self, "Silver Key", 4, 0)
+
+    @arkham.perform_check_actions_hook.match \
+        (fun.any, fun.any, fun.any, arkham.match_proto (SilverKey),
+         fun.val == arkham.checkbase_evade, fun.any, fun.any)
+    def do (game, investigator, subject, item,
+            check_base, modifier, difficulty):
+        """Any Phase: Put 1 Stamina token from the bank on Silver
+        Key before making an Evade check to automatically pass
+        it. Discard Silver Key after using it if there are 3
+        Stamina tokens on it. """
+
+        return [arkham.GameplayAction_Multiple \
+                ([arkham.GameplayAction_SucceedCheck (check_base),
+                  arkham.GameplayAction_MarkItem \
+                      (item, 3, arkham.GameplayAction_Discard (item))])]
+
     for count, item_proto in [
             (1, complex (arkham.InvestigatorItem, "Alien Statue", 5,
                          2, arkham.HarmSanity (1),
@@ -637,5 +665,7 @@ def build (game, module):
                                         (game, owner, item,
                                          arkham.HarmSanity (1)),
                                     arkham.GameplayAction_Discard (item)]))),
+            (1, RubyOfRlyeh ()),
+            (1, SilverKey ()),
         ]:
         module.m_unique_deck.register (item_proto, count)

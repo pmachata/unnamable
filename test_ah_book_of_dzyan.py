@@ -10,11 +10,13 @@ from test_ah_items import *
 def test1 (test, name):
     yield fun.and_ (action_bound_item_named (name),
                     fun.matchclass (arkham.GameplayAction_Multiple))
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
     for die in 5, 5: yield die
     yield fun.matchclass (arkham.GameplayAction_IncurDamage)
     yield fun.matchclass (arkham.GameplayAction_Stay)
     yield fun.and_ (action_bound_item_named (name),
                     fun.matchclass (arkham.GameplayAction_Multiple))
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
     for die in 5, 5: yield die
     yield fun.matchclass (arkham.GameplayAction_IncurDamage)
     yield fun.matchclass (arkham.GameplayAction_Stay)

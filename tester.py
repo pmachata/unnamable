@@ -19,6 +19,8 @@ class TestUI (arkham.UI):
     def select_action (self, game, investigator, actions):
         print "SELECT_ACTION\n" + "\n".join (" " + action.name () for action in actions)
         selector = self.m_controller.next ()
+        if not callable (selector):
+            self.m_controller.throw (AssertionError ("need callable selector"))
         actions = [action for action in actions if selector (action)]
         if len (actions) != 1:
             self.m_controller.throw (AssertionError ("need one action, got %d"

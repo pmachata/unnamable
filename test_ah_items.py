@@ -67,6 +67,7 @@ def test1 (test, name):
     yield fun.and_ (action_bound_item_named (name),
                     fun.matchclass (arkham.GameplayAction_Multiple))
     clues = test.inv.clues ()
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
     for dice in 5,5: yield dice
     assert test.inv.clues () == clues + 3
     raise tester.EndTest (True)
@@ -75,6 +76,7 @@ def test2 (test, name):
     yield fun.and_ (action_bound_item_named (name),
                     fun.matchclass (arkham.GameplayAction_Multiple))
     items1 = set (item.proto () for item in test.inv.m_items)
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
     for dice in 5,5: yield dice
     items2 = set (item.proto () for item in test.inv.m_items)
     discard_gain_new (items1, items2)
@@ -87,6 +89,7 @@ def test3 (test, name):
     sanity = test.inv.health (arkham.health_sanity).cur ()
     yield fun.matchclass (arkham.GameplayAction_IncurDamage)
     assert test.inv.health (arkham.health_sanity).cur () == sanity - 1
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
     yield 1 # failure
     sanity = test.inv.health (arkham.health_sanity).cur ()
     yield fun.matchclass (arkham.GameplayAction_IncurDamage)
@@ -100,6 +103,7 @@ def test3 (test, name):
     sanity = test.inv.health (arkham.health_sanity).cur ()
     yield fun.matchclass (arkham.GameplayAction_IncurDamage)
     assert test.inv.health (arkham.health_sanity).cur () == sanity - 1
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
     yield 5 # success
     clues = test.inv.clues ()
     yield fun.matchclass (arkham.GameplayAction_GainClues)
@@ -111,8 +115,10 @@ def test4 (test, name):
     yield fun.and_ (action_bound_item_named (name),
                     fun.matchclass (arkham.GameplayAction_Multiple))
     clues = test.inv.clues ()
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
     yield 1 # failure
     assert test.inv.clues () == clues + 3
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
     yield 5 # pass
     items2 = set (item.proto () for item in test.inv.m_items)
     discard_gain_new (items1, items2)
@@ -122,6 +128,7 @@ def test5 (test, name):
     items1 = set (item.proto () for item in test.inv.m_items)
     yield fun.and_ (action_bound_item_named (name),
                     fun.matchclass (arkham.GameplayAction_Multiple))
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
     yield 5
     items2 = set (item.proto () for item in test.inv.m_items)
     discard_gain_new (items1, items2)
@@ -131,6 +138,7 @@ def test6 (test, name):
     items1 = set (item.proto () for item in test.inv.m_items)
     yield fun.and_ (action_bound_item_named (name),
                     fun.matchclass (arkham.GameplayAction_Multiple))
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
     yield 5
     yield fun.matchclass (arkham.GameplayAction_IncurDamage)
     items2 = set (item.proto () for item in test.inv.m_items)
@@ -162,6 +170,7 @@ def test8 (test, name):
     items1 = set (item.proto () for item in test.inv.m_items)
     yield fun.and_ (action_bound_item_named (name),
                     fun.matchclass (arkham.GameplayAction_Multiple))
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
     yield 5; yield 5
     yield fun.matchclass (arkham.GameplayAction_IncurDamage)
     items2 = set (item.proto () for item in test.inv.m_items)
@@ -172,10 +181,16 @@ def test9 (test, name):
     items1 = set (item.proto () for item in test.inv.m_items)
     yield fun.and_ (action_bound_item_named (name),
                     fun.matchclass (arkham.GameplayAction_Multiple))
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
     yield 5
     yield fun.matchclass (arkham.GameplayAction_IncurDamage)
     items2 = set (item.proto () for item in test.inv.m_items)
     discard_gain_new (items1, items2)
+    raise tester.EndTest (True)
+
+def test10 (test, name):
+    assert test.inv.movement_points () == 6
+    yield fun.matchclass (arkham.GameplayAction_Stay)
     raise tester.EndTest (True)
 
 if __name__ == "__main__":
@@ -188,3 +203,4 @@ if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_item ("Healing Stone", test7, mod_unique.UniqueDeck))))
     tester.run_test (test_ah.Game (Test (test_item ("Nameless Cults", test8, mod_unique.UniqueDeck))))
     tester.run_test (test_ah.Game (Test (test_item ("Necronomicon", test9, mod_unique.UniqueDeck))))
+    tester.run_test (test_ah.Game (Test (test_item ("Ruby of R'lyeh", test10, mod_unique.UniqueDeck))))

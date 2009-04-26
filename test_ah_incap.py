@@ -30,9 +30,11 @@ class Test1 (tester.Controller):
         yield fun.matchclass (arkham.GameplayAction_Stay)
         yield fun.matchclass (arkham.GameplayAction_DealWithMonster)
         yield fun.matchclass (arkham.GameplayAction_Fight)
+        yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
         for roll in 5,: yield roll # pass horror check
         for i in 1,2:
             yield fun.matchclass (arkham.GameplayAction_Fight)
+            yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
             for roll in 1,1,1: yield roll
             yield fun.matchclass (arkham.GameplayAction_FailRoll)
             yield fun.matchclass (arkham.GameplayAction_IncurDamage)
@@ -46,6 +48,7 @@ class Test2 (Test1):
         yield fun.matchclass (arkham.GameplayAction_Stay)
         yield fun.matchclass (arkham.GameplayAction_DealWithMonster)
         yield fun.matchclass (arkham.GameplayAction_Fight)
+        yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
         for roll in 1,: yield roll # fail horror check
         yield fun.matchclass (arkham.GameplayAction_FailRoll)
         yield fun.matchclass (arkham.GameplayAction_IncurDamage)

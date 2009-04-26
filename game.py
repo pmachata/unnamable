@@ -127,11 +127,17 @@ class Item (Subject):
         self.m_exhausted = False
         return self.m_proto.upkeep (game, owner, self)
 
+    def movement_points_bonus (self, game, owner):
+        return self.m_proto.movement_points_bonus (game, owner, self)
+
     def movement (self, game, owner):
         return self.m_proto.movement (game, owner, self)
 
     def deal_with (self, game, owner):
         return self.m_proto.deal_with (game, owner, self)
+
+    def pre_combat (self, combat, owner, monster):
+        return self.m_proto.pre_combat (combat, owner, monster, self)
 
     def combat_turn (self, combat, owner, monster):
         return self.m_proto.combat_turn (combat, owner, monster, self)

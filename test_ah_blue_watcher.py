@@ -47,6 +47,7 @@ class ModuleProto2 (ModuleProto1):
         yield fun.matchclass (arkham.GameplayAction_DealWithMonster)
         yield fun.matchclass (arkham.GameplayAction_Fight)
         yield fun.matchclass (arkham.GameplayAction_Fight)
+        yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
         for die in 1, 1, 1, 1, 1: yield die
         trophies = len (test.inv.trophies ())
         yield action_bound_item_named (cls.item_name)

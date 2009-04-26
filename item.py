@@ -15,7 +15,13 @@ class ItemProto (ObjectWithAttributes):
     def upkeep (self, game, owner, item):
         return []
 
+    def movement_points_bonus (self, game, owner, item):
+        return 0
+
     def movement (self, game, owner, item):
+        return []
+
+    def pre_combat (self, combat, owner, monster, item):
         return []
 
     def combat_turn (self, combat, owner, monster, item):

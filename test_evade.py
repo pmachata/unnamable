@@ -24,6 +24,7 @@ class Test1 (tester.Controller):
         yield fun.matchclass (arkham.GameplayAction_Stay)
         yield fun.matchclass (arkham.GameplayAction_DealWithMonster)
         yield fun.matchclass (arkham.GameplayAction_Evade)
+        yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
         for roll in 5,: yield roll
 
 class Game1 (tester.TestGame):
@@ -40,6 +41,7 @@ class Test2 (Test1):
         yield fun.matchclass (arkham.GameplayAction_Stay)
         yield fun.matchclass (arkham.GameplayAction_DealWithMonster)
         yield fun.matchclass (arkham.GameplayAction_Evade)
+        yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
         for roll in 4,: yield roll
         yield fun.matchclass (arkham.GameplayAction_FailRoll)
 

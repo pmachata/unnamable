@@ -5,6 +5,12 @@ from obj import Subject, match_attribute, match_flag
 import conf
 import arkham
 
+class EndCheck (Exception):
+    def __init__ (self, success):
+        self.m_success = success
+    def success (self):
+        return self.m_success
+
 class CheckBase:
     def __init__ (self, name, correctible):
         self.m_name = name
@@ -214,6 +220,14 @@ perform_check_hook = fun.Function \
     (Game, Investigator, Subject, CheckBase, Modifier, Difficulty,
      name="perform_check_hook", trace=check_trace)
 
+normal_perform_check_hook = fun.Function \
+    (Game, Investigator, Subject, CheckBase, Modifier, Difficulty,
+     name="normal_perform_check_hook", trace=check_trace)
+
+perform_check_actions_hook = fun.Function \
+    (Game, Investigator, Subject, Item, CheckBase, Modifier, Difficulty,
+     name="perform_check_actions_hook", trace=check_trace)
+
 base_die_mod_hook = fun.Function \
     (Game, Investigator, Subject, CheckBase, Modifier,
      name="base_die_mod_hook", trace=check_trace)
@@ -318,6 +332,25 @@ def do (game, investigator, subject, check_base, modifier):
 
 @perform_check_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, check_base, modifier, difficulty):
+    try:
+        while True:
+            actions = sum ((perform_check_actions_hook \
+                                (game, investigator, subject, item,
+                                 check_base, modifier, difficulty)
+                            for item in investigator.wields_items ()),
+                           investigator.perform_check_actions \
+                               (game, subject, check_base))
+            actions.append (arkham.GameplayAction_NormalCheckHook \
+                                (game, investigator, subject,
+                                 check_base, modifier, difficulty))
+            if not game.perform_selected_action (investigator, actions):
+                break
+
+    except EndCheck, e:
+        return e.success ()
+
+@normal_perform_check_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)
+def do (game, investigator, subject, check_base, modifier, difficulty):
 
     roll = Roll (game, investigator, subject, check_base, modifier)
     roll.reroll (game, investigator, subject, check_base)
@@ -333,9 +366,9 @@ def do (game, investigator, subject, check_base, modifier, difficulty):
                     (game, investigator, subject, check_base, dice)
 
                 # xxx Note: by having bonus_hook and bonus_mod_hook,
-                # we make it possible for items to override the first
-                # hook, and e.g. monsters override the second.  On the
-                # other hand, this doesn't allow item x item
+                # we make it possible for items to specialize the
+                # first hook, and e.g. monsters specialize the second.
+                # On the other hand, this doesn't allow item x item
                 # influences.  Perhaps should be fixed.
                 for item in investigator.wields_items ():
                     b_successes = dice_roll_successes_bonus_hook \
@@ -383,6 +416,11 @@ def do (game, investigator, subject, check_base, modifier, difficulty):
         pass
 
     return ret
+
+@perform_check_actions_hook.match \
+    (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)
+def do (game, investigator, subject, item, check_base, modifier, difficulty):
+    return []
 
 @base_die_mod_hook.match (fun.any, fun.any, fun.any, fun.any, fun.any)
 def do (game, investigator, subject, check_base, modifier):
