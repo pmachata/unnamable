@@ -72,6 +72,21 @@ class GameplayAction_Many (GameplayAction):
             ret = action.bound_item () or ret
         return ret
 
+class GameplayAction_One (GameplayAction):
+    def __init__ (self, action, name):
+        assert action
+        GameplayAction.__init__ (self, name)
+        self.m_action = action
+
+    def bound_location (self):
+        return self.m_action.bound_location ()
+
+    def bound_monster (self):
+        return self.m_action.bound_monster ()
+
+    def bound_item (self):
+        return self.m_action.bound_item ()
+
 class GameplayAction_Multiple (GameplayAction_Many):
     def initial_name (self, actions):
         return ", ".join (action.name () for action in actions)
@@ -89,24 +104,13 @@ class GameplayAction_Select (GameplayAction_Many):
     def perform (self, game, investigator):
         game.perform_selected_action (investigator, self.m_actions)
 
-class GameplayAction_Repeat (GameplayAction):
+class GameplayAction_Repeat (GameplayAction_One):
     def __init__ (self, count, action):
         assert count > 1
-        assert action
         quantifier = "twice" if count == 2 else ("%d times" % count)
-        GameplayAction.__init__ (self, "%s do %s" % (quantifier,
-                                                     action.name ()))
+        GameplayAction_One.__init__ \
+            (self, action, "%s do %s" % (quantifier, action.name ()))
         self.m_count = count
-        self.m_action = action
-
-    def bound_location (self):
-        return self.m_action.bound_location ()
-
-    def bound_monster (self):
-        return self.m_action.bound_monster ()
-
-    def bound_item (self):
-        return self.m_action.bound_item ()
 
     def perform (self, game, investigator):
         for i in xrange (self.m_count):
@@ -152,6 +156,23 @@ class GameplayAction_Conditional (GameplayAction):
         if ret == None and self.m_fail:
             ret = self.m_fail.bound_item ()
         return ret
+
+class GameplayAction_WithSelectedItem (GameplayAction):
+    def __init__ (self, selector, description, action_ctor):
+        class FakeItem (arkham.ItemProto):
+            def __init__ (self):
+                arkham.ItemProto.__init__ (self, "selected %s" % description)
+        GameplayAction.__init__ \
+            (self, action_ctor (arkham.Item (FakeItem ())).name ())
+        self.m_selector = selector
+        self.m_action_ctor = action_ctor
+
+    def perform (self, game, investigator):
+        actions = [self.m_action_ctor (item)
+                   for item in investigator.wields_items ()
+                   if self.m_selector (item)]
+        assert len (actions) > 0
+        game.perform_selected_action (investigator, actions)
 
 # Movement actions
 
@@ -298,32 +319,33 @@ class GameplayAction_DealWithMonster (MonsterBoundGameplayAction):
         game.fight (investigator, self.m_monster)
         print "combat finished"
 
-class GameplayAction_EndCauseHarmLoop (GameplayAction):
+class GameplayAction_EndCauseHarmLoop (GameplayAction_One):
     def __init__ (self, action):
-        GameplayAction.__init__ (self, action.name ())
-        self.m_action = action
+        GameplayAction_One.__init__ (self, action, action.name ())
 
     def perform (self, game, investigator):
         self.m_action.perform (game, investigator)
         raise arkham.EndCauseHarm ()
 
-class GameplayAction_WhenCombatEnds (GameplayAction):
+class GameplayAction_WhenCombatEnds (GameplayAction_One):
     def __init__ (self, combat, action):
-        GameplayAction.__init__ (self, "when combat ends, %s" % action.name ())
-        self.m_action = action
+        GameplayAction_One.__init__ \
+            (self, action, "when combat ends, %s" % action.name ())
         self.m_combat = combat
 
     def perform (self, game, investigator):
         self.m_combat.on_end (lambda: self.m_action.perform (game, investigator))
 
-    def bound_location (self):
-        return self.m_action.bound_location ()
+class GameplayAction_ForCombat (GameplayAction_One):
+    def __init__ (self, combat, action, cleanup):
+        GameplayAction_One.__init__ \
+            (self, action, "%s until the end of the combat" % action.name ())
+        self.m_combat = combat
+        self.m_cleanup = cleanup
 
-    def bound_monster (self):
-        return self.m_action.bound_monster ()
-
-    def bound_item (self):
-        return self.m_action.bound_item ()
+    def perform (self, game, investigator):
+        self.m_action.perform (game, investigator)
+        self.m_combat.on_end (lambda: self.m_cleanup.perform (game, investigator))
 
 
 # Item manipulation actions
@@ -405,6 +427,30 @@ class GameplayAction_MarkItem (GameplayAction):
         self.m_item.tokens = self._tokens (self.m_item) + 1
         if self.m_item.tokens == self.m_max:
             self.m_when_exhausted.perform (game, investigator)
+
+class GameplayAction_Flag (ItemBoundGameplayAction):
+    def __init__ (self, item, attribute):
+        ItemBoundGameplayAction.__init__ \
+            (self, item, "make %s %s" % (item.name (), attribute))
+        assert not item.attributes ().has (attribute)
+        self.m_item = item
+        self.m_attribute = attribute
+
+    def perform (self, game, investigator):
+        assert not self.m_item.attributes ().has (self.m_attribute)
+        self.m_item.attributes ().set (self.m_attribute, True)
+
+class GameplayAction_Unflag (ItemBoundGameplayAction):
+    def __init__ (self, item, attribute):
+        ItemBoundGameplayAction.__init__ \
+            (self, item, "end %s %s" % (item.name (), attribute))
+        assert not item.attributes ().has (attribute)
+        self.m_item = item
+        self.m_attribute = attribute
+
+    def perform (self, game, investigator):
+        assert self.m_item.attributes ().flag (self.m_attribute)
+        self.m_item.attributes ().set (self.m_attribute, None)
 
 # Roll correction actions
 

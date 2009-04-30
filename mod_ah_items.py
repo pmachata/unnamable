@@ -2,20 +2,22 @@ import arkham
 import checks
 import fun
 
+# XXX All hooks really HAVE to be inside Game.  Otherwise each game
+# instance will include additional overloads without dropping the old
+# ones.
+first = True
+
 def build (game, module):
+    global first
 
     def plain_item (name, price, hands, bonuses, **attributes):
-        def pop_attrib (attr, default):
-            if attr not in attributes:
-                return default
-            ret = attributes[attr]
-            del attributes[attr]
-            return ret
-        after_use = pop_attrib ("after_use", None)
+        after_use = attributes.pop ("after_use", None)
+        extra_classes = tuple (attributes.pop ("extra_classes", ()))
 
         class PlainItem (arkham.InvestigatorItem):
             def __init__ (self):
                 arkham.InvestigatorItem.__init__ (self, name, price, hands, **attributes)
+        PlainItem.__bases__ = PlainItem.__bases__ + extra_classes
 
         for check_base, bonus in bonuses.iteritems ():
             @arkham.bonus_hook.match \
@@ -83,7 +85,7 @@ def build (game, module):
 
     # xxx .18 Derringer cannot be lost or stolen unless you choose to
     # allow it.
-    class Derringer18 (arkham.InvestigatorItem):
+    class Derringer18 (arkham.InvestigatorItem, arkham.Weapon):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, ".18 Derringer", 3, 1)
 
@@ -94,7 +96,7 @@ def build (game, module):
         return arkham.Bonus (2, arkham.family_physical)
 
 
-    class Axe (arkham.InvestigatorItem):
+    class Axe (arkham.InvestigatorItem, arkham.Weapon):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, "Axe", 3, 1)
 
@@ -109,7 +111,7 @@ def build (game, module):
             return arkham.Bonus (2, arkham.family_physical)
 
 
-    class Bullwhip (arkham.InvestigatorItem):
+    class Bullwhip (arkham.InvestigatorItem, arkham.Weapon):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, "Bullwhip", 2, 1)
 
@@ -132,7 +134,7 @@ def build (game, module):
             return []
 
 
-    class Cross (arkham.InvestigatorItem):
+    class Cross (arkham.InvestigatorItem, arkham.Weapon):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, "Cross", 3, 1)
 
@@ -218,7 +220,7 @@ def build (game, module):
         return [arkham.GameplayAction_Discard (item)]
 
 
-    class Shotgun (arkham.InvestigatorItem):
+    class Shotgun (arkham.InvestigatorItem, arkham.Weapon):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, "Shotgun", 6, 2)
 
@@ -254,10 +256,12 @@ def build (game, module):
             (1, Derringer18 ()),
             (1, plain_item (".38 Revolver", 4, 1,
                             {arkham.checkbase_combat:
-                                 arkham.Bonus (3, arkham.family_physical)})),
+                                 arkham.Bonus (3, arkham.family_physical)},
+                            extra_classes = [arkham.Weapon])),
             (1, plain_item (".45 Automatic", 5, 1,
                             {arkham.checkbase_combat:
-                                 arkham.Bonus (4, arkham.family_physical)})),
+                                 arkham.Bonus (4, arkham.family_physical)},
+                            extra_classes = [arkham.Weapon])),
             (1, complex (Tome, "Ancient Tome", 4, 2, None,
                          arkham.SkillCheck (arkham.checkbase_lore, -1),
                          # xxx should be spell deck
@@ -268,7 +272,8 @@ def build (game, module):
             (1, Bullwhip ()),
             (1, plain_item ("Cavalry Saber", 3, 1,
                             {arkham.checkbase_combat:
-                                 arkham.Bonus (2, arkham.family_physical)})),
+                                 arkham.Bonus (2, arkham.family_physical)},
+                            extra_classes = [arkham.Weapon])),
             (1, Cross ()),
             (1, plain_item ("Dark Cloak", 2, 0,
                             {arkham.checkbase_evade:
@@ -277,11 +282,13 @@ def build (game, module):
                             {arkham.checkbase_combat:
                                  arkham.Bonus (8, arkham.family_physical)},
                             after_use = lambda game, owner, item: \
-                                arkham.GameplayAction_Discard (item))),
+                                arkham.GameplayAction_Discard (item),
+                            extra_classes = [arkham.Weapon])),
             (1, Food ()),
             (1, plain_item ("Knife", 2, 1,
                             {arkham.checkbase_combat:
-                                 arkham.Bonus (1, arkham.family_physical)})),
+                                 arkham.Bonus (1, arkham.family_physical)},
+                            extra_classes = [arkham.Weapon])),
             (1, plain_item ("Lantern", 3, 0,
                             {arkham.checkbase_luck:
                                  arkham.Bonus (1, arkham.family_indifferent)})),
@@ -295,11 +302,13 @@ def build (game, module):
             (1, ResearchMaterials ()),
             (1, plain_item ("Rifle", 6, 2,
                             {arkham.checkbase_combat:
-                                 arkham.Bonus (5, arkham.family_physical)})),
+                                 arkham.Bonus (5, arkham.family_physical)},
+                            extra_classes = [arkham.Weapon])),
             (1, Shotgun ()),
             (1, plain_item ("Tommy Gun", 7, 2,
                             {arkham.checkbase_combat:
-                                 arkham.Bonus (6, arkham.family_physical)})),
+                                 arkham.Bonus (6, arkham.family_physical)},
+                            extra_classes = [arkham.Weapon])),
             (1, Whiskey ())
         ]:
         module.m_common_deck.register (item_proto, count)
@@ -512,7 +521,7 @@ def build (game, module):
             return ret
 
 
-    class HolyWater (arkham.InvestigatorItem):
+    class HolyWater (arkham.InvestigatorItem, arkham.Weapon):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, "Holy Water", 4, 2)
             """Bonus: +6 Combat check (Discard after use)"""
@@ -640,17 +649,20 @@ def build (game, module):
                                      arkham.HarmSanity (2))]))),
             (1, plain_item ("Enchanted Blade", 6, 1,
                             {arkham.checkbase_combat:
-                                 arkham.Bonus (4, arkham.family_magical)})),
+                                 arkham.Bonus (4, arkham.family_magical)},
+                            extra_classes = [arkham.Weapon])),
             (1, EnchantedJewelry ()),
             (1, plain_item ("Enchanted Knife", 5, 1,
                             {arkham.checkbase_combat:
-                                 arkham.Bonus (3, arkham.family_magical)})),
+                                 arkham.Bonus (3, arkham.family_magical)},
+                            extra_classes = [arkham.Weapon])),
             (1, FluteOfTheOuterGods ()),
             (1, HealingStone ()),
             (1, HolyWater ()),
             (1, plain_item ("Lamp of Alhazred", 7, 2,
                             {arkham.checkbase_combat:
-                                 arkham.Bonus (5, arkham.family_magical)})),
+                                 arkham.Bonus (5, arkham.family_magical)},
+                            extra_classes = [arkham.Weapon])),
             (1, complex (arkham.InvestigatorItem, "Nameless Cults", 3,
                          1, None,
                          arkham.SkillCheck (arkham.checkbase_lore, -1),
@@ -685,12 +697,14 @@ def build (game, module):
                                     arkham.GameplayAction_CauseHarm \
                                         (game, owner, item,
                                          arkham.HarmSanity (1)),
-                                    arkham.GameplayAction_Discard (item)]))),
+                                    arkham.GameplayAction_Discard (item)]),
+                            extra_classes = [arkham.Weapon])),
             (1, RubyOfRlyeh ()),
             (1, SilverKey ()),
             (1, plain_item ("Sword of Glory", 8, 2,
                             {arkham.checkbase_combat:
-                                 arkham.Bonus (6, arkham.family_magical)})),
+                                 arkham.Bonus (6, arkham.family_magical)},
+                            extra_classes = [arkham.Weapon])),
             (1, complex (arkham.InvestigatorItem, "The King in Yellow", 2,
                          2, None,
                          arkham.SkillCheck (arkham.checkbase_lore, -2),
@@ -758,13 +772,10 @@ def build (game, module):
                           arkham.GameplayAction_Conditional \
                               (combat.game, owner, item,
                                arkham.SkillCheck (arkham.checkbase_lore, -2),
-                               arkham.GameplayAction_Multiple \
-                                   ([arkham.GameplayAction_WieldItem \
-                                         (inst, True),
-                                     arkham.GameplayAction_WhenCombatEnds \
-                                         (combat,
-                                          arkham.GameplayAction_Discard (inst))
-                                     ]))])]
+                               arkham.GameplayAction_ForCombat \
+                                   (combat,
+                                    arkham.GameplayAction_WieldItem (inst, True),
+                                    arkham.GameplayAction_Discard (inst)))])]
 
     @arkham.bonus_hook.match \
         (fun.any, fun.any, fun.any,
@@ -774,8 +785,56 @@ def build (game, module):
         return arkham.Bonus (9, arkham.family_magical)
 
 
+    class EnchantWeapon (module.mod_spell.SpellItem):
+        def __init__ (self):
+            module.mod_spell.SpellItem.__init__ \
+                (self, "Enchant Weapon", 0, 0)
+
+        def combat_turn (self, combat, owner, monster, item):
+            if item.exhausted ():
+                return []
+
+            match_weapon = arkham.match_proto (arkham.Weapon)
+            if not any (match_weapon (item) for item in owner.wields_items ()):
+                return []
+
+            return \
+                [arkham.GameplayAction_Multiple \
+                     ([arkham.GameplayAction_Exhaust (item),
+                       arkham.GameplayAction_CauseHarm \
+                           (combat.game, owner, item,
+                            arkham.HarmSanity (1)),
+                       arkham.GameplayAction_Conditional \
+                           (combat.game, owner, item,
+                            arkham.SkillCheck (arkham.checkbase_lore, 0),
+                            arkham.GameplayAction_WithSelectedItem \
+                                (match_weapon, "weapon",
+                                 lambda item: \
+                                     arkham.GameplayAction_ForCombat \
+                                        (combat,
+                                         arkham.GameplayAction_Flag \
+                                             (item, "enchanted"),
+                                         arkham.GameplayAction_Unflag \
+                                             (item, "enchanted"))))
+                       ])]
+
+    # xxx hack...
+    if first:
+        @arkham.bonus_hook.match \
+            (fun.any, fun.any, fun.any,
+             arkham.match_flag ("enchanted"),
+             fun.val == arkham.checkbase_combat,
+             priority = 1)
+        def do (game, investigator, subject, item, check_base):
+            original_bonus = next ()
+            original_bonus.set_family (arkham.family_magical)
+            return original_bonus
+
+        first = False
+
     for count, item_proto in [
             (1, BindMonster ()),
             (1, DreadCurseOfAzathoth ()),
+            (1, EnchantWeapon ())
         ]:
         module.m_spell_deck.register (item_proto, count)

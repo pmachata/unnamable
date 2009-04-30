@@ -34,3 +34,7 @@ class ItemProto (ObjectWithAttributes):
         # Items in general have no resistances, so don't insist on
         # overriding this.
         return {}
+
+# Items that inherit from this class are considered Weapons.
+class Weapon:
+    pass

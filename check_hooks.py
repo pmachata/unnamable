@@ -188,6 +188,9 @@ class Bonus:
     def family (self):
         return self.m_family
 
+    def set_family (self, family):
+        self.m_family = family
+
     @classmethod
     def match_family (cls, family):
         def match (bonus):

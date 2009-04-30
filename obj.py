@@ -5,9 +5,10 @@ class Attributes:
         self.m_attributes = {}
 
     def set (self, name, value):
-        if self.has (name):
-            raise RuntimeError ("Attribute name collision")
-        self.m_attributes[name] = value
+        if value is None:
+            del self.m_attributes[name]
+        else:
+            self.m_attributes[name] = value
 
     def has (self, name):
         return name in self.m_attributes
@@ -72,6 +73,7 @@ class ObjectWithAttributes:
 
     def apply_attributes (self, dict):
         for k, v in dict.iteritems ():
+            assert not self.m_attributes.has (k)
             self.m_attributes.set (k, v)
 
     def attributes (self):
