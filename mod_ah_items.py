@@ -832,9 +832,46 @@ def build (game, module):
 
         first = False
 
+
+    class xxxFindGate (module.mod_spell.SpellItem):
+        """Movement Phase: Cast and exhaust to immediately return to
+        Arkham from an Other World. """
+        pass
+
+
+    class FleshWard (module.mod_spell.SpellItem):
+        """Any Phase: Cast and exhaust to ignore all Stamina loss
+        being dealt to you from one source. Discard this spell if the
+        Ancient One awakens."""
+        def __init__ (self):
+            module.mod_spell.SpellItem.__init__ (self, "Flesh Ward", 0, 0)
+
+    @arkham.damage_correction_actions_hook.match \
+        (fun.any, fun.any, fun.any,
+         arkham.match_proto (FleshWard), fun.any)
+    def do (game, owner, subject, item, damage):
+        if item.exhausted ():
+            return []
+
+        if arkham.health_stamina not in damage.aspects ():
+            return []
+
+        return [arkham.GameplayAction_Multiple \
+                    ([arkham.GameplayAction_Exhaust (item),
+                       arkham.GameplayAction_CauseHarm \
+                           (game, owner, item,
+                            arkham.HarmSanity (1)),
+                       arkham.GameplayAction_Conditional \
+                           (game, owner, item,
+                            arkham.SkillCheck (arkham.checkbase_lore, -2),
+                            arkham.GameplayAction_CancelDamage \
+                                (damage, arkham.health_stamina))])]
+
+
     for count, item_proto in [
             (1, BindMonster ()),
             (1, DreadCurseOfAzathoth ()),
-            (1, EnchantWeapon ())
+            (1, EnchantWeapon ()),
+            (1, FleshWard ()),
         ]:
         module.m_spell_deck.register (item_proto, count)

@@ -22,6 +22,9 @@ class ModuleProto (test_ah.ModuleProto):
     def expected_increment (self, x):
         return x
 
+    def actions (self):
+        yield fun.matchclass (arkham.GameplayAction_Multiple)
+
 class ModuleProto1 (ModuleProto):
     def turn_0 (self, game):
         inv = ModuleProto.do_turn_0 \
@@ -60,6 +63,24 @@ class ModuleProto4 (ModuleProto):
     def expected_increment (self, x):
         return _damage
 
+class ModuleProto5 (ModuleProto):
+    def turn_0 (self, game):
+        inv = ModuleProto.do_turn_0 \
+            (self, game,
+             self.m_spell_deck.draw \
+                 (lambda arg: arg.name () == "Flesh Ward"))
+        arkham.HarmStamina (_damage).cause (game, inv, arkham.Subject ())
+
+    def expected_increment (self, x):
+        return _damage
+
+    def actions (self):
+        yield fun.matchclass (arkham.GameplayAction_Multiple)
+        yield fun.matchclass (arkham.GameplayAction_IncurDamage)
+        yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
+        yield 5 # succeed lore check
+        yield fun.matchclass (arkham.GameplayAction_Stay) # the damage got reduced out
+
 class Test (tester.Controller):
     def __init__ (self, proto, aspect):
         tester.Controller.__init__ (self)
@@ -76,7 +97,8 @@ class Test (tester.Controller):
         x = self.module.heal_action_times ()
         y = self.module.expected_increment (x)
         for i in range (x):
-            yield fun.matchclass (arkham.GameplayAction_Multiple)
+            for action in self.module.actions ():
+                yield action
         h = self.inv.health (self.aspect).cur ()
         if y != _damage:
             yield fun.matchclass (arkham.GameplayAction_IncurDamage)
@@ -87,3 +109,4 @@ tester.run_test (test_ah.Game (Test (ModuleProto1, arkham.health_stamina)))
 tester.run_test (test_ah.Game (Test (ModuleProto2, arkham.health_sanity)))
 tester.run_test (test_ah.Game (Test (ModuleProto3, arkham.health_stamina)))
 tester.run_test (test_ah.Game (Test (ModuleProto4, arkham.health_stamina)))
+tester.run_test (test_ah.Game (Test (ModuleProto5, arkham.health_stamina)))
