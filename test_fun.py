@@ -210,6 +210,27 @@ def test8 ():
     assert x (3) == 2
     assert x (3) == 2
 
+def test9 ():
+    x = fun.Function ()
+    q = []
+
+    @x.match ()
+    def do ():
+        q.append (1)
+
+    @x.match (priority=1)
+    def do ():
+        next ()
+        q.append (2)
+
+    @x.match (priority=2)
+    def do ():
+        next ()
+        q.append (3)
+
+    x ()
+    assert q == [1, 2, 3]
+
 test1 ()
 test2 ()
 test3 ()
@@ -218,3 +239,4 @@ test5 ()
 test6 ()
 test7 ()
 test8 ()
+test9 ()

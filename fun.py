@@ -56,7 +56,7 @@ class Function (object):
                     ret, bind = ret
 
                 assert ret == True or ret == False, \
-                    "Top level predicates function must return True of False"
+                    "Top level predicate functions must return True of False"
 
                 if not ret:
                     #print "   rejected on argument #", arg
@@ -67,62 +67,75 @@ class Function (object):
 
         #print " +",", ".join (self.fmt_info (body) for _, body, _ in self.m_variants)
 
-        candidates = []
         best_priority = None
         bindings = {}
-        for variant in self.m_variants:
+
+        precedence = {}
+        for variant in list (variant for variant in self.m_variants
+                             if match_variant (variant)):
             priority = variant[2].priority
-            #print " * %s [prio=%s, best=%s]" % (self.fmt_info (variant[1]), priority, best_priority)
-            if best_priority == None or priority >= best_priority:
-                if match_variant (variant):
-                    if best_priority == None or priority > best_priority:
-                        candidates = []
-                        best_priority = priority
-                    candidates.append (variant)
+            if priority not in precedence:
+                precedence[priority] = []
+            precedence[priority].append (variant)
 
-        # Resolve.
-        if len (candidates) != 1:
-            if len (candidates) == 0:
-                candidates = [(predicate, body, options)
-                              for (predicate, body, options) in self.m_variants]
-            message = "candidates are:\n" \
+        def fmt_variants (variants):
+            return "candidates are:\n" \
                 + "\n".join ("  " + self.fmt_info (body)
-                             for (predicate, body, options) in candidates)
-            raise TypeError ("%s overload for call to %s (%s)\n"
-                             % ("Ambiguous" if len (candidates) > 1 else "Found no",
-                                self.m_name, ", ".join (str (arg)
+                             for (predicate, body, options) in variants)
+
+        if len (precedence) == 0:
+            candidates = [(predicate, body, options)
+                          for (predicate, body, options) in self.m_variants]
+            raise TypeError ("Found no matching overload for call to %s (%s)\n"
+                             % (self.m_name, ", ".join (str (arg)
                                                         for arg in args))
-                             + message)
+                             + fmt_variants (candidates))
 
-        # Call
-        _, body, options = candidates[0]
-        if options.trace:
-            print "%s: %s" % (self.m_name, self.fmt_info (body))
+        precedence_list = sorted (precedence.items (), key = lambda arg: arg[0])
 
-        class Bound:
-            def __init__ (self, bindings):
-                self.m_bindings = bindings
-            def __getattr__ (self, key):
-                return self.m_bindings[key]
+        class Next:
+            def __init__ (self, fun):
+                self.__cursor = 0
+                self.__fun = fun
 
-        # This is devious.
-        backup = dict (body.func_globals)
-        for key, val in bindings.iteritems ():
-            body.func_globals[key] = val
-        retval = body (*args)
-        for key in list (body.func_globals):
-            del body.func_globals[key]
-        for key, val in backup.iteritems ():
-            body.func_globals[key] = val
+            def __call__ (self):
+                self.__cursor -= 1
+                priority, variants = precedence_list[self.__cursor]
+                if len (variants) != 1:
+                    raise TypeError ("Ambiguous overload for call to %s (%s) with priority %d\n"
+                                     % (self.__fun.m_name, ", ".join (str (arg)
+                                                                for arg in args), priority)
+                                     + fmt_variants (variants))
 
-        if options.trace:
-            print "%s returning" % self.m_name, retval
+                # Call
+                _, body, options = variants[0]
+                if options.trace:
+                    print "%s: %s" % (self.__fun.m_name, self.__fun.fmt_info (body))
 
-        assert isinstance (retval, self.m_returns),\
-            "%s: return value (`%s') has to be of type `%s'" \
-            % (self.m_name, retval, self.m_returns)
+                # This is devious.
+                backup = dict (body.func_globals)
+                for key, val in bindings.iteritems ():
+                    body.func_globals[key] = val
+                retval = body (*args)
+                for key in list (body.func_globals):
+                    del body.func_globals[key]
+                for key, val in backup.iteritems ():
+                    body.func_globals[key] = val
 
-        return retval
+                if options.trace:
+                    print "%s returning" % self.__fun.m_name, retval
+
+                assert isinstance (retval, self.__fun.m_returns),\
+                    "%s: return value (`%s') has to be of type `%s'" \
+                    % (self.__fun.m_name, retval, self.__fun.m_returns)
+
+                return retval
+
+        assert "next" not in bindings
+        next = Next (self)
+        bindings["next"] = next
+
+        return next ()
 
 def bind (**kwargs):
     def match (arg):
