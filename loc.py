@@ -1,4 +1,4 @@
-from obj import ObjectWithAttributes
+from obj import ObjectWithAttributes, NamedObject
 
 class Neighborhood (ObjectWithAttributes):
     def __init__ (self):
@@ -12,10 +12,10 @@ class Connection (ObjectWithAttributes):
     def dest (self):
         return self.m_dest
 
-class Location (ObjectWithAttributes):
+class Location (ObjectWithAttributes, NamedObject):
     def __init__ (self, name, neighborhood = None):
         ObjectWithAttributes.__init__ (self)
-        self.m_name = name
+        NamedObject.__init__ (self, name)
         self.m_neighborhood = neighborhood
         self.m_connections = set ()
         self.m_clue_tokens = 0
@@ -23,9 +23,6 @@ class Location (ObjectWithAttributes):
     def add_connection (self, conn):
         assert conn not in self.m_connections
         self.m_connections.add (conn)
-
-    def name (self):
-        return self.m_name
 
     def add_clue_tokens (self, n):
         assert n >= 0
@@ -42,5 +39,6 @@ class ObjectWithLocation:
         return self.m_location
 
     def move_to (self, location):
-        print "ObjectWithLocation.move_to %s->%s" % (self.name (), location.name () if location else "None")
+        print "ObjectWithLocation.move_to %s->%s" \
+            % (self.name (), location.name () if location else "None")
         self.m_location = location

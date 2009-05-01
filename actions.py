@@ -1,13 +1,7 @@
-import fun
 import arkham
+import obj
 
-class GameplayAction:
-    def __init__ (self, name):
-        self.m_name = name
-
-    def name (self):
-        return self.m_name
-
+class GameplayAction (obj.NamedObject):
     def perform (self, game, investigator):
         pass
 
@@ -72,6 +66,9 @@ class GameplayAction_Many (GameplayAction):
             ret = action.bound_item () or ret
         return ret
 
+    def initial_name (self, actions):
+        raise NotImplementedError ()
+
 class GameplayAction_One (GameplayAction):
     def __init__ (self, action, name):
         assert action
@@ -113,7 +110,7 @@ class GameplayAction_Repeat (GameplayAction_One):
         self.m_count = count
 
     def perform (self, game, investigator):
-        for i in xrange (self.m_count):
+        for _ in xrange (self.m_count):
             self.m_action.perform (game, investigator)
 
 class GameplayAction_Conditional (GameplayAction):
@@ -288,18 +285,12 @@ class GameplayAction_Evade (MonsterBoundGameplayAction):
         self.m_combat = combat
 
 class GameplayAction_Evade_PreCombat (GameplayAction_Evade):
-    def __init__ (self, *args):
-        GameplayAction_Evade.__init__ (self, *args)
-
     def perform (self, game, investigator):
         game.evade_check_hook (self.m_combat, investigator, self.m_monster)
         investigator.lose_movement_points ()
         raise arkham.ContinueCombat () # Proceed with the combat.
 
 class GameplayAction_Evade_Combat (GameplayAction_Evade):
-    def __init__ (self, *args):
-        GameplayAction_Evade.__init__ (self, *args)
-
     def perform (self, game, investigator):
         game.evade_check_hook (self.m_combat, investigator, self.m_monster)
 
@@ -334,7 +325,8 @@ class GameplayAction_WhenCombatEnds (GameplayAction_One):
         self.m_combat = combat
 
     def perform (self, game, investigator):
-        self.m_combat.on_end (lambda: self.m_action.perform (game, investigator))
+        self.m_combat.on_end \
+            (lambda: self.m_action.perform (game, investigator))
 
 class GameplayAction_ForCombat (GameplayAction_One):
     def __init__ (self, combat, action, cleanup):
@@ -345,7 +337,8 @@ class GameplayAction_ForCombat (GameplayAction_One):
 
     def perform (self, game, investigator):
         self.m_action.perform (game, investigator)
-        self.m_combat.on_end (lambda: self.m_cleanup.perform (game, investigator))
+        self.m_combat.on_end \
+            (lambda: self.m_cleanup.perform (game, investigator))
 
 
 # Item manipulation actions
@@ -483,7 +476,7 @@ class GameplayAction_FailRoll (GameplayAction):
     def perform (self, game, investigator):
         raise arkham.EndPhase ()
 
-class GameplayAction_SucceedCombatCheck (GameplayAction):
+class GameplayAction_PassCombatCheck (GameplayAction):
     """Special action tightly bound into combat loop causes immediate
     success in enclosing combat check."""
     # xxx perhaps can be replaced with simple GameplayAction_SucceedCheck

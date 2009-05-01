@@ -9,7 +9,8 @@ def build (game, module):
 
         class PlainItem (arkham.InvestigatorItem):
             def __init__ (self):
-                arkham.InvestigatorItem.__init__ (self, name, price, hands, **attributes)
+                arkham.InvestigatorItem.__init__ (self, name, price,
+                                                  hands, **attributes)
         PlainItem.__bases__ = PlainItem.__bases__ + extra_classes
 
         for check_base, bonus in bonuses.iteritems ():
@@ -355,8 +356,7 @@ def build (game, module):
                     ([arkham.GameplayAction_CauseHarm \
                           (game, owner, item, arkham.HarmSanity (2)),
                       arkham.GameplayAction_Discard (item),
-                      arkham.GameplayAction_SucceedCombatCheck ()
-                      ])
+                      arkham.GameplayAction_PassCombatCheck ()])
                 ]
 
         def combat_turn (self, combat, owner, monster, item):
@@ -735,7 +735,7 @@ def build (game, module):
                                arkham.SkillCheck (arkham.checkbase_lore, +4, d),
                                arkham.GameplayAction_Multiple \
                                    ([arkham.GameplayAction_Discard (item),
-                                     arkham.GameplayAction_SucceedCombatCheck ()]))
+                                     arkham.GameplayAction_PassCombatCheck ()]))
                           ])]
 
 
@@ -767,7 +767,8 @@ def build (game, module):
                                arkham.SkillCheck (arkham.checkbase_lore, -2),
                                arkham.GameplayAction_ForCombat \
                                    (combat,
-                                    arkham.GameplayAction_WieldItem (inst, True),
+                                    arkham.GameplayAction_WieldItem \
+                                        (inst, True),
                                     arkham.GameplayAction_Discard (inst)))])]
 
     @game.bonus_hook.match \

@@ -179,7 +179,8 @@ class FightHooks:
         @self.cause_horror_harm_hook.match \
             (fun.any, fun.any, fun.any)
         def do (combat, investigator, monster):
-            monster.proto ().horror_harm ().cause (combat.game, investigator, monster)
+            monster.proto ().horror_harm ()\
+                .cause (combat.game, investigator, monster)
 
         @self.combat_loop_hook.match \
             (fun.any, fun.any, fun.any)
@@ -191,7 +192,8 @@ class FightHooks:
                             # Several actions can be performed before the
                             # combat continues.
                             combat.check_ends (investigator, monster)
-                            combat.game.combat_turn (combat, investigator, monster)
+                            combat.game.combat_turn \
+                                (combat, investigator, monster)
 
                     except ContinueCombat:
                         combat.check_ends (investigator, monster)
@@ -262,9 +264,10 @@ class FightHooks:
                                investigator.cause_combat_harm_actions \
                                    (combat, monster, harm))
                     actions.append (arkham.GameplayAction_EndCauseHarmLoop (
-                            arkham.GameplayAction_CauseHarm (combat.game, investigator,
-                                                             monster, harm)))
-                    if not combat.game.perform_selected_action (investigator, actions):
+                            arkham.GameplayAction_CauseHarm \
+                                (combat.game, investigator, monster, harm)))
+                    if not combat.game.perform_selected_action \
+                            (investigator, actions):
                         break
 
             except EndCauseHarm:

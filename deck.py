@@ -1,4 +1,5 @@
 from item import ItemProto
+import obj
 
 # There are two parts of a deck: potential cards, and cards that
 # actually end up being in the deck.  Potential cards are all cards
@@ -15,15 +16,12 @@ from item import ItemProto
 #  * withdraw: move one card from deck back to registered cards
 #  * draw: remove one card from the deck and return its instance
 #  * give_back: re-insert once drawn card back to the deck
-class Deck:
+class Deck (obj.NamedObject):
     def __init__ (self, name, ctor):
-        self.m_name = name
+        obj.NamedObject.__init__ (self, name)
         self.m_registered = {} # card -> count
         self.m_deck = []
         self.m_ctor = ctor
-
-    def name (self):
-        return self.m_name
 
     def register (self, card_proto, count):
         assert count > 0

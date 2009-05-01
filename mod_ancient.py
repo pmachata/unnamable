@@ -1,12 +1,6 @@
 import arkham
 
-class Ancient:
-    def __init__ (self, name):
-        self.m_name = name
-
-    def name (self):
-        return self.m_name
-
+class Ancient (arkham.NamedObject):
     # Override in subclass
     def before_turn_0 (self, game):
         pass

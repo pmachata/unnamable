@@ -11,7 +11,8 @@ def find_location (game, flag):
 
 class GameplayAction_Incapacitated (arkham.GameplayAction):
     def __init__ (self, location, aspect):
-        arkham.GameplayAction.__init__ (self, "move to %s and lose half the stuff" % location.name ())
+        arkham.GameplayAction.__init__ \
+            (self, "move to %s and lose half the stuff" % location.name ())
         self.m_location = location
         self.m_aspect = aspect
 
@@ -144,7 +145,8 @@ class ModuleProto (arkham.ModuleProto):
 
         maps.in_neighborhood (maps.neighborhood (game))
         southside = maps.location ("Southside", street = True)
-        historical_society = maps.location ("Historical society", unstable = True)
+        historical_society = maps.location \
+            ("Historical society", unstable = True)
         south_church = maps.location ("South Church")
         ma_s_boarding = maps.location ("Ma's Boarding House")
         (maps.draw_from (southside)
@@ -154,7 +156,8 @@ class ModuleProto (arkham.ModuleProto):
 
         maps.in_neighborhood (maps.neighborhood (game))
         french_hill = maps.location ("French Hill", street = True)
-        silver_twilight = maps.location ("Silver Twilight Lodge", unstable = True)
+        silver_twilight = maps.location \
+            ("Silver Twilight Lodge", unstable = True)
         witch_house = maps.location ("The Witch House", unstable = True)
         (maps.draw_from (french_hill)
          .out (silver_twilight, black = True, white = True).back ()

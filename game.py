@@ -163,11 +163,11 @@ class Game (fight_hooks.FightHooks, check_hooks.CheckHooks,
                 print
                 print
                 print
-                print "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-                print "+                                                       +"
-                print "+ TURN %-9d                                        +" % self.m_turn
-                print "+                                                       +"
-                print "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+                print "++++++++++++++++++++++++++++++++++++++++++++++++++++"
+                print "+                                                  +"
+                print "+ TURN %-9d                                   +" % self.m_turn
+                print "+                                                  +"
+                print "++++++++++++++++++++++++++++++++++++++++++++++++++++"
                 print
                 # This phase is not in the original game, but I figure
                 # it might be handy if something needs to be done
@@ -336,8 +336,13 @@ class Game (fight_hooks.FightHooks, check_hooks.CheckHooks,
                 break
 
             n_monsters = set (self.monsters_at (location))
-            d_monsters = monsters.difference (n_monsters) # recently dropped
-            i_monsters = monsters.union (n_monsters) - monsters # recently introduced
+
+            # recently dropped
+            d_monsters = monsters.difference (n_monsters)
+
+            # recently introduced
+            i_monsters = monsters.union (n_monsters) - monsters
+
             monsters.update (i_monsters)
 
             for monster in i_monsters:
@@ -361,15 +366,18 @@ class Game (fight_hooks.FightHooks, check_hooks.CheckHooks,
     # Retur False if investigator can't leave the location.
     def leave_location (self, investigator):
         location = investigator.location ()
-        print "%s attempts to leave %s" % (investigator.name (), location.name ())
+        print "%s attempts to leave %s" % (investigator.name (),
+                                           location.name ())
         self.deal_with_monsters (investigator)
         ret = investigator.alive () and investigator.movement_points () > 0
         if not ret:
-            print "%s can't leave %s" % (investigator.name (), location.name ())
+            print "%s can't leave %s" % (investigator.name (),
+                                         location.name ())
         return ret
 
     def enter_location (self, investigator):
-        print "%s entered %s" % (investigator.name (), investigator.location ().name ())
+        print "%s entered %s" % (investigator.name (),
+                                 investigator.location ().name ())
         self.m_dealt_with = set ()
 
     def environment (self):

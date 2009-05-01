@@ -1,12 +1,7 @@
-class Skill:
-    def __init__ (self, name):
-        self.m_name = name
-
-    def name (self):
-        return self.m_name
-
+import obj
+class Skill (obj.NamedObject):
     def __repr__ (self):
-        return "<Skill \"%s\">" % self.m_name
+        return "<Skill \"%s\">" % self.name ()
 
 skill_fight = Skill ("fight")
 skill_lore = Skill ("lore")

@@ -1,6 +1,7 @@
 import fun
 import conf
 import arkham
+import obj
 
 class EndCheck (Exception):
     def __init__ (self, success):
@@ -8,13 +9,10 @@ class EndCheck (Exception):
     def success (self):
         return self.m_success
 
-class CheckBase:
+class CheckBase (obj.NamedObject):
     def __init__ (self, name, correctible):
-        self.m_name = name
+        obj.NamedObject.__init__ (self, name)
         self.m_correctible = correctible
-
-    def name (self):
-        return self.m_name
 
     def correctible (self):
         return self.m_correctible
@@ -72,12 +70,8 @@ class Roll:
     def roll (self):
         return list (self.m_roll)
 
-class Family:
-    def __init__ (self, name):
-        self.m_name = name
-
-    def name (self):
-        return self.m_name
+class Family (obj.NamedObject):
+    pass
 
 family_indifferent = Family ("indifferent")
 family_physical = Family ("physical")
@@ -103,13 +97,10 @@ class Bonus:
             return bonus.family () == family
         return match
 
-class ResistanceLevel:
+class ResistanceLevel (obj.NamedObject):
     def __init__ (self, name, modifier):
-        self.m_name = name
+        obj.NamedObject.__init__ (self, name)
         self.m_modifier = modifier
-
-    def name (self):
-        return self.m_name
 
     def modify (self, bonus):
         return Bonus (self.m_modifier (bonus.value ()), bonus.family ())
@@ -175,7 +166,8 @@ class CheckHooks:
             return bonus
 
         @self.basic_skill_value_hook.match \
-            (fun.any, fun.any, fun.any, fun.matchclass (CheckBase_Skill), fun.any)
+            (fun.any, fun.any, fun.any,
+             fun.matchclass (CheckBase_Skill), fun.any)
         def do (game, investigator, subject, check_base, primary_list):
             return investigator.skill (check_base.m_skill)
 
@@ -342,11 +334,12 @@ class CheckHooks:
                 (game, investigator, subject, check_base, modifier)
 
             bonus = 0
-            for item in investigator.wields_items (): # includes skill cards, spells, weapons, etc.
+            for item in investigator.wields_items ():
                 i_bonus = game.bonus_hook \
                     (game, investigator, subject, item, check_base)
                 bonus += game.bonus_mod_hook \
-                    (game, investigator, subject, item, check_base, i_bonus).value ()
+                    (game, investigator, subject, item, check_base, i_bonus) \
+                    .value ()
 
             modifier += game.total_bonus_mod_hook \
                 (game, investigator, subject, check_base, bonus)
@@ -441,8 +434,9 @@ class CheckHooks:
                     actions = sum ((game.check_correction_actions_hook \
                                         (game, investigator, subject, item,
                                          check_base, roll)
-                                    for item in investigator.wields_items ()), []) \
-                                    + investigator.check_correction_actions (game, subject, check_base, roll)
+                                    for item in investigator.wields_items ()),
+                                   investigator.check_correction_actions \
+                                       (game, subject, check_base, roll))
                     actions.append (arkham.GameplayAction_FailRoll ())
                     if not game.perform_selected_action (investigator, actions):
                         break
@@ -454,7 +448,8 @@ class CheckHooks:
 
         @self.perform_check_actions_hook.match \
             (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)
-        def do (game, investigator, subject, item, check_base, modifier, difficulty):
+        def do (game, investigator, subject, item, check_base,
+                modifier, difficulty):
             return []
 
         @self.base_die_mod_hook.match \

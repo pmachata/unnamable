@@ -1,20 +1,14 @@
 from loc import ObjectWithLocation
-from obj import GameplayObject
+from obj import GameplayObject, NamedObject
 import arkham
 
 class Hand:
     def can_handle (self, game, investigator, object):
         return True
 
-class HealthAspect:
-    def __init__ (self, name):
-        self.m_name = name
-
-    def name (self):
-        return self.m_name
-
+class HealthAspect (NamedObject):
     def __repr__ (self):
-        return "<HealthAspect \"%s\">" % self.m_name
+        return "<HealthAspect \"%s\">" % self.name ()
 
 health_stamina = HealthAspect ("stamina")
 health_sanity = HealthAspect ("sanity")
@@ -47,11 +41,12 @@ class Health:
             self.m_cur = self.m_max
         print "to", self.m_cur
 
-class Investigator (ObjectWithLocation, GameplayObject):
+class Investigator (ObjectWithLocation, GameplayObject, NamedObject):
     def __init__ (self, name, initial_health,
                   initial_money, initial_clues, skills, home):
+
         ObjectWithLocation.__init__ (self, home)
-        self.m_name = name
+        NamedObject.__init__ (self, name)
 
         self.m_health = {}
         for aspect, max in initial_health.iteritems ():
@@ -69,9 +64,6 @@ class Investigator (ObjectWithLocation, GameplayObject):
         self.m_items = []
         self.m_temporary_items = []
         self.m_active_items = {} # item->[hands]
-
-    def name (self):
-        return self.m_name
 
     def clues (self):
         return self.m_clues
@@ -244,11 +236,12 @@ class Investigator (ObjectWithLocation, GameplayObject):
 
     def movement (self, game):
         if self.m_movement_points > 0:
-            dest_actions = [arkham.GameplayAction_Move (location)
-                            for location
-                            in [conn.dest ()
-                                for conn in self.location ().connections ()
-                                if not conn.attributes ().flag ("no_investigator")]]
+            dest_actions \
+                = [arkham.GameplayAction_Move (location)
+                   for location
+                   in [conn.dest ()
+                       for conn in self.location ().connections ()
+                       if not conn.attributes ().flag ("no_investigator")]]
         else:
             dest_actions = []
 
@@ -297,14 +290,16 @@ class Investigator (ObjectWithLocation, GameplayObject):
             ret.append \
                 (arkham.GameplayAction_Multiple \
                      ([arkham.GameplayAction_SpendClue (),
-                       arkham.GameplayAction_AddRoll (subject, check_base, roll)]))
+                       arkham.GameplayAction_AddRoll \
+                           (subject, check_base, roll)]))
         # xxx apparently, clue tokens should simply be items.  The
         # downside of that is that the investigator could choose from
         # N identical "spend this clue token" actions, that would need
         # to be handled in some way.
         return ret + sum (([arkham.GameplayAction_Multiple \
                                 ([spend_clue_action,
-                                  arkham.GameplayAction_AddRoll (subject, check_base, roll)])
+                                  arkham.GameplayAction_AddRoll \
+                                      (subject, check_base, roll)])
                             for spend_clue_action
                             in game.spend_clue_token_actions_hook \
                                 (game, self, subject, item, check_base)]

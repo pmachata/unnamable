@@ -95,3 +95,10 @@ class GameplayObject:
 class Subject:
     def resistances (self):
         return self.m_proto.resistances ()
+
+class NamedObject:
+    def __init__ (self, name):
+        self.m_name = name
+
+    def name (self):
+        return self.m_name

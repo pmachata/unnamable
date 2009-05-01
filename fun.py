@@ -59,13 +59,10 @@ class Function (object):
                     "Top level predicate functions must return True of False"
 
                 if not ret:
-                    #print "   rejected on argument #", arg
                     return False
                 bindings.update (bind)
 
             return True
-
-        #print " +",", ".join (self.fmt_info (body) for _, body, _ in self.m_variants)
 
         best_priority = None
         bindings = {}
@@ -91,7 +88,8 @@ class Function (object):
                                                         for arg in args))
                              + fmt_variants (candidates))
 
-        precedence_list = sorted (precedence.items (), key = lambda arg: arg[0])
+        precedence_list = sorted (precedence.items (),
+                                  key = lambda arg: arg[0])
 
         class Next:
             def __init__ (self, fun):
@@ -102,15 +100,19 @@ class Function (object):
                 self.__cursor -= 1
                 priority, variants = precedence_list[self.__cursor]
                 if len (variants) != 1:
-                    raise TypeError ("Ambiguous overload for call to %s (%s) with priority %d\n"
-                                     % (self.__fun.m_name, ", ".join (str (arg)
-                                                                for arg in args), priority)
-                                     + fmt_variants (variants))
+                    raise TypeError \
+                        ((("Ambiguous overload for call to %s "
+                           + "(%s) with priority %d\n")
+                          % (self.__fun.m_name,
+                             ", ".join (str (arg) for arg in args),
+                             priority))
+                         + fmt_variants (variants))
 
                 # Call
                 _, body, options = variants[0]
                 if options.trace:
-                    print "%s: %s" % (self.__fun.m_name, self.__fun.fmt_info (body))
+                    print "%s: %s" % (self.__fun.m_name,
+                                      self.__fun.fmt_info (body))
 
                 # This is devious.
                 backup = dict (body.func_globals)

@@ -56,16 +56,22 @@ class TUI (arkham.UI):
                 prefix = "  " * level
                 print "%s  evade:  %s" \
                     % (prefix,
-                       monster.proto ().evade_check ().description (game, investigator))
+                       monster.proto ().evade_check () \
+                           .description (game, investigator))
                 print "%s  horror: %s/%s" \
                     % (prefix,
-                       monster.proto ().horror_check ().description (game, investigator),
-                       monster.proto ().horror_harm ().description (game, investigator, monster))
+                       monster.proto ().horror_check () \
+                           .description (game, investigator),
+                       monster.proto ().horror_harm () \
+                           .description (game, investigator, monster))
                 print "%s  combat: %s/%s" \
                     % (prefix,
-                       monster.proto ().combat_check ().description (game, investigator),
-                       monster.proto ().combat_harm ().description (game, investigator, monster))
-                print "%s  location: %s" % (prefix, monster.location ().name ())
+                       monster.proto ().combat_check () \
+                           .description (game, investigator),
+                       monster.proto ().combat_harm () \
+                           .description (game, investigator, monster))
+                print "%s  location: %s" \
+                    % (prefix, monster.location ().name ())
 
         def dump_location_info (location, level):
             if dump_head (location, level):
@@ -83,7 +89,8 @@ class TUI (arkham.UI):
             % (investigator.name (),
                investigator.movement_points (),
                investigator.clues (),
-               ", ".join ("%s=%s" % (aspect.name (), investigator.health (aspect).cur ())
+               ", ".join ("%s=%s" % (aspect.name (),
+                                     investigator.health (aspect).cur ())
                           for aspect in investigator.health_aspects ()))
         dump_location_info (investigator.location (), 1)
         print "trophies:", ", ".join (trophy.name ()

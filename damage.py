@@ -9,7 +9,7 @@ class Amount:
         assert amount > 0
         self.m_amount -= amount
         if self.m_amount < 0:
-            self.m_amount == 0
+            self.m_amount = 0
         if self.m_amount == 0:
             self.m_parent.reduced_out (self)
 

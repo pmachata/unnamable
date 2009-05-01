@@ -14,7 +14,6 @@ class draw_from:
         assert loc2
         conn = arkham.Connection (loc2)
         loc1.add_connection (conn)
-        #print "\"%s\" -> \"%s\" [ label = \"%s\" ]" % (loc1.name (), loc2.name (), str (attrs))
         conn.apply_attributes (attrs)
         self.m_loc_1 = loc1
         self.m_loc_2 = loc2

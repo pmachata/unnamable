@@ -60,16 +60,13 @@ class ModuleIndex:
     def requested_modules (self):
         return list (self.m_modules_ordered)
 
-class ModuleProto:
+class ModuleProto (NamedObject):
     def __init__ (self, signature, name):
+        NamedObject.__init__ (self, name)
         self.m_signature = signature
-        self.m_name = name
 
     def signature (self):
         return self.m_signature
-
-    def name (self):
-        return self.m_name
 
     # Check consistency constraints of the module.
     def consistent (self, mod_index):

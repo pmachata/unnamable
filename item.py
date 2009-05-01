@@ -1,13 +1,10 @@
-from obj import ObjectWithAttributes
+from obj import ObjectWithAttributes, NamedObject
 
-class ItemProto (ObjectWithAttributes):
+class ItemProto (ObjectWithAttributes, NamedObject):
     def __init__ (self, name, **attributes):
         ObjectWithAttributes.__init__ (self)
+        NamedObject.__init__ (self, name)
         self.apply_attributes (attributes)
-        self.m_name = name
-
-    def name (self):
-        return self.m_name
 
     def discard (self):
         pass
