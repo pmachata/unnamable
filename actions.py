@@ -42,10 +42,10 @@ class ItemBoundGameplayAction (GameplayAction):
 
 class GameplayAction_Many (GameplayAction):
     """Base class for actions involving several sub-actions."""
-    def __init__ (self, actions):
+    def __init__ (self, actions, name_ctor):
         actions = list (action for action in actions if action != None)
         assert len (actions) > 0
-        GameplayAction.__init__ (self, self.initial_name (actions))
+        GameplayAction.__init__ (self, name_ctor (actions))
         self.m_actions = actions
 
     def bound_location (self):
@@ -66,9 +66,6 @@ class GameplayAction_Many (GameplayAction):
             ret = action.bound_item () or ret
         return ret
 
-    def initial_name (self, actions):
-        raise NotImplementedError ()
-
 class GameplayAction_One (GameplayAction):
     def __init__ (self, action, name):
         assert action
@@ -85,8 +82,10 @@ class GameplayAction_One (GameplayAction):
         return self.m_action.bound_item ()
 
 class GameplayAction_Multiple (GameplayAction_Many):
-    def initial_name (self, actions):
-        return ", ".join (action.name () for action in actions)
+    def __init__ (self, actions):
+        GameplayAction_Many.__init__ \
+            (self, actions,
+             lambda actions: ", ".join (action.name () for action in actions))
 
     def perform (self, game, investigator):
         ret = None
@@ -95,8 +94,10 @@ class GameplayAction_Multiple (GameplayAction_Many):
         return ret
 
 class GameplayAction_Select (GameplayAction_Many):
-    def initial_name (self, actions):
-        return " or ".join (action.name () for action in actions)
+    def __init__ (self, actions):
+        GameplayAction_Many.__init__ \
+            (self, actions,
+             lambda actions: " or ".join (action.name () for action in actions))
 
     def perform (self, game, investigator):
         game.perform_selected_action (investigator, self.m_actions)
@@ -113,46 +114,29 @@ class GameplayAction_Repeat (GameplayAction_One):
         for _ in xrange (self.m_count):
             self.m_action.perform (game, investigator)
 
-class GameplayAction_Conditional (GameplayAction):
+class GameplayAction_Conditional (GameplayAction_Many):
     def __init__ (self, game, investigator, subject,
                   check, action_pass, action_fail = None):
-        assert action_pass
-        GameplayAction.__init__ (self,
-                                 "if %s passes then %s%s" \
-                                     % (check.description (game, investigator),
-                                        action_pass.name (),
-                                        (", else %s" % action_fail.name () \
-                                             if action_fail != None else "")))
+        assert action_pass is not None
+        GameplayAction_Many.__init__ \
+                 (self, [action_pass, action_fail],
+                  lambda actions: \
+                      ("if %s passes then %s%s"
+                       % (check.description (game, investigator),
+                          actions[0].name (),
+                          (", else %s" % actions[1].name () \
+                               if len (actions) > 1 else ""))))
+
         self.m_check = check
-        self.m_pass = action_pass
-        self.m_fail = action_fail
         self.m_subject = subject
 
     def perform (self, game, investigator):
         if self.m_check.check (game, investigator, self.m_subject):
-            return self.m_pass.perform (game, investigator)
-        elif self.m_fail != None:
-            return self.m_fail.perform (game, investigator)
+            return self.m_actions[0].perform (game, investigator)
+        elif len (self.m_actions) > 1:
+            return self.m_actions[1].perform (game, investigator)
         else:
             return None
-
-    def bound_location (self):
-        ret = self.m_pass.bound_location ()
-        if ret == None and self.m_fail:
-            ret = self.m_fail.bound_location ()
-        return ret
-
-    def bound_monster (self):
-        ret = self.m_pass.bound_monster ()
-        if ret == None and self.m_fail:
-            ret = self.m_fail.bound_monster ()
-        return ret
-
-    def bound_item (self):
-        ret = self.m_pass.bound_item ()
-        if ret == None and self.m_fail:
-            ret = self.m_fail.bound_item ()
-        return ret
 
 class GameplayAction_WithSelectedItem (GameplayAction):
     def __init__ (self, selector, description, action_ctor):
