@@ -1,6 +1,7 @@
 import arkham
 import maps
 import fun
+import conf
 
 def find_location (game, flag):
     for location in game.all_locations ():
@@ -56,6 +57,26 @@ class ModuleProto (arkham.ModuleProto):
         arkham.ModuleProto.__init__ (self, "ah", "Arkham Horror")
         self.mod_ancient = None
         self.mod_terror = None
+
+        self.lose_in_time_and_space = fun.Function \
+            (arkham.Game, arkham.Investigator,
+             name="lose_in_time_and_space", trace=conf.trace)
+
+        @self.lose_in_time_and_space.match (fun.any, fun.any)
+        def do (game, investigator):
+            place = find_location (game, "lost_in_time_and_space")
+            if place != None:
+                game.move_investigator (investigator, place)
+            investigator.delay ()
+
+        class HarmLost (arkham.Harm):
+            def deal (self, game, investigator, monster):
+                lose_in_time_and_space (game, investigator)
+
+            def description (self, game, investigator, monster):
+                return "lost in time and space"
+
+        self.harm_lost = HarmLost ()
 
     def consistent (self, mod_index):
         decks = dict (("mod_" + id, mod_index.request (id))
