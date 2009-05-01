@@ -26,7 +26,7 @@ class Game (fight_hooks.FightHooks, check_hooks.CheckHooks,
         check_hooks.CheckHooks.__init__ (self, Game)
         damage_hooks.DamageHooks.__init__ (self, Game)
 
-        self.m_modules = [arkham.ModuleInstance (self, mod) for mod in modules]
+        self.m_modules = [arkham.Module (self, mod) for mod in modules]
         self.m_ui = ui
         self.m_turn = 0
 
@@ -129,14 +129,14 @@ class Game (fight_hooks.FightHooks, check_hooks.CheckHooks,
 
     def run (self):
         print "-- setting up the game --"
-        for modi in self.m_modules:
-            print "call construct in %s" % modi.name ()
-            modi.construct ()
+        for mod in self.m_modules:
+            print "call construct in %s" % mod.name ()
+            mod.construct ()
         if len (self.m_all_investigators) == 0:
             raise RuntimeError ("No Investigator's to play with!")
 
-        for modi in self.m_modules:
-            modi.post_construct ()
+        for mod in self.m_modules:
+            mod.post_construct ()
 
         self.m_ui.setup_players (self)
         if len (self.m_investigators) == 0:
@@ -144,8 +144,8 @@ class Game (fight_hooks.FightHooks, check_hooks.CheckHooks,
 
         print "player 1 is %s" % self.m_investigators[0].name ()
 
-        for modi in self.m_modules:
-            modi.before_turn_0 ()
+        for mod in self.m_modules:
+            mod.before_turn_0 ()
 
         for investigator in self.m_investigators:
             investigator.prepare_pass_1 (self)
@@ -153,8 +153,8 @@ class Game (fight_hooks.FightHooks, check_hooks.CheckHooks,
         for investigator in self.m_investigators:
             investigator.prepare_pass_2 (self)
 
-        for modi in self.m_modules:
-            modi.turn_0 ()
+        for mod in self.m_modules:
+            mod.turn_0 ()
 
         print "-- entering the game loop --"
         try:
@@ -177,28 +177,26 @@ class Game (fight_hooks.FightHooks, check_hooks.CheckHooks,
                         (investigator, investigator.turn_start (self))
 
                 print "-- upkeep --"
-                actions = sum ((modi.upkeep ()
-                                for modi in self.m_modules), [])
+                for mod in self.m_modules:
+                    if mod.upkeep_1 () != None:
+                        raise AssertionError \
+                            ("upkeep_1 is not supposed to return anything")
+
                 for investigator in self.m_investigators:
-                    try:
-                        while True:
-                            upkeep_actions = \
-                                actions + investigator.upkeep (self)
-                            if len (upkeep_actions) == 0:
-                                break
-                            upkeep_actions.append \
-                                (arkham.GameplayAction_DoNothing ())
-                            self.perform_selected_action \
-                                (investigator, upkeep_actions)
+                    if investigator.upkeep_1 (self) != None:
+                        raise AssertionError \
+                            ("upkeep_1 is not supposed to return anything")
 
-                    except EndPhase:
-                        pass
+                self.game_phase_with_actions ("upkeep_2")
+                self.game_phase_with_actions ("upkeep_3")
 
+                # Movement is complex, we can't simply dispatch to
+                # game_phase_with_actions.
                 print "-- movement --"
 
                 self.m_dealt_with = set ()
-                actions = sum ((modi.movement ()
-                                for modi in self.m_modules), [])
+                actions = sum ((mod.movement ()
+                                for mod in self.m_modules), [])
                 for investigator in self.m_investigators:
                     try:
                         while True:
@@ -215,34 +213,33 @@ class Game (fight_hooks.FightHooks, check_hooks.CheckHooks,
                     else:
                         print "skipping second dealing with monsters"
 
-                # XXX This brings the disctinction between "arkham"
-                # and "other-world" location into the core.  Currently
-                # don't mind, but may need to revamp the loop later.
-                def in_arkham (inv):
-                    if not inv.location ().attributes ().flag ("other_world"):
-                        return 1
-                    else:
-                        return 0
-                investigators = list (self.m_investigators)
-                investigators.sort (cmp = lambda x, y: \
-                                        in_arkham (x) - in_arkham (y))
-
-                print "-- encounters --"
-                actions = sum ((modi.encounters ()
-                                for modi in self.m_modules), [])
-                for investigator in investigators:
-                    self.perform_selected_action \
-                        (investigator, actions + investigator.encounters (self))
-
-                print "-- mythos --"
-                actions = sum ((modi.mythos ()
-                                for modi in self.m_modules), [])
-                for investigator in self.m_investigators:
-                    self.perform_selected_action \
-                        (investigator, actions + investigator.mythos (self))
+                self.game_phase_with_actions ("encounters_1")
+                self.game_phase_with_actions ("encounters_2")
+                self.game_phase_with_actions ("mythos")
 
         except EndGame:
             pass
+
+    def game_phase_with_actions (self, phase_name):
+        print "-- %s --" % phase_name
+
+        mod_actions = sum ((getattr (mod, phase_name) ()
+                            for mod in self.m_modules), [])
+
+        for investigator in self.m_investigators:
+            try:
+                while True:
+                    actions = (mod_actions
+                               + getattr (investigator, phase_name) (self))
+                    if len (actions) == 0:
+                        break
+                    actions.append \
+                        (arkham.GameplayAction_DoNothing ())
+                    self.perform_selected_action \
+                        (investigator, actions)
+
+            except EndPhase:
+                pass
 
     def perform_selected_action (self, investigator, actions):
         if actions:
@@ -258,8 +255,8 @@ class Game (fight_hooks.FightHooks, check_hooks.CheckHooks,
         actions = []
         actions.extend (investigator.pre_combat (combat, monster))
         actions.extend (monster.pre_combat (combat, investigator))
-        actions.extend (sum ((modi.pre_combat (combat, investigator, monster)
-                              for modi in self.m_modules), []))
+        actions.extend (sum ((mod.pre_combat (combat, investigator, monster)
+                              for mod in self.m_modules), []))
         self.perform_selected_action (investigator, actions)
 
     def combat_turn (self, combat, investigator, monster):
@@ -267,8 +264,8 @@ class Game (fight_hooks.FightHooks, check_hooks.CheckHooks,
         actions = []
         actions.extend (investigator.combat_turn (combat, monster))
         actions.extend (monster.combat_turn (combat, investigator))
-        actions.extend (sum ((modi.combat_turn (combat, investigator, monster)
-                              for modi in self.m_modules), []))
+        actions.extend (sum ((mod.combat_turn (combat, investigator, monster)
+                              for mod in self.m_modules), []))
         self.perform_selected_action (investigator, actions)
 
     def investigator_dead (self, investigator):
@@ -278,8 +275,8 @@ class Game (fight_hooks.FightHooks, check_hooks.CheckHooks,
             print "-- investigator_dead --"
             actions = []
             actions.extend (investigator.investigator_dead (self))
-            actions.extend (sum ((modi.investigator_dead (investigator)
-                                  for modi in self.m_modules), []))
+            actions.extend (sum ((mod.investigator_dead (investigator)
+                                  for mod in self.m_modules), []))
             self.perform_selected_action (investigator, actions)
 
     def fight (self, investigator, monster):

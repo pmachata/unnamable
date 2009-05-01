@@ -87,13 +87,19 @@ class ModuleProto (NamedObject):
         pass
 
     # Game play phases.
-    def upkeep (self, game):
+    def upkeep_1 (self, game):
+        pass
+    def upkeep_2 (self, game):
+        return []
+    def upkeep_3 (self, game):
         return []
 
     def movement (self, game):
         return []
 
-    def encounters (self, game):
+    def encounters_1 (self, game):
+        return []
+    def encounters_2 (self, game):
         return []
 
     def mythos (self, game):

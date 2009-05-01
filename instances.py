@@ -1,7 +1,7 @@
 from loc import ObjectWithLocation
 from obj import Subject
 
-class ModuleInstance:
+class Module:
     def __init__ (self, game, type):
         self.m_game = game
         self.m_type = type
@@ -26,14 +26,20 @@ class ModuleInstance:
         return self.m_type.turn_0 (self.m_game)
 
     # Game play phases.
-    def upkeep (self):
-        return self.m_type.upkeep (self.m_game)
+    def upkeep_1 (self):
+        return self.m_type.upkeep_1 (self.m_game)
+    def upkeep_2 (self):
+        return self.m_type.upkeep_2 (self.m_game)
+    def upkeep_3 (self):
+        return self.m_type.upkeep_3 (self.m_game)
 
     def movement (self):
         return self.m_type.movement (self.m_game)
 
-    def encounters (self):
-        return self.m_type.encounters (self.m_game)
+    def encounters_1 (self):
+        return self.m_type.encounters_1 (self.m_game)
+    def encounters_2 (self):
+        return self.m_type.encounters_2 (self.m_game)
 
     def mythos (self):
         return self.m_type.mythos (self.m_game)
@@ -107,9 +113,14 @@ class Item (Subject):
         return "<Item \"%s\">" % self.name ()
 
     # Game phases
-    def upkeep (self, game, owner):
+    def upkeep_1 (self, game, owner):
         self.m_exhausted = False
-        return self.m_proto.upkeep (game, owner, self)
+
+    def upkeep_2 (self, game, owner):
+        return self.m_proto.upkeep_2 (game, owner, self)
+
+    def upkeep_3 (self, game, owner):
+        return self.m_proto.upkeep_3 (game, owner, self)
 
     def movement_points_bonus (self, game, owner):
         return self.m_proto.movement_points_bonus (game, owner, self)

@@ -160,7 +160,7 @@ def test7 (test, name):
 
     # Use matchclass now to make sure that we have only one available
     # match: to heal stamina.
-    yield fun.matchclass (arkham.GameplayAction_Heal)
+    yield lambda arg: arg.name ().find ("stamina +1") >= 0
     assert test.inv.health (arkham.health_stamina).cur () == h[1] + 1
 
     yield fun.matchclass (arkham.GameplayAction_Stay)

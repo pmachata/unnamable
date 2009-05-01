@@ -9,7 +9,10 @@ class ItemProto (ObjectWithAttributes, NamedObject):
     def discard (self):
         pass
 
-    def upkeep (self, game, owner, item):
+    def upkeep_2 (self, game, owner, item):
+        return []
+
+    def upkeep_3 (self, game, owner, item):
         return []
 
     def movement_points_bonus (self, game, owner, item):

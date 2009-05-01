@@ -221,14 +221,17 @@ class CheckHooks:
             (Game, arkham.Investigator, arkham.Subject, CheckBase, Modifier,
              name="normal_die_count_hook", trace=check_trace)
 
+        # Returns overall success value (True or False).
         self.perform_check_hook = fun.Function \
             (Game, arkham.Investigator, arkham.Subject,
              CheckBase, Modifier, Difficulty,
-             name="perform_check_hook", trace=check_trace)
+             name="perform_check_hook", trace=check_trace, returns=bool)
+
+        # Returns number of successes rolled.
         self.normal_perform_check_hook = fun.Function \
             (Game, arkham.Investigator, arkham.Subject,
              CheckBase, Modifier, Difficulty,
-             name="normal_perform_check_hook", trace=check_trace)
+             name="normal_perform_check_hook", trace=check_trace, returns=int)
 
         self.perform_check_actions_hook = fun.Function \
             (Game, arkham.Investigator, arkham.Subject, arkham.Item,
@@ -366,7 +369,7 @@ class CheckHooks:
                                         (game, investigator, subject,
                                          check_base, modifier, difficulty))
                     if not game.perform_selected_action (investigator, actions):
-                        break
+                        raise AssertionError ()
 
             except EndCheck, e:
                 return e.success ()
@@ -381,18 +384,14 @@ class CheckHooks:
             difficulty = game.difficulty_mod_hook \
                 (game, investigator, subject, check_base, difficulty)
 
+            successes = 0
+
             try:
                 while True:
-                    successes = 0
                     for dice in roll.roll ():
                         r_successes = game.dice_roll_successes_hook \
                             (game, investigator, subject, check_base, dice)
 
-                        # xxx Note: by having bonus_hook and bonus_mod_hook,
-                        # we make it possible for items to specialize the
-                        # first hook, and e.g. monsters specialize the second.
-                        # On the other hand, this doesn't allow item x item
-                        # influences.  Perhaps should be fixed.
                         for item in investigator.wields_items ():
                             b_successes = game.dice_roll_successes_bonus_hook \
                                 (game, investigator, subject, item,
@@ -414,19 +413,19 @@ class CheckHooks:
                             (game, investigator, subject, item, check_base) \
                             .perform (game, investigator)
 
-                    ret = successes >= difficulty
+                    success = successes >= difficulty
 
                     # xxx This needs to be passed over to UI as some sort of
                     # event description object.
                     print "%s check %s, %s/%s successes with roll %s"\
                         % (check_base.name (),
-                           "passed" if ret else "failed",
+                           "passed" if success else "failed",
                            successes, difficulty,
                            # I'd love to use unicode die faces, but while
                            # cute, that's just not practical.
                            ",".join (str (dice) for dice in roll.roll ()))
 
-                    if successes >= difficulty or not check_base.correctible ():
+                    if success or not check_base.correctible ():
                         print "success"
                         # No need to modify the roll.
                         break
@@ -444,7 +443,7 @@ class CheckHooks:
             except arkham.EndPhase:
                 pass
 
-            return ret
+            return successes
 
         @self.perform_check_actions_hook.match \
             (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)

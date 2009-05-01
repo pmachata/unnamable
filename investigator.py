@@ -226,13 +226,23 @@ class Investigator (ObjectWithLocation, GameplayObject, NamedObject):
                 if item in self.m_active_items]
 
     # Game play phases.
-    def upkeep (self, game):
+    def upkeep_1 (self, game):
+        for item in self.m_active_items:
+            item.upkeep_1 (game, self)
         self.m_movement_points \
             = sum ((item.movement_points_bonus (game, self)
                     for item in self.m_active_items),
                    self.initial_movement_points ())
-        return sum ((item.upkeep (game, self)
-                     for item in self.m_active_items), [])
+
+    def game_phase (self, game, phase_name, initial):
+        return sum ((getattr (item, phase_name) (game, self)
+                     for item in self.m_active_items), initial)
+
+    def upkeep_2 (self, game):
+        return self.game_phase (game, "upkeep_2", [])
+
+    def upkeep_3 (self, game):
+        return self.game_phase (game, "upkeep_3", [])
 
     def movement (self, game):
         if self.m_movement_points > 0:
@@ -245,10 +255,9 @@ class Investigator (ObjectWithLocation, GameplayObject, NamedObject):
         else:
             dest_actions = []
 
-        return [arkham.GameplayAction_Stay (self.m_location)] + dest_actions \
-            + sum ((item.movement (game, self)
-                    for item in self.m_active_items),
-                   self.item_actions ())
+        return self.game_phase \
+            (game, "movement",
+             [arkham.GameplayAction_Stay (self.m_location)] + dest_actions)
 
     def initial_movement_points (self):
         " not including bonuses for items "
@@ -262,8 +271,7 @@ class Investigator (ObjectWithLocation, GameplayObject, NamedObject):
 
     # Combat phases.
     def deal_with (self, game):
-        return sum ((item.deal_with (game, self)
-                     for item in self.wields_items ()), [])
+        return self.game_phase (game, "deal_with", [])
 
     def pre_combat (self, combat, monster):
         return ([arkham.GameplayAction_Evade_PreCombat (combat, monster),

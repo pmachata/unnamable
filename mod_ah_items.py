@@ -493,24 +493,20 @@ def build (game, module):
             arkham.InvestigatorItem.__init__ \
                 (self, "Healing Stone", 8, 0)
 
-        def upkeep (self, game, owner, item):
-            # Only allow one action per upkeep.  We can't exhaust,
-            # since upkeep is where the card should be refreshed.
-            item_turn = getattr (item, "turn", -1)
-            cur_turn = game.turn_number ()
-            item.turn = cur_turn
-            if cur_turn <= item_turn:
+        def upkeep_2 (self, game, owner, item):
+            if item.exhausted ():
                 return []
 
-            aspects = owner.health_aspects ()
             ret = []
             for aspect in (arkham.health_sanity, arkham.health_stamina):
-                if aspect in aspects:
+                if aspect in owner.health_aspects ():
                     health = owner.health (aspect)
                     if health.cur () < health.max ():
                         ret.append \
-                            (arkham.GameplayAction_Heal \
-                                 (arkham.Heal ({aspect: 1})))
+                            (arkham.GameplayAction_Multiple \
+                                 ([arkham.GameplayAction_Exhaust (item),
+                                   arkham.GameplayAction_Heal \
+                                       (arkham.Heal ({aspect: 1}))]))
             return ret
 
 
@@ -580,7 +576,7 @@ def build (game, module):
         Stamina tokens on it. """
 
         return [arkham.GameplayAction_Multiple \
-                ([arkham.GameplayAction_SucceedCheck (check_base),
+                ([arkham.GameplayAction_PassCheck (check_base),
                   arkham.GameplayAction_MarkItem \
                       (item, 3, arkham.GameplayAction_Discard (item))])]
 
