@@ -10,6 +10,7 @@ from checks import *
 from damage import *
 from track import *
 from item import *
+from instances import *
 from deck import *
 from game import *
 

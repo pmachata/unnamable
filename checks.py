@@ -1,9 +1,4 @@
 import arkham
-import fun
-from game import Game, Item
-from investigator import Investigator
-from obj import Subject
-import conf
 
 class Check:
     def check (self, game, investigator):
@@ -34,7 +29,7 @@ class SkillCheck (Check):
 
     def check (self, game, investigator, subject):
         print "%s check:" % self.m_check_base.name ()
-        return arkham.perform_check_hook \
+        return game.perform_check_hook \
             (game, investigator, subject,
              self.m_check_base, self.m_base_modifier, self.m_difficulty)
 

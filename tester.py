@@ -106,15 +106,16 @@ class TestGame (arkham.Game):
                               TestUI (controller))
         self.m_controller = controller
 
+        @self.normal_one_dice_roll_hook.match \
+            (fun.matchclass (TestGame), fun.any, fun.any, fun.any)
+        def do (game, investigator, subject, skill_name):
+            return game.roll ()
+
     def roll (self):
         ret = self.m_controller.next ()
         assert isinstance (ret, int), ret
         assert ret > 0
         return ret
-
-@arkham.normal_one_dice_roll_hook.match (fun.matchclass (TestGame), fun.any, fun.any, fun.any)
-def do (game, investigator, subject, skill_name):
-    return game.roll ()
 
 class Controller:
     def __init__ (self):

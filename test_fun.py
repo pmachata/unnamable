@@ -231,6 +231,17 @@ def test9 ():
     x ()
     assert q == [1, 2, 3]
 
+def test10 ():
+    class X:
+        def __init__ (self):
+            self.x = fun.Function (int)
+
+            @self.x.match (int)
+            def do (i):
+                return i + 1
+
+    assert X ().x (1) == 2
+
 test1 ()
 test2 ()
 test3 ()
@@ -240,3 +251,4 @@ test6 ()
 test7 ()
 test8 ()
 test9 ()
+test10 ()

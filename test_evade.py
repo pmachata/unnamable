@@ -31,9 +31,11 @@ class Game1 (tester.TestGame):
     def __init__ (self):
         tester.TestGame.__init__ (self, Test1 ())
 
-@arkham.pass_evade_check_hook.match  (tester.match_combat (Game1), tester.match_investigator ("1"), fun.any)
-def do (combat, investigator, monster):
-    raise tester.EndTest (True)
+        @self.pass_evade_check_hook.match  \
+            (tester.match_combat (Game1),
+             tester.match_investigator ("1"), fun.any)
+        def do (combat, investigator, monster):
+            raise tester.EndTest (True)
 
 
 class Test2 (Test1):
@@ -49,9 +51,11 @@ class Game2 (tester.TestGame):
     def __init__ (self):
         tester.TestGame.__init__ (self, Test2 ())
 
-@arkham.fail_evade_check_hook.match  (tester.match_combat (Game2), tester.match_investigator ("1"), fun.any)
-def do (combat, investigator, monster):
-    raise tester.EndTest (True)
+        @self.fail_evade_check_hook.match \
+            (tester.match_combat (Game2),
+             tester.match_investigator ("1"), fun.any)
+        def do (combat, investigator, monster):
+            raise tester.EndTest (True)
 
 tester.run_test (Game1 ())
 tester.run_test (Game2 ())

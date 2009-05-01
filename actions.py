@@ -268,7 +268,7 @@ class GameplayAction_NormalCheckHook (GameplayAction):
         self.m_difficulty = difficulty
 
     def perform (self, game, investigator):
-        raise arkham.EndCheck (arkham.normal_perform_check_hook \
+        raise arkham.EndCheck (game.normal_perform_check_hook \
                                    (game, investigator, self.m_subject,
                                     self.m_check_base, self.m_modifier,
                                     self.m_difficulty))
@@ -292,7 +292,7 @@ class GameplayAction_Evade_PreCombat (GameplayAction_Evade):
         GameplayAction_Evade.__init__ (self, *args)
 
     def perform (self, game, investigator):
-        arkham.evade_check_hook (self.m_combat, investigator, self.m_monster)
+        game.evade_check_hook (self.m_combat, investigator, self.m_monster)
         investigator.lose_movement_points ()
         raise arkham.ContinueCombat () # Proceed with the combat.
 
@@ -301,7 +301,7 @@ class GameplayAction_Evade_Combat (GameplayAction_Evade):
         GameplayAction_Evade.__init__ (self, *args)
 
     def perform (self, game, investigator):
-        arkham.evade_check_hook (self.m_combat, investigator, self.m_monster)
+        game.evade_check_hook (self.m_combat, investigator, self.m_monster)
 
 class GameplayAction_Fight (MonsterBoundGameplayAction):
     def __init__ (self, monster):

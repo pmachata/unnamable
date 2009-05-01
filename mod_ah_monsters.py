@@ -1,9 +1,10 @@
 import fun
 import arkham
+import conf
 
 # xxx should be published by module so that it's possible to override it
 lose_in_time_and_space = fun.Function (arkham.Game, arkham.Investigator,
-                                       name="lose_in_time_and_space", trace=arkham.trace)
+                                       name="lose_in_time_and_space", trace=conf.trace)
 @lose_in_time_and_space.match (fun.any, fun.any)
 def do (game, investigator):
     place = find_location (game, "lost_in_time_and_space")
@@ -28,7 +29,8 @@ def build (game, module):
                 (self, "Elder Thing",
                  -2, (-3, 2), 2, (+0, 1))
 
-    @arkham.combat_check_fail_hook.match (fun.any, fun.any, arkham.match_proto (ElderThing))
+    @game.combat_check_fail_hook.match \
+        (fun.any, fun.any, arkham.match_proto (ElderThing))
     def do (game, investigator, monster):
         print """XXX When you fail a Combat check against Elder
         Thing, you must discard 1 of your Weapons or Spells (your
@@ -61,7 +63,8 @@ def build (game, module):
                                  # goes to the cup after it's
                                  # killed.
 
-    @arkham.combat_check_pass_hook.match (fun.any, fun.any, arkham.match_proto (MiGo))
+    @game.combat_check_pass_hook.match \
+        (fun.any, fun.any, arkham.match_proto (MiGo))
     def do (game, investigator, monster):
         print """XXX If you pass a Combat check against Migo,
         return it to the box and draw 1 Unique Item."""
@@ -118,7 +121,8 @@ def build (game, module):
         def combat_harm (self):
             return arkham.SpecialHarm ()
 
-    @arkham.fight_hook.match (fun.any, fun.any, arkham.match_proto (TheBlackMan))
+    @game.fight_hook.match \
+        (fun.any, fun.any, arkham.match_proto (TheBlackMan))
     def do (combat, investigator, monster):
         if arkham.SkillCheck (arkham.checkbase_luck, -1) \
                 .check (combat.game, investigator, monster):
@@ -128,15 +132,18 @@ def build (game, module):
             investigator.devour (combat.game, monster)
             raise arkham.EndCombat (False)
 
-    @arkham.cause_combat_harm_hook.match (fun.any, fun.any, arkham.match_proto (TheBlackMan))
+    @game.cause_combat_harm_hook.match \
+        (fun.any, fun.any, arkham.match_proto (TheBlackMan))
     def do (combat, investigator, monster):
         pass
 
-    @arkham.combat_won_hook.match (fun.any, fun.any, arkham.match_proto (TheBlackMan))
+    @game.combat_won_hook.match \
+        (fun.any, fun.any, arkham.match_proto (TheBlackMan))
     def do (combat, investigator, monster):
         arkham.endless_combat_won_hook (combat, investigator, monster)
 
-    @arkham.combat_lost_hook.match (fun.any, fun.any, arkham.match_proto (TheBlackMan))
+    @game.combat_lost_hook.match \
+        (fun.any, fun.any, arkham.match_proto (TheBlackMan))
     def do (combat, investigator, monster):
         arkham.endless_combat_won_hook (combat, investigator, monster)
 
@@ -149,7 +156,8 @@ def build (game, module):
                  mask = True,
                  endless = True)
 
-    @arkham.fight_hook.match (fun.any, fun.any, arkham.match_proto (TheBloatedWoman))
+    @game.fight_hook.match \
+        (fun.any, fun.any, arkham.match_proto (TheBloatedWoman))
     def do (combat, investigator, monster):
         """Before making a Horror check, pass a Will(-2) check or
         or automatically fail the Horror check and the Combat check."""

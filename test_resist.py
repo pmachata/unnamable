@@ -28,9 +28,9 @@ def gen_test (item_fam, *roll, **resist):
                 def __init__ (self):
                     arkham.InvestigatorItem.__init__ (self, "item", 0, 1)
 
-            @arkham.bonus_hook.match (fun.any, fun.any, fun.any,
-                                      arkham.with_proto (fun.matchclass (MyItem)),
-                                      fun.val == arkham.checkbase_combat)
+            @game.bonus_hook.match (fun.any, fun.any, fun.any,
+                                    arkham.with_proto (fun.matchclass (MyItem)),
+                                    fun.val == arkham.checkbase_combat)
             def do (game, investigator, subject, item, check_base):
                 return arkham.Bonus (2, item_fam)
 

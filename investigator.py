@@ -306,7 +306,7 @@ class Investigator (ObjectWithLocation, GameplayObject):
                                 ([spend_clue_action,
                                   arkham.GameplayAction_AddRoll (subject, check_base, roll)])
                             for spend_clue_action
-                            in arkham.spend_clue_token_actions_hook \
+                            in game.spend_clue_token_actions_hook \
                                 (game, self, subject, item, check_base)]
                            for item in self.m_active_items), [])
 

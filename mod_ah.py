@@ -31,6 +31,7 @@ def has_token (what):
         return False
     return match
 
+"""
 class ItemBlessing:
     pass
 
@@ -48,6 +49,7 @@ def do (game, investigator, subject, item, skill_name, roll):
 def do (game, investigator, subject, item, skill_name, roll):
     if roll == 5:
         return -1
+"""
 
 class ModuleProto (arkham.ModuleProto):
     def __init__ (self):

@@ -96,10 +96,10 @@ class Test (tester.Controller):
     def actions (self):
         x = self.module.heal_action_times ()
         y = self.module.expected_increment (x)
+        h = self.inv.health (self.aspect).cur ()
         for i in range (x):
             for action in self.module.actions ():
                 yield action
-        h = self.inv.health (self.aspect).cur ()
         if y != _damage:
             yield fun.matchclass (arkham.GameplayAction_IncurDamage)
         assert self.inv.health (self.aspect).cur () == h - _damage + y

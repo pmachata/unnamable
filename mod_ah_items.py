@@ -2,14 +2,7 @@ import arkham
 import checks
 import fun
 
-# XXX All hooks really HAVE to be inside Game.  Otherwise each game
-# instance will include additional overloads without dropping the old
-# ones.
-first = True
-
 def build (game, module):
-    global first
-
     def plain_item (name, price, hands, bonuses, **attributes):
         after_use = attributes.pop ("after_use", None)
         extra_classes = tuple (attributes.pop ("extra_classes", ()))
@@ -20,14 +13,14 @@ def build (game, module):
         PlainItem.__bases__ = PlainItem.__bases__ + extra_classes
 
         for check_base, bonus in bonuses.iteritems ():
-            @arkham.bonus_hook.match \
+            @game.bonus_hook.match \
                 (fun.any, fun.any, fun.any,
                  arkham.match_proto (PlainItem), fun.val == check_base)
             def do (game, investigator, subject, item, check_base):
                 return bonus
 
             if after_use:
-                @arkham.item_after_use_hook.match \
+                @game.item_after_use_hook.match \
                     (fun.any, fun.any, fun.any,
                      arkham.match_proto (PlainItem), fun.val == check_base)
                 def do (game, investigator, subject, item, check_base):
@@ -89,7 +82,7 @@ def build (game, module):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, ".18 Derringer", 3, 1)
 
-    @arkham.bonus_hook.match \
+    @game.bonus_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Derringer18),
          fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
@@ -100,7 +93,7 @@ def build (game, module):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, "Axe", 3, 1)
 
-    @arkham.bonus_hook.match \
+    @game.bonus_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Axe),
          fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
@@ -115,13 +108,13 @@ def build (game, module):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, "Bullwhip", 2, 1)
 
-    @arkham.bonus_hook.match \
+    @game.bonus_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Bullwhip),
          fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
         return arkham.Bonus (1, arkham.family_physical)
 
-    @arkham.check_correction_actions_hook.match \
+    @game.check_correction_actions_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Bullwhip),
          fun.val == arkham.checkbase_combat, fun.any)
     def do (game, investigator, subject, item, skill_name, roll):
@@ -138,14 +131,14 @@ def build (game, module):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, "Cross", 3, 1)
 
-    @arkham.bonus_hook.match \
+    @game.bonus_hook.match \
         (fun.any, fun.any, arkham.match_flag ("undead"),
          arkham.match_proto (Cross),
          fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
         return arkham.Bonus (3, arkham.family_magical)
 
-    @arkham.bonus_hook.match \
+    @game.bonus_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Cross),
          fun.val == arkham.checkbase_horror)
     def do (game, investigator, subject, item, skill_name):
@@ -156,7 +149,7 @@ def build (game, module):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, "Food", 1, 0)
 
-    @arkham.damage_correction_actions_hook.match \
+    @game.damage_correction_actions_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Food),
          lambda damage: arkham.health_stamina in damage.aspects ())
     def do (game, investigator, subject, item, damage):
@@ -171,7 +164,7 @@ def build (game, module):
             arkham.InvestigatorItem.__init__ \
                 (self, "Lucky Cigarette Case", 1, 0)
 
-    @arkham.check_correction_actions_hook.match \
+    @game.check_correction_actions_hook.match \
         (fun.any, fun.any, fun.any,
          arkham.match_proto (LuckyCigaretteCase), fun.any, fun.any)
     def do (game, investigator, subject, item, skill_name, roll):
@@ -213,7 +206,7 @@ def build (game, module):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, "Research Materials", 1, 0)
 
-    @arkham.spend_clue_token_actions_hook.match \
+    @game.spend_clue_token_actions_hook.match \
         (fun.any, fun.any, fun.any,
          arkham.match_proto (ResearchMaterials), fun.any)
     def do (game, investigator, subject, item, skill_name):
@@ -224,13 +217,13 @@ def build (game, module):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, "Shotgun", 6, 2)
 
-    @arkham.bonus_hook.match \
+    @game.bonus_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Shotgun),
          fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
         return arkham.Bonus (4, arkham.family_physical)
 
-    @arkham.dice_roll_successes_bonus_hook.match \
+    @game.dice_roll_successes_bonus_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Shotgun),
          fun.val == arkham.checkbase_combat,
          fun.val == 6)
@@ -242,7 +235,7 @@ def build (game, module):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, "Whiskey", 1, 0)
 
-    @arkham.damage_correction_actions_hook.match \
+    @game.damage_correction_actions_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Whiskey),
          lambda damage: arkham.health_sanity in damage.aspects ())
     def do (game, investigator, subject, item, damage):
@@ -370,7 +363,7 @@ def build (game, module):
             return BlueWatcherOfThePyramid.bonus_action \
                 (combat.game, owner, monster, item)
 
-    @arkham.check_correction_actions_hook.match \
+    @game.check_correction_actions_hook.match \
         (fun.any, fun.any, fun.any,
          arkham.match_proto (BlueWatcherOfThePyramid),
          fun.val == arkham.checkbase_combat, fun.any)
@@ -439,7 +432,7 @@ def build (game, module):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, "Enchanted Jewelry", 3, 0)
 
-    @arkham.damage_correction_actions_hook.match \
+    @game.damage_correction_actions_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (EnchantedJewelry),
          lambda damage: arkham.health_stamina in damage.aspects ())
     def do (game, investigator, subject, item, damage):
@@ -471,7 +464,7 @@ def build (game, module):
 
                 def perform (self, game, investigator):
                     for monster in game.monsters_at (owner.location ()):
-                        arkham.combat_won_hook (combat, owner, monster)
+                        game.combat_won_hook (combat, owner, monster)
 
             return [
                 arkham.GameplayAction_Multiple \
@@ -526,13 +519,13 @@ def build (game, module):
             arkham.InvestigatorItem.__init__ (self, "Holy Water", 4, 2)
             """Bonus: +6 Combat check (Discard after use)"""
 
-    @arkham.bonus_hook.match \
+    @game.bonus_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (HolyWater),
          fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
         return 6
 
-    @arkham.item_after_use_hook.match \
+    @game.item_after_use_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (HolyWater),
          fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
@@ -545,7 +538,7 @@ def build (game, module):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, "Obsidian Statue", 4, 0)
 
-    @arkham.damage_correction_actions_hook.match \
+    @game.damage_correction_actions_hook.match \
         (fun.any, fun.any, fun.any,
          arkham.match_proto (ObsidianStatue), fun.any)
     def do (game, investigator, subject, item, damage):
@@ -576,7 +569,7 @@ def build (game, module):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, "Silver Key", 4, 0)
 
-    @arkham.perform_check_actions_hook.match \
+    @game.perform_check_actions_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (SilverKey),
          fun.val == arkham.checkbase_evade, fun.any, fun.any)
     def do (game, investigator, subject, item,
@@ -596,7 +589,7 @@ def build (game, module):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, "Warding Statue", 6, 0)
 
-    @arkham.cause_combat_harm_actions_hook.match \
+    @game.cause_combat_harm_actions_hook.match \
         (fun.any, fun.any, fun.any,
          arkham.match_proto (WardingStatue),
          fun.and_ (fun.matchclass (arkham.HarmDamage),
@@ -777,7 +770,7 @@ def build (game, module):
                                     arkham.GameplayAction_WieldItem (inst, True),
                                     arkham.GameplayAction_Discard (inst)))])]
 
-    @arkham.bonus_hook.match \
+    @game.bonus_hook.match \
         (fun.any, fun.any, fun.any,
          arkham.match_proto (DreadCurseOfAzathoth.Instance),
          fun.val == arkham.checkbase_combat)
@@ -818,19 +811,15 @@ def build (game, module):
                                              (item, "enchanted"))))
                        ])]
 
-    # xxx hack...
-    if first:
-        @arkham.bonus_hook.match \
-            (fun.any, fun.any, fun.any,
-             arkham.match_flag ("enchanted"),
-             fun.val == arkham.checkbase_combat,
-             priority = 1)
-        def do (game, investigator, subject, item, check_base):
-            original_bonus = next ()
-            original_bonus.set_family (arkham.family_magical)
-            return original_bonus
-
-        first = False
+    @game.bonus_hook.match \
+        (fun.any, fun.any, fun.any,
+         arkham.match_flag ("enchanted"),
+         fun.val == arkham.checkbase_combat,
+         priority = 1)
+    def do (game, investigator, subject, item, check_base):
+        original_bonus = next ()
+        original_bonus.set_family (arkham.family_magical)
+        return original_bonus
 
 
     class xxxFindGate (module.mod_spell.SpellItem):
@@ -846,7 +835,7 @@ def build (game, module):
         def __init__ (self):
             module.mod_spell.SpellItem.__init__ (self, "Flesh Ward", 0, 0)
 
-    @arkham.damage_correction_actions_hook.match \
+    @game.damage_correction_actions_hook.match \
         (fun.any, fun.any, fun.any,
          arkham.match_proto (FleshWard), fun.any)
     def do (game, owner, subject, item, damage):

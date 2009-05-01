@@ -92,7 +92,7 @@ class HarmDamage (Harm):
         return self.m_damage
 
     def cause (self, game, investigator, monster):
-        arkham.damage_hook (game, investigator, monster, self.m_damage)
+        game.damage_hook (game, investigator, monster, self.m_damage)
 
     def nil (self, game, investigator, monster):
         return self.m_damage.nil ()
