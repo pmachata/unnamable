@@ -27,11 +27,17 @@ class SkillCheck (Check):
         self.m_difficulty = difficulty
         assert difficulty >= 1
 
-    def check (self, game, investigator, subject):
+    def _perform_check (self, game, investigator, subject):
         print "%s check:" % self.m_check_base.name ()
         return game.perform_check_hook \
             (game, investigator, subject,
              self.m_check_base, self.m_base_modifier, self.m_difficulty)
+
+    def check (self, game, investigator, subject):
+        return self._perform_check (game, investigator, subject)[0]
+
+    def extended_check (self, game, investigator, subject):
+        return self._perform_check (game, investigator, subject)
 
     def difficulty (self):
         return self.m_difficulty

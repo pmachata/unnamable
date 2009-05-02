@@ -4,10 +4,11 @@ import arkham
 import obj
 
 class EndCheck (Exception):
-    def __init__ (self, success):
+    def __init__ (self, success, successes):
         self.m_success = success
-    def success (self):
-        return self.m_success
+        self.m_successes = successes
+    def result (self):
+        return self.m_success, self.m_successes
 
 class CheckBase (obj.NamedObject):
     def __init__ (self, name, correctible):
@@ -221,11 +222,11 @@ class CheckHooks:
             (Game, arkham.Investigator, arkham.Subject, CheckBase, Modifier,
              name="normal_die_count_hook", trace=check_trace)
 
-        # Returns overall success value (True or False).
+        # Returns a pair (overall success value, number of successes).
         self.perform_check_hook = fun.Function \
             (Game, arkham.Investigator, arkham.Subject,
              CheckBase, Modifier, Difficulty,
-             name="perform_check_hook", trace=check_trace, returns=bool)
+             name="perform_check_hook", trace=check_trace, returns=tuple)
 
         # Returns number of successes rolled.
         self.normal_perform_check_hook = fun.Function \
@@ -372,7 +373,7 @@ class CheckHooks:
                         raise AssertionError ()
 
             except EndCheck, e:
-                return e.success ()
+                return e.result ()
 
         @self.normal_perform_check_hook.match \
             (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)

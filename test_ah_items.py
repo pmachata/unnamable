@@ -5,6 +5,7 @@ import fun
 import arkham
 import mod_common
 import mod_unique
+import mod_spell
 
 class ModuleProto (test_ah.ModuleProto):
     def turn_0 (self, game):
@@ -43,6 +44,12 @@ def action_bound_monster_named (name):
         else:
             return item.name () == name
     return match
+
+def cast_spell (*roll):
+    yield fun.matchclass (arkham.GameplayAction_Multiple) # cast spell
+    yield fun.matchclass (arkham.GameplayAction_IncurDamage) # spell damage
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook) # lore check
+    for i in roll: yield i
 
 def test_item (name, actions, deck = mod_common.CommonDeck):
     class ModuleProto1 (ModuleProto):
@@ -160,7 +167,7 @@ def test7 (test, name):
 
     # Use matchclass now to make sure that we have only one available
     # match: to heal stamina.
-    yield lambda arg: arg.name ().find ("stamina +1") >= 0
+    yield lambda arg: "stamina" in arg.name ()
     assert test.inv.health (arkham.health_stamina).cur () == h[1] + 1
 
     yield fun.matchclass (arkham.GameplayAction_Stay)
@@ -202,6 +209,19 @@ def test11 (test, name):
     assert test.inv.clues () == clues + 4
     raise tester.EndTest (True)
 
+def test12 (n):
+    def t (test, name):
+        h = test.inv.health (arkham.health_stamina)
+        h.reduce (5)
+        hv = h.cur ()
+        yield fun.matchclass (arkham.GameplayAction_Stay) # wait for next round
+        for y in cast_spell (*list (5 if i < n else 1 for i in range (4))): yield y
+        yield lambda action: " %d " % n in action.name ()
+        assert h.cur () == hv + n
+        yield fun.matchclass (arkham.GameplayAction_Stay)
+        raise tester.EndTest (True)
+    return t
+
 if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_item ("Old Journal", test1))))
     tester.run_test (test_ah.Game (Test (test_item ("Ancient Tome", test2))))
@@ -214,3 +234,6 @@ if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_item ("Necronomicon", test9, mod_unique.UniqueDeck))))
     tester.run_test (test_ah.Game (Test (test_item ("Ruby of R'lyeh", test10, mod_unique.UniqueDeck))))
     tester.run_test (test_ah.Game (Test (test_item ("The King in Yellow", test11, mod_unique.UniqueDeck))))
+    tester.run_test (test_ah.Game (Test (test_item ("Heal", test12 (1), mod_spell.SpellDeck))))
+    tester.run_test (test_ah.Game (Test (test_item ("Heal", test12 (2), mod_spell.SpellDeck))))
+    tester.run_test (test_ah.Game (Test (test_item ("Heal", test12 (3), mod_spell.SpellDeck))))

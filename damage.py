@@ -49,7 +49,7 @@ class Damage (ImpactHealth):
             investigator.health (aspect).reduce (amount.amount ())
 
     def description (self):
-        return ", ".join ("%s %+d" % (aspect.name (), -amount.amount ())
+        return ", ".join ("decrease %s by %s" % (aspect.name (), amount.amount ())
                           for aspect, amount in self.m_aspects.iteritems ())
 
 class Heal (ImpactHealth):
@@ -58,7 +58,7 @@ class Heal (ImpactHealth):
             investigator.health (aspect).add (amount.amount ())
 
     def description (self):
-        return ", ".join ("%s %+d" % (aspect.name (), amount.amount ())
+        return ", ".join ("add %s to %s" % (amount.amount (), aspect.name ())
                           for aspect, amount in self.m_aspects.iteritems ())
 
 class Harm:

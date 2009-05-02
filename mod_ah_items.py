@@ -854,10 +854,52 @@ def build (game, module):
                                 (damage, arkham.health_stamina))])]
 
 
+    class Heal (module.mod_spell.SpellItem):
+        """Upkeep Phase: You may cast and exhaust. You or another
+        investigator in your area gains Stamina equal to the successes
+        you rolled on your Spell check. This Stamina cannot be split
+        between multiple investigators."""
+        def __init__ (self):
+            module.mod_spell.SpellItem.__init__ (self, "Heal", 0, 0)
+
+        def upkeep_2 (self, game, owner, item):
+            if item.exhausted ():
+                return []
+
+            def qualifies (investigator):
+                if investigator.location () != owner.location ():
+                    return False
+                h = investigator.health (arkham.health_stamina)
+                return h.cur () < h.max ()
+
+            if not any (qualifies (investigator)
+                        for investigator in game.investigators ()):
+                return []
+
+            def success_action (successes):
+                return arkham.GameplayAction_WithSelectedInvestigator \
+                    (qualifies,
+                     "you or other investigator on the same location",
+                     lambda investigator: \
+                         arkham.GameplayAction_Heal \
+                                (arkham.Heal ({arkham.health_stamina:
+                                                   successes})))
+
+            return [arkham.GameplayAction_Multiple \
+                        ([arkham.GameplayAction_Exhaust (item),
+                           arkham.GameplayAction_CauseHarm \
+                               (game, owner, item,
+                                arkham.HarmSanity (1)),
+                           arkham.GameplayAction_WithNumberOfSuccesses \
+                               (game, owner, item,
+                                arkham.SkillCheck (arkham.checkbase_lore, +1),
+                                success_action)])]
+
     for count, item_proto in [
             (1, BindMonster ()),
             (1, DreadCurseOfAzathoth ()),
             (1, EnchantWeapon ()),
             (1, FleshWard ()),
+            (1, Heal ()),
         ]:
         module.m_spell_deck.register (item_proto, count)

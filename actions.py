@@ -138,6 +138,37 @@ class GameplayAction_Conditional (GameplayAction_Many):
         else:
             return None
 
+class GameplayAction_WithNumberOfSuccesses (GameplayAction):
+    # SkillCheck needs to be passed here, or something else that can
+    # yield success as well as number of successes after the call to
+    # `extended_check' method.
+    def __init__ (self, game, investigator, subject,
+                  skill_check, action_ctor_pass, action_ctor_fail = None):
+        assert action_ctor_pass is not None
+        n = "number of successes"
+        GameplayAction.__init__ \
+                 (self,
+                  "if %s passes then %s%s" \
+                      % (skill_check.description (game, investigator),
+                         action_ctor_pass (n).name (),
+                          (", else %s" % action_ctor_fail (n).name () \
+                               if action_ctor_fail != None else "")))
+
+        self.m_check = skill_check
+        self.m_subject = subject
+        self.m_pass = action_ctor_pass
+        self.m_fail = action_ctor_fail
+
+    def perform (self, game, investigator):
+        success, successes \
+            = self.m_check.extended_check (game, investigator, self.m_subject)
+        if success:
+            return self.m_pass (successes).perform (game, investigator)
+        elif self.m_fail != None:
+            return self.m_fail (successes).perform (game, investigator)
+        else:
+            return None
+
 class GameplayAction_WithSelectedItem (GameplayAction):
     def __init__ (self, selector, description, action_ctor):
         class FakeItem (arkham.ItemProto):
@@ -152,6 +183,25 @@ class GameplayAction_WithSelectedItem (GameplayAction):
         actions = [self.m_action_ctor (item)
                    for item in investigator.wields_items ()
                    if self.m_selector (item)]
+        assert len (actions) > 0
+        game.perform_selected_action (investigator, actions)
+
+class GameplayAction_WithSelectedInvestigator (GameplayAction):
+    def __init__ (self, selector, description, action_ctor):
+        class FakeInvestigator (arkham.ItemProto):
+            def __init__ (self):
+                arkham.ItemProto.__init__ (self, None)
+        GameplayAction.__init__ \
+            (self, "select %s and %s" \
+                 % (description,
+                    action_ctor (FakeInvestigator ()).name ()))
+        self.m_selector = selector
+        self.m_action_ctor = action_ctor
+
+    def perform (self, game, investigator):
+        actions = [self.m_action_ctor (investigator)
+                   for investigator in game.investigators ()
+                   if self.m_selector (investigator)]
         assert len (actions) > 0
         game.perform_selected_action (investigator, actions)
 
@@ -249,17 +299,18 @@ class GameplayAction_NormalCheckHook (GameplayAction):
         self.m_difficulty = difficulty
 
     def perform (self, game, investigator):
-        raise arkham.EndCheck (game.normal_perform_check_hook \
-                                   (game, investigator, self.m_subject,
-                                    self.m_check_base, self.m_modifier,
-                                    self.m_difficulty) >= self.m_difficulty)
+        successes = game.normal_perform_check_hook \
+            (game, investigator, self.m_subject,
+             self.m_check_base, self.m_modifier,
+             self.m_difficulty)
+        raise arkham.EndCheck (successes >= self.m_difficulty, successes)
 
 class GameplayAction_PassCheck (GameplayAction):
     def __init__ (self, check_base):
         GameplayAction.__init__ (self, "pass %s check" % check_base.name ())
 
     def perform (self, game, investigator):
-        raise arkham.EndCheck (True)
+        raise arkham.EndCheck (True, 1)
 
 # Combat actions
 

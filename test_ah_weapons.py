@@ -42,12 +42,6 @@ def fight_and_horror_check (*roll):
     yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
     for i in roll: yield i
 
-def cast_spell (*roll):
-    yield fun.matchclass (arkham.GameplayAction_Multiple) # cast spell
-    yield fun.matchclass (arkham.GameplayAction_IncurDamage) # spell damage
-    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook) # lore check
-    for i in roll: yield i
-
 def test1 (test):
     for y in fight_and_horror_check (5, 5): yield y
     yield fun.matchclass (arkham.GameplayAction_Fight)
