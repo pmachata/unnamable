@@ -895,11 +895,31 @@ def build (game, module):
                                 arkham.SkillCheck (arkham.checkbase_lore, +1),
                                 success_action)])]
 
+    class MistsOfReleh (module.mod_spell.SpellItem):
+        def __init__ (self):
+            module.mod_spell.SpellItem.__init__ (self, "Mists of Releh", 0, 0)
+
+    @game.perform_check_actions_hook.match \
+        (fun.any, fun.any, fun.any, arkham.match_proto (MistsOfReleh),
+         fun.val == arkham.checkbase_evade, fun.any, fun.any)
+    def do (game, investigator, subject, item,
+            check_base, modifier, difficulty):
+        """Any Phase: Cast and exhaust to pass an Evade check. The
+        casting modifier is equal to the monster's Awareness."""
+
+        return [arkham.GameplayAction_Multiple \
+                    ([arkham.GameplayAction_Exhaust (item),
+                      arkham.GameplayAction_Conditional \
+                          (game, investigator, item,
+                           arkham.SkillCheck (arkham.checkbase_lore, modifier),
+                           arkham.GameplayAction_PassCheck (check_base))])]
+
     for count, item_proto in [
             (1, BindMonster ()),
             (1, DreadCurseOfAzathoth ()),
             (1, EnchantWeapon ()),
             (1, FleshWard ()),
             (1, Heal ()),
+            (1, MistsOfReleh ()),
         ]:
         module.m_spell_deck.register (item_proto, count)

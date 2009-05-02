@@ -19,9 +19,10 @@ def test_weapons (actions, names, **attrib):
             class SomeMonster (arkham.SimpleMonster):
                 def __init__ (self):
                     toughness = attrib.pop ("toughness", 1)
+                    awareness = attrib.pop ("awareness", 1)
                     arkham.SimpleMonster.__init__ \
                         (self, "SomeMonster",
-                         0, (0, 1), toughness, (0, 1),
+                         awareness, (0, 1), toughness, (0, 1),
                          **attrib)
             game.add_monster (arkham.Monster (SomeMonster ()),
                               inv.location ())
@@ -136,6 +137,19 @@ def test7 (test):
     yield fun.matchclass (arkham.GameplayAction_Stay)
     raise tester.EndTest (True)
 
+def test8 (awareness):
+    def t (test):
+        yield fun.matchclass (arkham.GameplayAction_Stay)
+        yield fun.matchclass (arkham.GameplayAction_DealWithMonster)
+        yield fun.matchclass (arkham.GameplayAction_Evade)
+        yield lambda action: (" lore(%+d) " % awareness) in action.name ()
+        yield fun.matchclass (arkham.GameplayAction_NormalCheckHook) # lore check
+        for i in range (3 + awareness):
+            yield 5
+        yield fun.matchclass (arkham.GameplayAction_Stay)
+        raise tester.EndTest (True)
+    return t
+
 if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_weapon ("Dynamite", test1))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Powder of Ibn-Ghazi", test2, mod_unique.UniqueDeck))))
@@ -148,3 +162,5 @@ if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_weapons (test7, [("Enchant Weapon", mod_spell.SpellDeck),
                                                                (".18 Derringer", mod_common.CommonDeck)],
                                                        physical="immunity"))))
+    tester.run_test (test_ah.Game (Test (test_weapon ("Mists of Releh", test8 (-1), mod_spell.SpellDeck, awareness=-1))))
+    tester.run_test (test_ah.Game (Test (test_weapon ("Mists of Releh", test8 (+1), mod_spell.SpellDeck, awareness=+1))))
