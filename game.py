@@ -26,6 +26,11 @@ class Game (fight_hooks.FightHooks, check_hooks.CheckHooks,
         check_hooks.CheckHooks.__init__ (self, Game)
         damage_hooks.DamageHooks.__init__ (self, Game)
 
+        if len (modules) == 0:
+            raise RuntimeError ("No modules to play with!")
+
+        assert ui is not None
+
         self.m_modules = [arkham.Module (self, mod) for mod in modules]
         self.m_ui = ui
         self.m_turn = 0
@@ -48,13 +53,15 @@ class Game (fight_hooks.FightHooks, check_hooks.CheckHooks,
         # being in a location with monsters when the turn ends.)
         self.m_dealt_with = None
 
-        if len (modules) == 0:
-            raise RuntimeError ("No modules to play with!")
-
-        assert self.m_ui != None
+        # Per-turn callbacks.  lambda -> how many times (0 for endless)
+        self.m_per_turn = {}
 
     def turn_number (self):
         return self.m_turn
+
+    def register_per_turn (self, callback, how_many_times = 0):
+        """ how_many_times == 0 means endless """
+        self.m_per_turn[callback] = how_many_times
 
     def add_neighborhood (self, neighborhood):
         assert neighborhood not in self.m_neighborhoods
@@ -169,6 +176,14 @@ class Game (fight_hooks.FightHooks, check_hooks.CheckHooks,
                 print "+                                                  +"
                 print "++++++++++++++++++++++++++++++++++++++++++++++++++++"
                 print
+                # Do per-turn callbacks
+                for callback, how_many_times in self.m_per_turn.items ():
+                    callback (self)
+                    if how_many_times == 1:
+                        del self.m_per_turn[callback]
+                    elif how_many_times != 0:
+                        self.m_per_turn[callback] -= 1
+
                 # This phase is not in the original game, but I figure
                 # it might be handy if something needs to be done
                 # before the first module fires its upkeep.

@@ -390,6 +390,17 @@ class GameplayAction_ForCombat (GameplayAction_One):
         self.m_combat.on_end \
             (lambda: self.m_cleanup.perform (game, investigator))
 
+class GameplayAction_ForTurn (GameplayAction_One):
+    def __init__ (self, action, cleanup):
+        GameplayAction_One.__init__ \
+            (self, action, "%s until the end of the turn" % action.name ())
+        self.m_cleanup = cleanup
+
+    def perform (self, game, investigator):
+        self.m_action.perform (game, investigator)
+        game.register_per_turn \
+            (lambda game: self.m_cleanup.perform (game, investigator), 1)
+
 
 # Item manipulation actions
 

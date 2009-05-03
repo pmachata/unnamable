@@ -735,7 +735,10 @@ def build (game, module):
                           ])]
 
 
-    def simple_bonus_spell (name, lore_mod, sanity_cost, hands, bonuses):
+    def simple_bonus_spell (name, lore_mod, sanity_cost, hands, bonuses,
+                            action_ctor = lambda combat, setup, teardown: \
+                                arkham.GameplayAction_ForCombat \
+                                        (combat, setup, teardown)):
         class SimpleBonusSpell (module.mod_spell.SpellItem):
             class Instance (module.mod_spell.SpellInst):
                 def __init__ (self, parent):
@@ -763,17 +766,19 @@ def build (game, module):
                                   (combat.game, owner, item,
                                    arkham.SkillCheck (arkham.checkbase_lore,
                                                       lore_mod),
-                                   arkham.GameplayAction_ForCombat \
+                                   action_ctor \
                                        (combat,
                                         arkham.GameplayAction_WieldItem \
                                             (inst, True),
                                         arkham.GameplayAction_Discard (inst)))])]
 
         for checkbase, bonus in bonuses.iteritems ():
+            if not callable (checkbase):
+                checkbase = fun.val == checkbase
             @game.bonus_hook.match \
                 (fun.any, fun.any, fun.any,
                  arkham.match_proto (SimpleBonusSpell.Instance),
-                 fun.val == checkbase)
+                 checkbase)
             def do (game, investigator, subject, item, check_base):
                 return bonus
 
@@ -1013,6 +1018,50 @@ def build (game, module):
                                 arkham.GameplayAction_Multiple ([a1, a2]),
                                 arkham.GameplayAction_Multiple ([r1, r2])))])]
 
+    class VoiceOfRa (module.mod_spell.SpellItem):
+        class Instance (module.mod_spell.SpellInst):
+            def __init__ (self, parent):
+                module.mod_spell.SpellInst.__init__ \
+                    (self, parent.name (), 0, 0)
+
+        def __init__ (self):
+            module.mod_spell.SpellItem.__init__ \
+                (self, "Voice of Ra", 0, 0)
+
+        def gen_bonus_action (self, game, owner, item):
+            if item.exhausted ():
+                return []
+
+            inst = arkham.Item (VoiceOfRa.Instance (self))
+            if not owner.find_wield (game, inst, inst.hands ()):
+                return []
+
+            return [arkham.GameplayAction_Multiple \
+                        ([arkham.GameplayAction_Exhaust (item),
+                          arkham.GameplayAction_CauseHarm \
+                              (game, owner, item,
+                               arkham.HarmSanity (1)),
+                          arkham.GameplayAction_Conditional \
+                              (game, owner, item,
+                               arkham.SkillCheck (arkham.checkbase_lore, -1),
+                               arkham.GameplayAction_ForTurn \
+                                   (arkham.GameplayAction_WieldItem \
+                                        (inst, True),
+                                    arkham.GameplayAction_Discard (inst)))])]
+
+        def combat_turn (self, combat, owner, monster, item):
+            return self.gen_bonus_action (combat.game, owner, item)
+
+        def movement (self, game, owner, item):
+            return self.gen_bonus_action (game, owner, item)
+
+    @game.bonus_hook.match \
+        (fun.any, fun.any, fun.any,
+         arkham.match_proto (VoiceOfRa.Instance),
+         fun.any)
+    def do (game, investigator, subject, item, check_base):
+        return arkham.Bonus (1, arkham.family_magical)
+
     for count, item_proto in [
             (1, BindMonster ()),
             (1, simple_bonus_spell ("Dread Curse of Azathoth", -2, 2, 2,
@@ -1026,6 +1075,7 @@ def build (game, module):
             (1, simple_bonus_spell ("Shrivelling", -1, 1, 1,
                                     {arkham.checkbase_combat:
                                          arkham.Bonus (6, arkham.family_magical)})),
+            (1, VoiceOfRa ()),
             (1, simple_bonus_spell ("Wither", +0, 0, 1,
                                     {arkham.checkbase_combat:
                                          arkham.Bonus (3, arkham.family_magical)})),

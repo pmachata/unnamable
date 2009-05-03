@@ -234,6 +234,21 @@ def test13 (test):
     yield fun.matchclass (arkham.GameplayAction_Stay)
     raise tester.EndTest (True)
 
+def test14 (test):
+    for y in cast_spell (True, 5, 5): yield y
+    for y in fight_and_horror_check (5, 5, 5): yield y # note: +1 in effect
+    yield fun.matchclass (arkham.GameplayAction_Evade)
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook) # evade check
+    # evade check: 3 base, +1 monster, +1 Voice of Ra
+    for y in 5, 5, 5, 5, 5: yield y
+    for y in fight_and_horror_check (5, 5): yield y # note: +1 not in effect anymore
+    yield fun.matchclass (arkham.GameplayAction_Evade)
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook) # evade check
+    # evade check: 3 base, +1 monster
+    for y in 5, 5, 5, 5: yield y
+    yield fun.matchclass (arkham.GameplayAction_Stay)
+    raise tester.EndTest (True)
+
 if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_weapon ("Dynamite", test1))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Powder of Ibn-Ghazi", test2, mod_unique.UniqueDeck))))
@@ -273,11 +288,12 @@ if __name__ == "__main__":
                                                        arkham.monster_endless: None,
                                                        arkham.monster_physical: arkham.reslev_resistance},
                                                       toughness=1))))
-
     tester.run_test (test_ah.Game (Test (test_weapon ("Red Sign of Shudde M'ell", test13, mod_spell.SpellDeck,
                                                       {arkham.monster_magical: arkham.reslev_immunity,
                                                        arkham.monster_endless: None,
                                                        arkham.monster_physical: arkham.reslev_resistance},
                                                       toughness=2))))
+
     tester.run_test (test_ah.Game (Test (test_weapon ("Shrivelling", test5 (-1, 6), mod_spell.SpellDeck))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Wither", test5 (0, 3, False), mod_spell.SpellDeck))))
+    tester.run_test (test_ah.Game (Test (test_weapon ("Voice of Ra", test14, mod_spell.SpellDeck))))
