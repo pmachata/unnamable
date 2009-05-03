@@ -11,7 +11,7 @@ class ResistanceLevel (NamedObject):
         return arkham.Bonus (self.m_modifier (bonus.value ()), bonus.family ())
 
 reslev_none = ResistanceLevel ("none", lambda val: val)
-reslev_resistance = ResistanceLevel ("resistance", lambda val: val / 2)
+reslev_resistance = ResistanceLevel ("resistance", lambda val: (val + 1) / 2)
 reslev_immunity = ResistanceLevel ("immunity", lambda val: 0)
 
 class Family (NamedObject):
