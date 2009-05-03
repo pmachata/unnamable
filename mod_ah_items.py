@@ -258,10 +258,9 @@ def build (game, module):
                             extra_classes = [arkham.Weapon])),
             (1, complex (Tome, "Ancient Tome", 4, 2, None,
                          arkham.SkillCheck (arkham.checkbase_lore, -1),
-                         # xxx should be spell deck
                          lambda game, owner, item: \
                              arkham.GameplayAction_DrawItem \
-                                (module.m_common_deck))),
+                                (module.m_spell_deck))),
             (1, Axe ()),
             (1, Bullwhip ()),
             (1, plain_item ("Cavalry Saber", 3, 1,
@@ -330,9 +329,8 @@ def build (game, module):
                                    (game, owner, item,
                                     arkham.SkillCheck \
                                         (arkham.CheckBase_Fixed (1), 0),
-                                    # xxx should be spell deck
                                     arkham.GameplayAction_DrawItem \
-                                        (module.m_common_deck),
+                                        (module.m_spell_deck),
                                     arkham.GameplayAction_GainClues (3)))])
                     ]
             else:
@@ -395,9 +393,8 @@ def build (game, module):
                               (game, owner, item,
                                arkham.SkillCheck (arkham.checkbase_lore, -1),
                                arkham.GameplayAction_Multiple \
-                                   ([# xxx should be spell deck
-                                     arkham.GameplayAction_DrawItem \
-                                         (module.m_common_deck),
+                                   ([arkham.GameplayAction_DrawItem \
+                                         (module.m_spell_deck),
                                      arkham.GameplayAction_CauseHarm \
                                          (game, owner, item,
                                           arkham.HarmSanity (1)),
@@ -608,9 +605,8 @@ def build (game, module):
                          lambda game, owner, item: \
                              (arkham.GameplayAction_Select
                                   ([arkham.GameplayAction_GainClues (3),
-                                    # xxx should be spell deck
                                     arkham.GameplayAction_DrawItem \
-                                        (module.m_common_deck)])),
+                                        (module.m_spell_deck)])),
                          lambda game, owner, item: \
                              arkham.GameplayAction_CauseHarm \
                                  (game, owner, item, arkham.HarmSanity (2)))),
@@ -629,9 +625,8 @@ def build (game, module):
                          arkham.SkillCheck (arkham.checkbase_lore, -2),
                          lambda game, owner, item: \
                              arkham.GameplayAction_Multiple ([
-                                # xxx should be spell deck
                                 arkham.GameplayAction_DrawItem \
-                                    (module.m_common_deck),
+                                    (module.m_spell_deck),
                                 arkham.GameplayAction_GainClues (1),
                                 arkham.GameplayAction_CauseHarm \
                                     (game, owner, item,
@@ -657,9 +652,8 @@ def build (game, module):
                          arkham.SkillCheck (arkham.checkbase_lore, -1),
                          lambda game, owner, item: \
                              arkham.GameplayAction_Multiple ([
-                                # xxx should be spell deck
                                 arkham.GameplayAction_DrawItem \
-                                    (module.m_common_deck),
+                                    (module.m_spell_deck),
                                 arkham.GameplayAction_CauseHarm \
                                     (game, owner, item,
                                      arkham.HarmSanity (1))]))),
@@ -668,9 +662,8 @@ def build (game, module):
                          arkham.SkillCheck (arkham.checkbase_lore, -2),
                          lambda game, owner, item: \
                              arkham.GameplayAction_Multiple ([
-                                # xxx should be spell deck
                                 arkham.GameplayAction_DrawItem \
-                                    (module.m_common_deck),
+                                    (module.m_spell_deck),
                                 arkham.GameplayAction_CauseHarm \
                                     (game, owner, item,
                                      arkham.HarmSanity (2))]))),
