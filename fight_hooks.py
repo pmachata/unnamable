@@ -1,6 +1,6 @@
 import fun
 import conf
-from obj import cond_bind_attrib, match_flag
+from obj import match_flag
 import arkham
 
 class EndCombat (Exception):
@@ -345,17 +345,17 @@ class FightHooks:
 
         @self.horror_check_pass_hook.match \
             (fun.any, fun.any,
-             fun.bind (X = cond_bind_attrib ("nightmarish")))
+             arkham.has_special_ability (arkham.monster_nightmarish))
         def do (combat, investigator, monster):
-            investigator.health (arkham.health_sanity).reduce (X)
-            return combat.game.normal_horror_check_pass_hook \
-                (combat, investigator, monster)
+            value = monster.special_ability_param (arkham.monster_nightmarish)
+            investigator.health (arkham.health_sanity).reduce (value)
 
         @self.combat_check_pass_hook.match \
             (fun.any, fun.any,
-             fun.bind (X = cond_bind_attrib ("overwhelming")))
+             arkham.has_special_ability (arkham.monster_overwhelming))
         def do (combat, investigator, monster):
-            investigator.health (arkham.health_stamina).reduce (X)
+            value = monster.special_ability_param (arkham.monster_overwhelming)
+            investigator.health (arkham.health_stamina).reduce (value)
             return combat.game.normal_combat_check_pass_hook \
                 (combat, investigator, monster)
 

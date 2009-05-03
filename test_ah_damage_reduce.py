@@ -25,13 +25,18 @@ class ModuleProto (test_ah.ModuleProto):
     def actions (self):
         yield fun.matchclass (arkham.GameplayAction_Multiple)
 
+class TestProto:
+    pass
+
+test_subject = arkham.Subject (TestProto ())
+
 class ModuleProto1 (ModuleProto):
     def turn_0 (self, game):
         inv = ModuleProto.do_turn_0 \
             (self, game,
              self.m_common_deck.draw \
                  (lambda arg: arg.name () == "Food"))
-        arkham.HarmStamina (_damage).cause (game, inv, arkham.Subject ())
+        arkham.HarmStamina (_damage).cause (game, inv, test_subject)
 
 class ModuleProto2 (ModuleProto):
     def turn_0 (self, game):
@@ -39,7 +44,7 @@ class ModuleProto2 (ModuleProto):
             (self, game,
              self.m_common_deck.draw \
                  (lambda arg: arg.name () == "Whiskey"))
-        arkham.HarmSanity (_damage).cause (game, inv, arkham.Subject ())
+        arkham.HarmSanity (_damage).cause (game, inv, test_subject)
 
 class ModuleProto3 (ModuleProto):
     def turn_0 (self, game):
@@ -47,7 +52,7 @@ class ModuleProto3 (ModuleProto):
             (self, game,
              self.m_unique_deck.draw \
                  (lambda arg: arg.name () == "Enchanted Jewelry"))
-        arkham.HarmStamina (_damage).cause (game, inv, arkham.Subject ())
+        arkham.HarmStamina (_damage).cause (game, inv, test_subject)
 
     def heal_action_times (self):
         return 3
@@ -58,7 +63,7 @@ class ModuleProto4 (ModuleProto):
             (self, game,
              self.m_unique_deck.draw \
                  (lambda arg: arg.name () == "Obsidian Statue"))
-        arkham.HarmStamina (_damage).cause (game, inv, arkham.Subject ())
+        arkham.HarmStamina (_damage).cause (game, inv, test_subject)
 
     def expected_increment (self, x):
         return _damage
@@ -69,7 +74,7 @@ class ModuleProto5 (ModuleProto):
             (self, game,
              self.m_spell_deck.draw \
                  (lambda arg: arg.name () == "Flesh Ward"))
-        arkham.HarmStamina (_damage).cause (game, inv, arkham.Subject ())
+        arkham.HarmStamina (_damage).cause (game, inv, test_subject)
 
     def expected_increment (self, x):
         return _damage

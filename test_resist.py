@@ -3,7 +3,7 @@ import arkham
 import maps
 import fun
 
-def gen_test (item_fam, *roll, **resist):
+def gen_test (item_fam, special_abilities, *roll):
     class Test1 (tester.Controller):
         def construct (self, game, module):
             maps.in_neighborhood (maps.neighborhood (game))
@@ -17,7 +17,7 @@ def gen_test (item_fam, *roll, **resist):
                 arkham.SimpleMonster (
                     "M1",
                     0, (0, 0), 1, (0, 1),
-                    **resist
+                    special_abilities
                 )
             )
 
@@ -56,18 +56,18 @@ def gen_test (item_fam, *roll, **resist):
 
     return Game1 ()
 
-tester.run_test (gen_test (arkham.family_physical, 5, 5, 5))
-tester.run_test (gen_test (arkham.family_physical, 5, 5, physical="resistance"))
-tester.run_test (gen_test (arkham.family_physical, 5, physical="immunity"))
+tester.run_test (gen_test (arkham.family_physical, {}, 5, 5, 5))
+tester.run_test (gen_test (arkham.family_physical, {arkham.monster_physical: arkham.reslev_resistance}, 5, 5))
+tester.run_test (gen_test (arkham.family_physical, {arkham.monster_physical: arkham.reslev_immunity}, 5))
 
-tester.run_test (gen_test (arkham.family_magical, 5, 5, 5))
-tester.run_test (gen_test (arkham.family_magical, 5, 5, 5, physical="resistance"))
-tester.run_test (gen_test (arkham.family_magical, 5, 5, 5, physical="immunity"))
+tester.run_test (gen_test (arkham.family_magical, {}, 5, 5, 5))
+tester.run_test (gen_test (arkham.family_magical, {arkham.monster_physical: arkham.reslev_resistance}, 5, 5, 5))
+tester.run_test (gen_test (arkham.family_magical, {arkham.monster_physical: arkham.reslev_immunity}, 5, 5, 5))
 
-tester.run_test (gen_test (arkham.family_physical, 5, 5, 5))
-tester.run_test (gen_test (arkham.family_physical, 5, 5, 5, magical="resistance"))
-tester.run_test (gen_test (arkham.family_physical, 5, 5, 5, magical="immunity"))
+tester.run_test (gen_test (arkham.family_physical, {}, 5, 5, 5))
+tester.run_test (gen_test (arkham.family_physical, {arkham.monster_magical: arkham.reslev_resistance}, 5, 5, 5))
+tester.run_test (gen_test (arkham.family_physical, {arkham.monster_magical: arkham.reslev_immunity}, 5, 5, 5))
 
-tester.run_test (gen_test (arkham.family_magical, 5, 5, 5))
-tester.run_test (gen_test (arkham.family_magical, 5, 5, magical="resistance"))
-tester.run_test (gen_test (arkham.family_magical, 5, magical="immunity"))
+tester.run_test (gen_test (arkham.family_magical, {}, 5, 5, 5))
+tester.run_test (gen_test (arkham.family_magical, {arkham.monster_magical: arkham.reslev_resistance}, 5, 5))
+tester.run_test (gen_test (arkham.family_magical, {arkham.monster_magical: arkham.reslev_immunity}, 5))

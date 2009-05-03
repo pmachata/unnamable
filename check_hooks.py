@@ -1,7 +1,7 @@
 import fun
 import conf
 import arkham
-import obj
+from obj import NamedObject
 
 class EndCheck (Exception):
     def __init__ (self, success, successes):
@@ -10,9 +10,9 @@ class EndCheck (Exception):
     def result (self):
         return self.m_success, self.m_successes
 
-class CheckBase (obj.NamedObject):
+class CheckBase (NamedObject):
     def __init__ (self, name, correctible):
-        obj.NamedObject.__init__ (self, name)
+        NamedObject.__init__ (self, name)
         self.m_correctible = correctible
 
     def correctible (self):
@@ -71,13 +71,6 @@ class Roll:
     def roll (self):
         return list (self.m_roll)
 
-class Family (obj.NamedObject):
-    pass
-
-family_indifferent = Family ("indifferent")
-family_physical = Family ("physical")
-family_magical = Family ("magical")
-
 class Bonus:
     def __init__ (self, value, family):
         self.m_value = value
@@ -97,18 +90,6 @@ class Bonus:
         def match (bonus):
             return bonus.family () == family
         return match
-
-class ResistanceLevel (obj.NamedObject):
-    def __init__ (self, name, modifier):
-        obj.NamedObject.__init__ (self, name)
-        self.m_modifier = modifier
-
-    def modify (self, bonus):
-        return Bonus (self.m_modifier (bonus.value ()), bonus.family ())
-
-reslev_none = ResistanceLevel ("none", lambda val: val)
-reslev_resistance = ResistanceLevel ("resistance", lambda val: val / 2)
-reslev_immunity = ResistanceLevel ("immunity", lambda val: 0)
 
 class CheckHooks:
     def __init__ (self, Game):
@@ -470,7 +451,7 @@ class CheckHooks:
         @self.bonus_hook.match \
             (fun.any, fun.any, fun.any, fun.any, fun.any)
         def do (game, investigator, subject, item, check_base):
-            return Bonus (0, family_indifferent)
+            return Bonus (0, arkham.family_indifferent)
 
         @self.bonus_mod_hook.match \
             (fun.any, fun.any, fun.any, fun.any, fun.any, fun.any)
@@ -571,13 +552,13 @@ class CheckHooks:
 
         @self.bonus_mod_hook.match \
             (fun.any, fun.any,
-             lambda subject: len (subject.resistances ()) > 0,
+             lambda subject: len (subject.special_abilities ()) > 0,
              fun.any, fun.val == checkbase_combat,
-             fun.not_ (Bonus.match_family (family_indifferent)))
+             fun.not_ (Bonus.match_family (arkham.family_indifferent)))
         def do (game, investigator, subject, item, check_base, bonus):
-            fam = bonus.family ()
-            ress = subject.resistances ()
-            if fam in ress:
-                return ress[fam].modify (bonus)
-            else:
-                return bonus
+            for ability in subject.special_abilities ():
+                if fun.matchclass (arkham.MonsterResistance) (ability):
+                    if ability.family () == bonus.family ():
+                        reslev = subject.special_ability_param (ability)
+                        bonus = reslev.modify (bonus)
+            return bonus

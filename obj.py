@@ -98,9 +98,67 @@ class GameplayObject:
     def mythos (self, game):
         return []
 
-class Subject:
-    def resistances (self):
-        return self.m_proto.resistances ()
+class ObjectWithPrototype:
+    def __init__ (self, proto):
+        self.m_proto = proto
+
+    def proto (self):
+        return self.m_proto
+
+class SubjectProto:
+    def __init__ (self, special_abilities = []):
+        try:
+            # is it convertible to a dictionary?
+            self.m_special_abilities = dict (special_abilities)
+        except TypeError:
+            # no it's not
+            self.m_special_abilities \
+                = dict ((ability, None)
+                        for ability in special_abilities)
+
+    def special_abilities (self):
+        return dict (self.m_special_abilities)
+
+    def has_special_ability (self, ability):
+        return ability in self.m_special_abilities
+
+    def special_ability_param (self, ability):
+        return self.m_special_abilities[ability]
+
+class Subject (ObjectWithPrototype):
+    def __init__ (self, proto):
+        ObjectWithPrototype.__init__ (self, proto)
+        self.m_added_abilities = {}
+        self.m_removed_abilities = set ()
+
+    def special_abilities (self):
+        ret = self.m_proto.special_abilities ()
+        for ability in self.m_removed_abilities:
+            del ret[ability]
+        ret.update (self.m_added_abilities)
+        return ret
+
+    def has_special_ability (self, ability):
+        return ability in self.special_abilities ()
+
+    def add_special_ability (self, ability, argument = None):
+        assert ability not in self.special_abilities ()
+        if ability in self.m_removed_abilities:
+            self.m_removed_abilities.remove (ability)
+        else:
+            self.m_added_abilities[ability] = argument
+        assert ability in self.special_abilities ()
+
+    def remove_special_ability (self, ability):
+        assert ability in self.special_abilities ()
+        if ability in self.m_added_abilities:
+            del self.m_added_abilities[ability]
+        else:
+            self.m_removed_abilities.add (ability)
+        assert ability not in self.special_abilities ()
+
+    def special_ability_param (self, ability):
+        return self.special_abilities ()[ability]
 
 class NamedObject:
     def __init__ (self, name):
@@ -108,3 +166,8 @@ class NamedObject:
 
     def name (self):
         return self.m_name
+
+def has_special_ability (ability):
+    def match (arg):
+        return arg.has_special_ability (ability)
+    return match

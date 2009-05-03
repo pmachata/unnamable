@@ -58,46 +58,39 @@ class Module:
 class Monster (ObjectWithLocation, Subject):
     def __init__ (self, proto):
         ObjectWithLocation.__init__ (self, None)
-        self.m_proto = proto
+        Subject.__init__ (self, proto)
 
     def name (self):
         return self.m_proto.name ()
 
     def movement (self, game):
-        return self.m_proto.movement (game)
+        return self.proto ().movement (game)
 
     def pre_combat (self, combat, investigator):
-        return self.m_proto.pre_combat (combat, investigator)
+        return self.proto ().pre_combat (combat, investigator)
 
     def combat_turn (self, combat, investigator):
-        return self.m_proto.combat_turn (combat, investigator)
-
-    def proto (self):
-        return self.m_proto
+        return self.proto ().combat_turn (combat, investigator)
 
     def attributes (self):
-        return self.m_proto.attributes ()
+        return self.proto ().attributes ()
 
     def discard (self):
-        return self.m_proto.discard ()
-
+        return self.proto ().discard ()
 
 class Item (Subject):
     def __init__ (self, proto):
-        self.m_proto = proto
+        Subject.__init__ (self, proto)
         self.m_exhausted = False
 
     def name (self):
-        return self.m_proto.name ()
-
-    def proto (self):
-        return self.m_proto
+        return self.proto ().name ()
 
     def attributes (self):
-        return self.m_proto.attributes ()
+        return self.proto ().attributes ()
 
     def hands (self):
-        return self.m_proto.hands ()
+        return self.proto ().hands ()
 
     def exhausted (self):
         return self.m_exhausted
@@ -107,7 +100,7 @@ class Item (Subject):
         self.m_exhausted = True
 
     def discard (self):
-        return self.m_proto.discard ()
+        return self.proto ().discard ()
 
     def __repr__ (self):
         return "<Item \"%s\">" % self.name ()
@@ -117,22 +110,22 @@ class Item (Subject):
         self.m_exhausted = False
 
     def upkeep_2 (self, game, owner):
-        return self.m_proto.upkeep_2 (game, owner, self)
+        return self.proto ().upkeep_2 (game, owner, self)
 
     def upkeep_3 (self, game, owner):
-        return self.m_proto.upkeep_3 (game, owner, self)
+        return self.proto ().upkeep_3 (game, owner, self)
 
     def movement_points_bonus (self, game, owner):
-        return self.m_proto.movement_points_bonus (game, owner, self)
+        return self.proto ().movement_points_bonus (game, owner, self)
 
     def movement (self, game, owner):
-        return self.m_proto.movement (game, owner, self)
+        return self.proto ().movement (game, owner, self)
 
     def deal_with (self, game, owner):
-        return self.m_proto.deal_with (game, owner, self)
+        return self.proto ().deal_with (game, owner, self)
 
     def pre_combat (self, combat, owner, monster):
-        return self.m_proto.pre_combat (combat, owner, monster, self)
+        return self.proto ().pre_combat (combat, owner, monster, self)
 
     def combat_turn (self, combat, owner, monster):
-        return self.m_proto.combat_turn (combat, owner, monster, self)
+        return self.proto ().combat_turn (combat, owner, monster, self)

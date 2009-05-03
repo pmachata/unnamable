@@ -1,9 +1,10 @@
-from obj import ObjectWithAttributes, NamedObject
+from obj import ObjectWithAttributes, NamedObject, SubjectProto
 
-class ItemProto (ObjectWithAttributes, NamedObject):
+class ItemProto (ObjectWithAttributes, NamedObject, SubjectProto):
     def __init__ (self, name, **attributes):
         ObjectWithAttributes.__init__ (self)
         NamedObject.__init__ (self, name)
+        SubjectProto.__init__ (self, {}) # no special abilities
         self.apply_attributes (attributes)
 
     def discard (self):
@@ -29,11 +30,6 @@ class ItemProto (ObjectWithAttributes, NamedObject):
 
     def deal_with (self, game, owner, item):
         return []
-
-    def resistances (self):
-        # Items in general have no resistances, so don't insist on
-        # overriding this.
-        return {}
 
 # Items that inherit from this class are considered Weapons.
 class Weapon:

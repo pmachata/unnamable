@@ -1,9 +1,47 @@
 import arkham
+from obj import NamedObject, SubjectProto
 from deck import DeckItem
 
-class MonsterProto (DeckItem):
-    def __init__ (self, name, **attributes):
+class ResistanceLevel (NamedObject):
+    def __init__ (self, name, modifier):
+        NamedObject.__init__ (self, name)
+        self.m_modifier = modifier
+
+    def modify (self, bonus):
+        return arkham.Bonus (self.m_modifier (bonus.value ()), bonus.family ())
+
+reslev_none = ResistanceLevel ("none", lambda val: val)
+reslev_resistance = ResistanceLevel ("resistance", lambda val: val / 2)
+reslev_immunity = ResistanceLevel ("immunity", lambda val: 0)
+
+class Family (NamedObject):
+    pass
+
+family_indifferent = Family ("indifferent")
+family_physical = Family ("physical")
+family_magical = Family ("magical")
+
+class MonsterSpecialAbility (NamedObject):
+    pass
+
+class MonsterResistance (MonsterSpecialAbility):
+    def __init__ (self, family):
+        MonsterSpecialAbility.__init__ (self, family.name ())
+        self.m_family = family
+
+    def family (self):
+        return self.m_family
+
+monster_physical = MonsterResistance (family_physical)
+monster_magical = MonsterResistance (family_magical)
+
+monster_nightmarish = MonsterSpecialAbility ("nightmarish")
+monster_overwhelming = MonsterSpecialAbility ("overwhelming")
+
+class MonsterProto (DeckItem, SubjectProto):
+    def __init__ (self, name, special_abilities = {}, **attributes):
         DeckItem.__init__ (self, name, **attributes)
+        SubjectProto.__init__ (self, special_abilities)
 
     # Override in subclass
     def movement (self, game):
@@ -32,43 +70,24 @@ class MonsterProto (DeckItem):
     def combat_harm (self):
         raise NotImplementedError ()
 
-    # Resistances.  See check_hooks.py for definitions.
-    def resistances (self):
-        raise NotImplementedError ()
-
-    def resistance (self, family):
-        return self.resistances ().get (family, arkham.reslev_none)
-
 class BasicMonster (MonsterProto):
     def __init__ (self, name,
                   evade_check,
                   horror_check, horror_harm,
                   combat_check, combat_harm,
+                  special_abilities = set (),
                   **attributes):
 
-        res = {}
         for fam in ("physical", "magical"):
-            if fam in attributes:
-                assert fam not in res
-                lev = attributes[fam]
-                res[fam] = lev
-                del attributes[fam]
-                assert lev in ["resistance", "immunity"]
+            assert fam not in attributes
 
-        MonsterProto.__init__ (self, name, **attributes)
+        MonsterProto.__init__ (self, name, special_abilities, **attributes)
 
         self.m_evade_check = evade_check
         self.m_horror_check = horror_check
         self.m_horror_harm = horror_harm
         self.m_combat_check = combat_check
         self.m_combat_harm = combat_harm
-
-        self.m_resistances \
-            = dict (({"physical": arkham.family_physical,
-                      "magical": arkham.family_magical}[fam],
-                     {"resistance": arkham.reslev_resistance,
-                      "immunity": arkham.reslev_immunity}[lev])
-                    for fam, lev in res.iteritems ())
 
     def evade_check (self):
         return self.m_evade_check
@@ -85,15 +104,13 @@ class BasicMonster (MonsterProto):
     def combat_harm (self):
         return self.m_combat_harm
 
-    def resistances (self):
-        return self.m_resistances
-
 class SimpleMonster (BasicMonster):
     def __init__ (self, name,
                   awareness,
                   (horror_rating, horror_damage),
                   toughness,
                   (combat_rating, combat_damage),
+                  special_abilities = set (),
                   **attributes):
         BasicMonster.__init__ (self, name,
                                arkham.evade_check (awareness),
@@ -101,4 +118,5 @@ class SimpleMonster (BasicMonster):
                                arkham.HarmSanity (horror_damage),
                                arkham.combat_check (combat_rating, toughness),
                                arkham.HarmStamina (combat_damage),
+                               special_abilities,
                                **attributes)

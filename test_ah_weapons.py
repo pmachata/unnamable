@@ -8,7 +8,7 @@ import mod_unique
 import mod_spell
 from test_ah_items import *
 
-def test_weapons (actions, names, **attrib):
+def test_weapons (actions, names, special_abilities = [], **attrib):
     class ModuleProto1 (ModuleProto):
         def setup_investigator (self, game, inv):
             for name, deck in names:
@@ -23,9 +23,9 @@ def test_weapons (actions, names, **attrib):
                     arkham.SimpleMonster.__init__ \
                         (self, "SomeMonster",
                          awareness, (0, 1), toughness, (0, 1),
-                         **attrib)
-            game.add_monster (arkham.Monster (SomeMonster ()),
-                              inv.location ())
+                         special_abilities, **attrib)
+            mon = arkham.Monster (SomeMonster ())
+            game.add_monster (mon, inv.location ())
 
         @classmethod
         def actions (self, test):
@@ -33,8 +33,9 @@ def test_weapons (actions, names, **attrib):
 
     return ModuleProto1
 
-def test_weapon (name, actions, deck = mod_common.CommonDeck, **attrib):
-    return test_weapons (actions, [(name, deck)], **attrib)
+def test_weapon (name, actions, deck = mod_common.CommonDeck,
+                 special_abilities = [], **attrib):
+    return test_weapons (actions, [(name, deck)], special_abilities, **attrib)
 
 def fight_and_horror_check (*roll):
     yield fun.matchclass (arkham.GameplayAction_Stay)
@@ -150,6 +151,29 @@ def test8 (awareness):
         raise tester.EndTest (True)
     return t
 
+def test9 (n):
+    def t(test):
+        h = test.inv.health (arkham.health_sanity)
+        hv = h.cur ()
+        for y in fight_and_horror_check (5, 5): yield y
+        assert h.cur () == hv - n
+        yield fun.matchclass (arkham.GameplayAction_Fight)
+        raise tester.EndTest (True)
+    return t
+
+def test10 (n):
+    def t(test):
+        h = test.inv.health (arkham.health_stamina)
+        hv = h.cur ()
+        for y in fight_and_horror_check (5, 5): yield y
+        yield fun.matchclass (arkham.GameplayAction_Fight)
+        yield fun.matchclass (arkham.GameplayAction_NormalCheckHook) # combat check
+        for y in 1, 1, 1, 1, 1, 5, 5: yield y # pass combat check
+        assert h.cur () == hv - n
+        yield fun.matchclass (arkham.GameplayAction_Stay)
+        raise tester.EndTest (True)
+    return t
+
 if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_weapon ("Dynamite", test1))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Powder of Ibn-Ghazi", test2, mod_unique.UniqueDeck))))
@@ -161,6 +185,14 @@ if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_weapon ("Bind Monster", test6 (3), mod_spell.SpellDeck, toughness=3))))
     tester.run_test (test_ah.Game (Test (test_weapons (test7, [("Enchant Weapon", mod_spell.SpellDeck),
                                                                (".18 Derringer", mod_common.CommonDeck)],
-                                                       physical="immunity"))))
+                                                       {arkham.monster_physical: arkham.reslev_immunity}))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Mists of Releh", test8 (-1), mod_spell.SpellDeck, awareness=-1))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Mists of Releh", test8 (+1), mod_spell.SpellDeck, awareness=+1))))
+    tester.run_test (test_ah.Game (Test (test_weapon (".18 Derringer", test9 (1), mod_common.CommonDeck,
+                                                      {arkham.monster_nightmarish: 1}))))
+    tester.run_test (test_ah.Game (Test (test_weapon (".18 Derringer", test9 (2), mod_common.CommonDeck,
+                                                      {arkham.monster_nightmarish: 2}))))
+    tester.run_test (test_ah.Game (Test (test_weapon (".18 Derringer", test10 (1), mod_common.CommonDeck,
+                                                      {arkham.monster_overwhelming: 1}))))
+    tester.run_test (test_ah.Game (Test (test_weapon (".18 Derringer", test10 (2), mod_common.CommonDeck,
+                                                      {arkham.monster_overwhelming: 2}))))
