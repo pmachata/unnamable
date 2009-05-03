@@ -1026,5 +1026,8 @@ def build (game, module):
             (1, simple_bonus_spell ("Shrivelling", -1, 1, 1,
                                     {arkham.checkbase_combat:
                                          arkham.Bonus (6, arkham.family_magical)})),
+            (1, simple_bonus_spell ("Wither", +0, 0, 1,
+                                    {arkham.checkbase_combat:
+                                         arkham.Bonus (3, arkham.family_magical)})),
         ]:
         module.m_spell_deck.register (item_proto, count)

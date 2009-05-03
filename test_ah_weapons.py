@@ -103,10 +103,10 @@ def test4 (test):
     yield fun.matchclass (arkham.GameplayAction_Fight)
     raise tester.EndTest (True)
 
-def test5 (lore_mod, combat_mod):
+def test5 (lore_mod, combat_mod, damage=True):
     def t (test):
         for y in fight_and_horror_check (5, 5): yield y
-        for y in cast_spell (*list (5 for i in xrange (3 + lore_mod))): yield y
+        for y in cast_spell (damage, *list (5 for i in xrange (3 + lore_mod))): yield y
         yield fun.matchclass (arkham.GameplayAction_Fight)
         yield fun.matchclass (arkham.GameplayAction_NormalCheckHook) # combat check
         for i in xrange (5 + combat_mod): yield 1 # fail combat hook
@@ -124,7 +124,7 @@ def test5 (lore_mod, combat_mod):
 def test6 (combat_successes):
     def test (test):
         for y in fight_and_horror_check (5, 5): yield y
-        for y in cast_spell (*[5 if i < combat_successes else 1
+        for y in cast_spell (True, *[5 if i < combat_successes else 1
                                for i in range (7)]):
             yield y
         yield fun.matchclass (arkham.GameplayAction_Stay)
@@ -142,7 +142,7 @@ def test7 (test):
     yield fun.matchclass (arkham.GameplayAction_FailRoll)
     yield fun.matchclass (arkham.GameplayAction_EndCauseHarmLoop)
     yield fun.matchclass (arkham.GameplayAction_IncurDamage) # monster hit
-    for y in cast_spell (5, 5, 5): yield y
+    for y in cast_spell (True, 5, 5, 5): yield y
     yield fun.matchclass (arkham.GameplayAction_ForCombat)
     yield fun.matchclass (arkham.GameplayAction_Fight)
     yield fun.matchclass (arkham.GameplayAction_NormalCheckHook) # combat check
@@ -218,7 +218,7 @@ def test12 (test):
 def test13 (test):
     trophies = len (test.inv.trophies ())
     for y in fight_and_horror_check (5, 5): yield y
-    for y in cast_spell (5, 5): yield y
+    for y in cast_spell (True, 5, 5): yield y
     e1 = look_for_action (lambda action: True,
                           lambda action: "endless" in action.name ())
     yield e1
@@ -280,3 +280,4 @@ if __name__ == "__main__":
                                                        arkham.monster_physical: arkham.reslev_resistance},
                                                       toughness=2))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Shrivelling", test5 (-1, 6), mod_spell.SpellDeck))))
+    tester.run_test (test_ah.Game (Test (test_weapon ("Wither", test5 (0, 3, False), mod_spell.SpellDeck))))

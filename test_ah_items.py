@@ -45,9 +45,10 @@ def action_bound_monster_named (name):
             return item.name () == name
     return match
 
-def cast_spell (*roll):
+def cast_spell (damage, *roll):
     yield fun.matchclass (arkham.GameplayAction_Multiple) # cast spell
-    yield fun.matchclass (arkham.GameplayAction_IncurDamage) # spell damage
+    if damage:
+        yield fun.matchclass (arkham.GameplayAction_IncurDamage) # spell damage
     yield fun.matchclass (arkham.GameplayAction_NormalCheckHook) # lore check
     for i in roll: yield i
 
@@ -215,7 +216,7 @@ def test12 (n):
         h.reduce (5)
         hv = h.cur ()
         yield fun.matchclass (arkham.GameplayAction_Stay) # wait for next round
-        for y in cast_spell (*list (5 if i < n else 1 for i in range (4))): yield y
+        for y in cast_spell (True, *list (5 if i < n else 1 for i in range (4))): yield y
         yield lambda action: " %d " % n in action.name ()
         assert h.cur () == hv + n
         yield fun.matchclass (arkham.GameplayAction_Stay)
