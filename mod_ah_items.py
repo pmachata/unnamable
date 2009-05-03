@@ -735,44 +735,49 @@ def build (game, module):
                           ])]
 
 
-    class DreadCurseOfAzathoth (module.mod_spell.SpellItem):
-        class Instance (module.mod_spell.SpellInst):
-            def __init__ (self, parent):
-                module.mod_spell.SpellInst.__init__ \
-                    (self, parent.name (), 0, 2)
+    def simple_bonus_spell (name, lore_mod, sanity_cost, hands, bonuses):
+        class SimpleBonusSpell (module.mod_spell.SpellItem):
+            class Instance (module.mod_spell.SpellInst):
+                def __init__ (self, parent):
+                    module.mod_spell.SpellInst.__init__ \
+                        (self, parent.name (), 0, hands)
 
-        def __init__ (self):
-            module.mod_spell.SpellItem.__init__ \
-                (self, "Dread Curse of Azathoth", 0, 0)
+            def __init__ (self):
+                module.mod_spell.SpellItem.__init__ \
+                    (self, name, 0, 0)
 
-        def combat_turn (self, combat, owner, monster, item):
-            if item.exhausted ():
-                return []
+            def combat_turn (self, combat, owner, monster, item):
+                if item.exhausted ():
+                    return []
 
-            inst = arkham.Item (DreadCurseOfAzathoth.Instance (self))
-            if not owner.find_wield (combat.game, inst, inst.hands ()):
-                return []
+                inst = arkham.Item (SimpleBonusSpell.Instance (self))
+                if not owner.find_wield (combat.game, inst, inst.hands ()):
+                    return []
 
-            return [arkham.GameplayAction_Multiple \
-                        ([arkham.GameplayAction_Exhaust (item),
-                          arkham.GameplayAction_CauseHarm \
-                              (combat.game, owner, item,
-                               arkham.HarmSanity (2)),
-                          arkham.GameplayAction_Conditional \
-                              (combat.game, owner, item,
-                               arkham.SkillCheck (arkham.checkbase_lore, -2),
-                               arkham.GameplayAction_ForCombat \
-                                   (combat,
-                                    arkham.GameplayAction_WieldItem \
-                                        (inst, True),
-                                    arkham.GameplayAction_Discard (inst)))])]
+                return [arkham.GameplayAction_Multiple \
+                            ([arkham.GameplayAction_Exhaust (item),
+                              arkham.GameplayAction_CauseHarm \
+                                  (combat.game, owner, item,
+                                   arkham.HarmSanity (sanity_cost)),
+                              arkham.GameplayAction_Conditional \
+                                  (combat.game, owner, item,
+                                   arkham.SkillCheck (arkham.checkbase_lore,
+                                                      lore_mod),
+                                   arkham.GameplayAction_ForCombat \
+                                       (combat,
+                                        arkham.GameplayAction_WieldItem \
+                                            (inst, True),
+                                        arkham.GameplayAction_Discard (inst)))])]
 
-    @game.bonus_hook.match \
-        (fun.any, fun.any, fun.any,
-         arkham.match_proto (DreadCurseOfAzathoth.Instance),
-         fun.val == arkham.checkbase_combat)
-    def do (game, investigator, subject, item, check_base):
-        return arkham.Bonus (9, arkham.family_magical)
+        for checkbase, bonus in bonuses.iteritems ():
+            @game.bonus_hook.match \
+                (fun.any, fun.any, fun.any,
+                 arkham.match_proto (SimpleBonusSpell.Instance),
+                 fun.val == checkbase)
+            def do (game, investigator, subject, item, check_base):
+                return bonus
+
+        return SimpleBonusSpell ()
 
 
     class EnchantWeapon (module.mod_spell.SpellItem):
@@ -1008,53 +1013,18 @@ def build (game, module):
                                 arkham.GameplayAction_Multiple ([a1, a2]),
                                 arkham.GameplayAction_Multiple ([r1, r2])))])]
 
-    class Shrivelling (module.mod_spell.SpellItem):
-        class Instance (module.mod_spell.SpellInst):
-            def __init__ (self, parent):
-                module.mod_spell.SpellInst.__init__ \
-                    (self, parent.name (), 0, 1)
-
-        def __init__ (self):
-            module.mod_spell.SpellItem.__init__ \
-                (self, "Shrivelling", 0, 0)
-
-        def combat_turn (self, combat, owner, monster, item):
-            if item.exhausted ():
-                return []
-
-            inst = arkham.Item (Shrivelling.Instance (self))
-            if not owner.find_wield (combat.game, inst, inst.hands ()):
-                return []
-
-            return [arkham.GameplayAction_Multiple \
-                        ([arkham.GameplayAction_Exhaust (item),
-                          arkham.GameplayAction_CauseHarm \
-                              (combat.game, owner, item,
-                               arkham.HarmSanity (1)),
-                          arkham.GameplayAction_Conditional \
-                              (combat.game, owner, item,
-                               arkham.SkillCheck (arkham.checkbase_lore, -1),
-                               arkham.GameplayAction_ForCombat \
-                                   (combat,
-                                    arkham.GameplayAction_WieldItem \
-                                        (inst, True),
-                                    arkham.GameplayAction_Discard (inst)))])]
-
-    @game.bonus_hook.match \
-        (fun.any, fun.any, fun.any,
-         arkham.match_proto (Shrivelling.Instance),
-         fun.val == arkham.checkbase_combat)
-    def do (game, investigator, subject, item, check_base):
-        return arkham.Bonus (6, arkham.family_magical)
-
     for count, item_proto in [
             (1, BindMonster ()),
-            (1, DreadCurseOfAzathoth ()),
+            (1, simple_bonus_spell ("Dread Curse of Azathoth", -2, 2, 2,
+                                    {arkham.checkbase_combat:
+                                         arkham.Bonus (9, arkham.family_magical)})),
             (1, EnchantWeapon ()),
             (1, FleshWard ()),
             (1, Heal ()),
             (1, MistsOfReleh ()),
             (1, RedSignOfShuddeMell ()),
-            (1, Shrivelling ()),
+            (1, simple_bonus_spell ("Shrivelling", -1, 1, 1,
+                                    {arkham.checkbase_combat:
+                                         arkham.Bonus (6, arkham.family_magical)})),
         ]:
         module.m_spell_deck.register (item_proto, count)
