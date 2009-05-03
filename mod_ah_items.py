@@ -1008,6 +1008,45 @@ def build (game, module):
                                 arkham.GameplayAction_Multiple ([a1, a2]),
                                 arkham.GameplayAction_Multiple ([r1, r2])))])]
 
+    class Shrivelling (module.mod_spell.SpellItem):
+        class Instance (module.mod_spell.SpellInst):
+            def __init__ (self, parent):
+                module.mod_spell.SpellInst.__init__ \
+                    (self, parent.name (), 0, 1)
+
+        def __init__ (self):
+            module.mod_spell.SpellItem.__init__ \
+                (self, "Shrivelling", 0, 0)
+
+        def combat_turn (self, combat, owner, monster, item):
+            if item.exhausted ():
+                return []
+
+            inst = arkham.Item (Shrivelling.Instance (self))
+            if not owner.find_wield (combat.game, inst, inst.hands ()):
+                return []
+
+            return [arkham.GameplayAction_Multiple \
+                        ([arkham.GameplayAction_Exhaust (item),
+                          arkham.GameplayAction_CauseHarm \
+                              (combat.game, owner, item,
+                               arkham.HarmSanity (1)),
+                          arkham.GameplayAction_Conditional \
+                              (combat.game, owner, item,
+                               arkham.SkillCheck (arkham.checkbase_lore, -1),
+                               arkham.GameplayAction_ForCombat \
+                                   (combat,
+                                    arkham.GameplayAction_WieldItem \
+                                        (inst, True),
+                                    arkham.GameplayAction_Discard (inst)))])]
+
+    @game.bonus_hook.match \
+        (fun.any, fun.any, fun.any,
+         arkham.match_proto (Shrivelling.Instance),
+         fun.val == arkham.checkbase_combat)
+    def do (game, investigator, subject, item, check_base):
+        return arkham.Bonus (6, arkham.family_magical)
+
     for count, item_proto in [
             (1, BindMonster ()),
             (1, DreadCurseOfAzathoth ()),
@@ -1016,5 +1055,6 @@ def build (game, module):
             (1, Heal ()),
             (1, MistsOfReleh ()),
             (1, RedSignOfShuddeMell ()),
+            (1, Shrivelling ()),
         ]:
         module.m_spell_deck.register (item_proto, count)

@@ -103,21 +103,23 @@ def test4 (test):
     yield fun.matchclass (arkham.GameplayAction_Fight)
     raise tester.EndTest (True)
 
-def test5 (test):
-    for y in fight_and_horror_check (5, 5): yield y
-    for y in cast_spell (5): yield y
-    yield fun.matchclass (arkham.GameplayAction_Fight)
-    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook) # combat check
-    for i in xrange (14): yield 1 # fail combat hook
-    yield fun.matchclass (arkham.GameplayAction_FailRoll)
-    yield fun.matchclass (arkham.GameplayAction_EndCauseHarmLoop)
-    yield fun.matchclass (arkham.GameplayAction_IncurDamage) # monster hit
-    yield fun.matchclass (arkham.GameplayAction_Fight)
-    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook) # combat check
-    for i in xrange (14): yield 5 # check we still have the bonus
-    yield fun.matchclass (arkham.GameplayAction_Stay)
-    assert len (test.inv.m_temporary_items) == 0 # check the spell didn't get stuck
-    raise tester.EndTest (True)
+def test5 (lore_mod, combat_mod):
+    def t (test):
+        for y in fight_and_horror_check (5, 5): yield y
+        for y in cast_spell (*list (5 for i in xrange (3 + lore_mod))): yield y
+        yield fun.matchclass (arkham.GameplayAction_Fight)
+        yield fun.matchclass (arkham.GameplayAction_NormalCheckHook) # combat check
+        for i in xrange (5 + combat_mod): yield 1 # fail combat hook
+        yield fun.matchclass (arkham.GameplayAction_FailRoll)
+        yield fun.matchclass (arkham.GameplayAction_EndCauseHarmLoop)
+        yield fun.matchclass (arkham.GameplayAction_IncurDamage) # monster hit
+        yield fun.matchclass (arkham.GameplayAction_Fight)
+        yield fun.matchclass (arkham.GameplayAction_NormalCheckHook) # combat check
+        for i in xrange (5 + combat_mod): yield 5 # check we still have the bonus
+        yield fun.matchclass (arkham.GameplayAction_Stay)
+        assert len (test.inv.m_temporary_items) == 0 # check the spell didn't get stuck
+        raise tester.EndTest (True)
+    return t
 
 def test6 (combat_successes):
     def test (test):
@@ -237,7 +239,7 @@ if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_weapon ("Powder of Ibn-Ghazi", test2, mod_unique.UniqueDeck))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Silver Key", test3, mod_unique.UniqueDeck))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Warding Statue", test4, mod_unique.UniqueDeck))))
-    tester.run_test (test_ah.Game (Test (test_weapon ("Dread Curse of Azathoth", test5, mod_spell.SpellDeck))))
+    tester.run_test (test_ah.Game (Test (test_weapon ("Dread Curse of Azathoth", test5 (-2, +9), mod_spell.SpellDeck))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Bind Monster", test6 (1), mod_spell.SpellDeck, toughness=1))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Bind Monster", test6 (2), mod_spell.SpellDeck, toughness=2))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Bind Monster", test6 (3), mod_spell.SpellDeck, toughness=3))))
@@ -277,3 +279,4 @@ if __name__ == "__main__":
                                                        arkham.monster_endless: None,
                                                        arkham.monster_physical: arkham.reslev_resistance},
                                                       toughness=2))))
+    tester.run_test (test_ah.Game (Test (test_weapon ("Shrivelling", test5 (-1, 6), mod_spell.SpellDeck))))
