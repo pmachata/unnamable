@@ -281,11 +281,14 @@ class Investigator (ObjectWithLocation, GameplayObject, NamedObject):
                        self.item_actions ()))
 
     def combat_turn (self, combat, monster):
-        return ([arkham.GameplayAction_Evade_Combat (combat, monster),
-                 arkham.GameplayAction_Fight (monster)]
-                + sum ((item.combat_turn (combat, self, monster)
-                        for item in self.wields_items ()), [])
-                + self.item_actions ())
+        ret = []
+        if not monster.has_special_ability (arkham.monster_ambush):
+            ret.append (arkham.GameplayAction_Evade_Combat (combat, monster))
+        ret.append (arkham.GameplayAction_Fight (monster))
+        ret.extend (sum ((item.combat_turn (combat, self, monster)
+                          for item in self.wields_items ()),
+                         self.item_actions ()))
+        return ret
 
     # Unconscious/Insane actions.
     def investigator_dead (self, game):

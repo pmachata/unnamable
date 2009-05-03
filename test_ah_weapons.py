@@ -33,6 +33,16 @@ def test_weapons (actions, names, special_abilities = [], **attrib):
 
     return ModuleProto1
 
+class look_for_action:
+    def __init__ (self, lookfor, match):
+        self.seen = 0
+        self.lookfor = lookfor
+        self.match = match
+    def __call__ (self, action):
+        if self.lookfor (action):
+            self.seen += 1
+        return self.match (action)
+
 def test_weapon (name, actions, deck = mod_common.CommonDeck,
                  special_abilities = [], **attrib):
     return test_weapons (actions, [(name, deck)], special_abilities, **attrib)
@@ -174,6 +184,25 @@ def test10 (n):
         raise tester.EndTest (True)
     return t
 
+def test11 (n):
+    """ Check that ambush monster presents an option to evade before
+    the combat begins, but not in the middle of the combat. """
+    yield fun.matchclass (arkham.GameplayAction_Stay)
+    yield fun.matchclass (arkham.GameplayAction_DealWithMonster)
+    e1 = look_for_action (fun.matchclass (arkham.GameplayAction_Evade),
+                          fun.matchclass (arkham.GameplayAction_Fight))
+    yield e1
+    assert e1.seen == 1
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
+    for i in 5, 5: yield i
+
+    e2 = look_for_action (fun.matchclass (arkham.GameplayAction_Evade),
+                          fun.matchclass (arkham.GameplayAction_Fight))
+    yield e2
+    assert e2.seen == 0
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook) # combat check
+    raise tester.EndTest (True)
+
 if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_weapon ("Dynamite", test1))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Powder of Ibn-Ghazi", test2, mod_unique.UniqueDeck))))
@@ -196,3 +225,5 @@ if __name__ == "__main__":
                                                       {arkham.monster_overwhelming: 1}))))
     tester.run_test (test_ah.Game (Test (test_weapon (".18 Derringer", test10 (2), mod_common.CommonDeck,
                                                       {arkham.monster_overwhelming: 2}))))
+    tester.run_test (test_ah.Game (Test (test_weapon (".18 Derringer", test11, mod_common.CommonDeck,
+                                                      {arkham.monster_ambush: None}))))

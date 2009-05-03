@@ -202,7 +202,7 @@ def build (game, module):
                                   undead = True)),
         (3, arkham.SimpleMonster ("Ghoul",
                                   -3, (+0, 1), 1, (-1, 1),
-                                  ambush = True)),
+                                  [arkham.monster_ambush])),
         (1, arkham.SimpleMonster ("God Of The Bloody Tongue",
                                   +1, (-3, 3), 4, (-4, 4),
                                   {arkham.monster_nightmarish: 1,

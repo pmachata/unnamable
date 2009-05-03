@@ -38,6 +38,8 @@ monster_magical = MonsterResistance (family_magical)
 monster_nightmarish = MonsterSpecialAbility ("nightmarish")
 monster_overwhelming = MonsterSpecialAbility ("overwhelming")
 
+monster_ambush = MonsterSpecialAbility ("ambush")
+
 class MonsterProto (DeckItem, SubjectProto):
     def __init__ (self, name, special_abilities = {}, **attributes):
         DeckItem.__init__ (self, name, **attributes)
