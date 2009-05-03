@@ -203,6 +203,16 @@ def test11 (n):
     yield fun.matchclass (arkham.GameplayAction_NormalCheckHook) # combat check
     raise tester.EndTest (True)
 
+def test12 (test):
+    trophies = len (test.inv.trophies ())
+    for y in fight_and_horror_check (5, 5): yield y
+    yield fun.matchclass (arkham.GameplayAction_Fight)
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook) # combat check
+    for i in 5, 5, 5, 5, 5, 5, 5: yield i
+    assert trophies == len (test.inv.trophies ())
+    yield fun.matchclass (arkham.GameplayAction_Stay)
+    raise tester.EndTest (True)
+
 if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_weapon ("Dynamite", test1))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Powder of Ibn-Ghazi", test2, mod_unique.UniqueDeck))))
@@ -217,6 +227,8 @@ if __name__ == "__main__":
                                                        {arkham.monster_physical: arkham.reslev_immunity}))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Mists of Releh", test8 (-1), mod_spell.SpellDeck, awareness=-1))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Mists of Releh", test8 (+1), mod_spell.SpellDeck, awareness=+1))))
+
+    # Test nighmarish/overwhelming.
     tester.run_test (test_ah.Game (Test (test_weapon (".18 Derringer", test9 (1), mod_common.CommonDeck,
                                                       {arkham.monster_nightmarish: 1}))))
     tester.run_test (test_ah.Game (Test (test_weapon (".18 Derringer", test9 (2), mod_common.CommonDeck,
@@ -225,5 +237,12 @@ if __name__ == "__main__":
                                                       {arkham.monster_overwhelming: 1}))))
     tester.run_test (test_ah.Game (Test (test_weapon (".18 Derringer", test10 (2), mod_common.CommonDeck,
                                                       {arkham.monster_overwhelming: 2}))))
+
+    # Ambush monsters.
     tester.run_test (test_ah.Game (Test (test_weapon (".18 Derringer", test11, mod_common.CommonDeck,
                                                       {arkham.monster_ambush: None}))))
+
+    # Endless monsters.  Test both endless parameter and endless ability.
+    tester.run_test (test_ah.Game (Test (test_weapon (".18 Derringer", test12, mod_common.CommonDeck,
+                                                      {arkham.monster_endless: None}))))
+    tester.run_test (test_ah.Game (Test (test_weapon (".18 Derringer", test12, mod_common.CommonDeck, endless=True))))

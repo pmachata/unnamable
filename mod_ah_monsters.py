@@ -31,7 +31,7 @@ def build (game, module):
                  arkham.ConditionalHarm (terror_at_least_6,
                                          arkham.HarmStamina (1),
                                          arkham.HarmStamina (3)),
-                 endless = True) # XXX only if terror_track >= 6!
+                 {arkham.monster_endless: None}) # XXX only if terror_track >= 6!
 
 
     class MiGo (arkham.SimpleMonster):
@@ -39,9 +39,8 @@ def build (game, module):
             arkham.SimpleMonster.__init__ \
                 (self, "Mi-Go",
                  -2, (-1, 2), 1, (+0, 1),
-                 endless = True) # Not technically endless, but
-                                 # goes to the cup after it's
-                                 # killed.
+                 endless = True) # I.e. Endless not as an ability, but
+                                 # as a property of the monster.
 
     @game.combat_check_pass_hook.match \
         (fun.any, fun.any, arkham.match_proto (MiGo))
@@ -82,9 +81,9 @@ def build (game, module):
         def __init__ (self):
             arkham.MonsterProto.__init__ \
                 (self, "The Black Man",
+                 {arkham.monster_endless: None},
                  in_cup = False,
-                 mask = True,
-                 endless = True)
+                 mask = True)
 
         def evade_check (self):
             return arkham.evade_check (-3)
@@ -132,9 +131,9 @@ def build (game, module):
             arkham.SimpleMonster.__init__ \
                 (self, "The Bloated Woman",
                  -1, (-1, 2), 2, (-2, 2),
+                 {arkham.monster_endless: None},
                  in_cup = False,
-                 mask = True,
-                 endless = True)
+                 mask = True)
 
     @game.fight_hook.match \
         (fun.any, fun.any, arkham.match_proto (TheBloatedWoman))
@@ -206,10 +205,10 @@ def build (game, module):
         (1, arkham.SimpleMonster ("God Of The Bloody Tongue",
                                   +1, (-3, 3), 4, (-4, 4),
                                   {arkham.monster_nightmarish: 1,
-                                   arkham.monster_overwhelming: 1},
+                                   arkham.monster_overwhelming: 1,
+                                   arkham.monster_endless: None},
                                   in_cup = False,
-                                  mask = True,
-                                  endless = True)),
+                                  mask = True)),
         (2, arkham.SimpleMonster ("Gug",
                                   -2, (-1, 2), 3, (-2, 4),
                                   {arkham.monster_overwhelming: 1})),
@@ -220,14 +219,14 @@ def build (game, module):
               arkham.HarmSanity (2),
               arkham.ConditionalCheck\
                   (lambda game, investigator: \
-                       ### Temporary...
+                       ### xxx Temporary...
                        game.environment () == "Blackest Night",
                    arkham.combat_check (-5, 2),
                    arkham.combat_check (-2, 2)),
               arkham.HarmStamina (2),
+              {arkham.monster_endless: None},
               in_cup = False,
-              mask = True,
-              endless = True)),
+              mask = True)),
         (1, arkham.SimpleMonster ("High Priest",
                                   -2, (+1, 1), 2, (-2, 2),
                                   {arkham.monster_magical:
@@ -255,9 +254,9 @@ def build (game, module):
               arkham.HarmSanity (1),
               arkham.SkillCheck (arkham.checkbase_lore, -3, 2),
               arkham.HarmStamina (3),
+              {arkham.monster_endless: None},
               in_cup = False,
-              mask = True,
-              endless = True)),
+              mask = True)),
         (1, arkham.SimpleMonster ("Vampire",
                                   -3, (+0, 2), 2, (-3, 3),
                                   {arkham.monster_physical:

@@ -39,6 +39,7 @@ monster_nightmarish = MonsterSpecialAbility ("nightmarish")
 monster_overwhelming = MonsterSpecialAbility ("overwhelming")
 
 monster_ambush = MonsterSpecialAbility ("ambush")
+monster_endless = MonsterSpecialAbility ("endless")
 
 class MonsterProto (DeckItem, SubjectProto):
     def __init__ (self, name, special_abilities = {}, **attributes):

@@ -1,6 +1,5 @@
 import fun
 import conf
-from obj import match_flag
 import arkham
 
 class EndCombat (Exception):
@@ -373,6 +372,8 @@ class FightHooks:
             monster.discard ()
 
         @self.combat_won_hook.match \
-            (fun.any, fun.any, match_flag ("endless"))
+            (fun.any, fun.any,
+             fun.or_ (arkham.match_flag ("endless"),
+                      arkham.has_special_ability (arkham.monster_endless)))
         def do (combat, investigator, monster):
             combat.game.endless_combat_won_hook (combat, investigator, monster)
