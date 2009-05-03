@@ -59,9 +59,19 @@ class Monster (ObjectWithLocation, Subject):
     def __init__ (self, proto):
         ObjectWithLocation.__init__ (self, None)
         Subject.__init__ (self, proto)
+        self.m_combat_check = None
 
     def name (self):
-        return self.m_proto.name ()
+        return self.proto ().name ()
+
+    def combat_check (self):
+        if self.m_combat_check is not None:
+            return self.m_combat_check
+        else:
+            return self.proto ().combat_check ()
+
+    def set_combat_check (self, combat_check):
+        self.m_combat_check = combat_check
 
     def movement (self, game):
         return self.proto ().movement (game)

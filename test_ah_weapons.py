@@ -213,6 +213,25 @@ def test12 (test):
     yield fun.matchclass (arkham.GameplayAction_Stay)
     raise tester.EndTest (True)
 
+def test13 (test):
+    trophies = len (test.inv.trophies ())
+    for y in fight_and_horror_check (5, 5): yield y
+    for y in cast_spell (5, 5): yield y
+    e1 = look_for_action (lambda action: True,
+                          lambda action: "endless" in action.name ())
+    yield e1
+    assert e1.seen == 2 # we expect two matches, not three,
+                        # because magical immunity has to be
+                        # ignored
+    yield fun.matchclass (arkham.GameplayAction_Fight)
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook) # combat check
+    for i in 5, 1, 1, 1, 1, : yield i # check that one success is
+                                      # enough even for toughness 2
+                                      # monster
+    assert len (test.inv.trophies ()) == trophies + 1
+    yield fun.matchclass (arkham.GameplayAction_Stay)
+    raise tester.EndTest (True)
+
 if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_weapon ("Dynamite", test1))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Powder of Ibn-Ghazi", test2, mod_unique.UniqueDeck))))
@@ -246,3 +265,15 @@ if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_weapon (".18 Derringer", test12, mod_common.CommonDeck,
                                                       {arkham.monster_endless: None}))))
     tester.run_test (test_ah.Game (Test (test_weapon (".18 Derringer", test12, mod_common.CommonDeck, endless=True))))
+
+    tester.run_test (test_ah.Game (Test (test_weapon ("Red Sign of Shudde M'ell", test13, mod_spell.SpellDeck,
+                                                      {arkham.monster_magical: arkham.reslev_immunity,
+                                                       arkham.monster_endless: None,
+                                                       arkham.monster_physical: arkham.reslev_resistance},
+                                                      toughness=1))))
+
+    tester.run_test (test_ah.Game (Test (test_weapon ("Red Sign of Shudde M'ell", test13, mod_spell.SpellDeck,
+                                                      {arkham.monster_magical: arkham.reslev_immunity,
+                                                       arkham.monster_endless: None,
+                                                       arkham.monster_physical: arkham.reslev_resistance},
+                                                      toughness=2))))

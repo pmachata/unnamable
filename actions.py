@@ -205,6 +205,21 @@ class GameplayAction_WithSelectedInvestigator (GameplayAction):
         assert len (actions) > 0
         game.perform_selected_action (investigator, actions)
 
+class GameplayAction_WithSelected (GameplayAction):
+    def __init__ (self, candidate_ctor, description, action_ctor, fake):
+        GameplayAction.__init__ \
+            (self, "select %s and %s" \
+                 % (description,
+                    action_ctor (fake).name ()))
+        self.m_candidate_ctor = candidate_ctor
+        self.m_action_ctor = action_ctor
+
+    def perform (self, game, investigator):
+        actions = [self.m_action_ctor (candidate)
+                   for candidate in self.m_candidate_ctor ()]
+        assert len (actions) > 0
+        game.perform_selected_action (investigator, actions)
+
 # Movement actions
 
 class GameplayAction_Move (LocationBoundGameplayAction):
@@ -550,6 +565,54 @@ class GameplayAction_IncurDamage (GameplayAction):
 
     def perform (self, game, investigator):
         raise arkham.EndPhase ()
+
+# Monster actions
+
+class GameplayAction_ReduceMonsterToughness (MonsterBoundGameplayAction):
+    def __init__ (self, monster, by, minimum):
+        MonsterBoundGameplayAction.__init__ \
+            (self, monster,
+             "reduce toughness by %d to a minimum of %d" \
+                 % (by, minimum))
+        self.m_by = by
+        self.m_minimum = minimum
+
+    def perform (self, game, investigator):
+        check = self.m_monster.combat_check ()
+        diff = check.difficulty ()
+        if diff > self.m_minimum:
+            diff2 = max (self.m_minimum, diff - self.m_by)
+            check.set_difficulty (diff2)
+            print "reduced difficulty from %d to %d" % (diff, diff2)
+
+class GameplayAction_SetMonsterToughness (MonsterBoundGameplayAction):
+    def __init__ (self, monster, value):
+        MonsterBoundGameplayAction.__init__ \
+            (self, monster, "set toughness to %d" % value)
+        self.m_value = value
+
+    def perform (self, game, investigator):
+        self.m_monster.combat_check ().set_difficulty (self.m_value)
+
+class GameplayAction_DropSpecialAbility (MonsterBoundGameplayAction):
+    def __init__ (self, monster, ability):
+        MonsterBoundGameplayAction.__init__ \
+            (self, monster, "drop %s ability" % ability.name ())
+        self.m_ability = ability
+
+    def perform (self, game, investigator):
+        self.m_monster.remove_special_ability (self.m_ability)
+
+class GameplayAction_CancelSpecialAbilityCustomization \
+        (MonsterBoundGameplayAction):
+    def __init__ (self, monster, ability):
+        MonsterBoundGameplayAction.__init__ \
+            (self, monster,
+             "undo changes on monster's %s ability" % ability.name ())
+        self.m_ability = ability
+
+    def perform (self, game, investigator):
+        self.m_monster.cancel_special_ability_customization (self.m_ability)
 
 # Various
 

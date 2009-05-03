@@ -214,7 +214,7 @@ class FightHooks:
         @self.normal_combat_check_hook.match \
             (fun.any, fun.any, fun.any)
         def do (combat, investigator, monster):
-            if monster.proto ().combat_check () \
+            if monster.combat_check () \
                     .check (combat.game, investigator, monster):
                 combat.game.combat_check_pass_hook \
                     (combat, investigator, monster)

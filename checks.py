@@ -42,6 +42,9 @@ class SkillCheck (Check):
     def difficulty (self):
         return self.m_difficulty
 
+    def set_difficulty (self, difficulty):
+        self.m_difficulty = difficulty
+
     def description (self, game, investigator):
         return "%s(%+d)%s" % (self.m_check_base.name (),
                               self.m_base_modifier,

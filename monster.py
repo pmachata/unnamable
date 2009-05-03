@@ -32,6 +32,7 @@ class MonsterResistance (MonsterSpecialAbility):
     def family (self):
         return self.m_family
 
+# xxx I think most of these should be module members.
 monster_physical = MonsterResistance (family_physical)
 monster_magical = MonsterResistance (family_magical)
 

@@ -719,7 +719,7 @@ def build (game, module):
             check. You must roll successes equal to the monster's
             toughness to cast this spell.
             xxx This spell doesn't work on Ancient Ones."""
-            cc = monster.proto ().combat_check ()
+            cc = monster.combat_check ()
             if fun.matchclass (arkham.SkillCheck) (cc):
                 d = cc.difficulty ()
                 return [
@@ -914,6 +914,100 @@ def build (game, module):
                            arkham.SkillCheck (arkham.checkbase_lore, modifier),
                            arkham.GameplayAction_PassCheck (check_base))])]
 
+    class RedSignOfShuddeMell (module.mod_spell.SpellItem):
+        def __init__ (self):
+            module.mod_spell.SpellItem.__init__ \
+                (self, "Red Sign of Shudde M'ell", 0, 0)
+
+        def combat_turn (self, combat, owner, monster, item):
+            """Any Phase: Cast and exhaust to lower a monster's
+            toughness by 1 (to a minimum of 1) and ignore one of its
+            special abilities other than Magical Immunity until the
+            end of this combat. """
+
+            if item.exhausted ():
+                return []
+
+            a1 = r1 = a2 = r2 = None
+
+            cc = monster.combat_check ()
+            if fun.matchclass (arkham.SkillCheck) (cc) \
+                    and cc.difficulty () > 1:
+                a1 = arkham.GameplayAction_ReduceMonsterToughness \
+                    (monster, 1, 1)
+                r1 = arkham.GameplayAction_SetMonsterToughness \
+                    (monster, cc.difficulty ())
+
+            def build_candidates ():
+                return list \
+                    (ability
+                     for ability, parameter \
+                         in monster.special_abilities ().iteritems ()
+                     if ability != arkham.monster_magical
+                     or parameter != arkham.reslev_immunity)
+
+            if len (build_candidates ()) > 0:
+                class mem:
+                    def set (self, content):
+                        self._content = content
+                    def get (self):
+                        return self._content
+
+                def build_action_ctor (m, action_ctor):
+                    def ctor (candidate):
+                        class Action (arkham.GameplayAction_One):
+                            def __init__ (self, action):
+                                arkham.GameplayAction_One.__init__ \
+                                    (self, action, action.name ())
+
+                            def perform (self, game, investigator):
+                                m.set (candidate)
+                                self.m_action.perform (game, investigator)
+                        return Action (action_ctor (candidate))
+                    return ctor
+
+                class Reaction (arkham.GameplayAction):
+                    def __init__ (self, name, ctor):
+                        arkham.GameplayAction.__init__ (self, name)
+                        self.m_ctor = ctor
+
+                    def perform (self, game, investigator):
+                        selected = m.get ()
+                        self.m_ctor (selected).perform (game, investigator)
+
+                m = mem ()
+
+                a2 = arkham.GameplayAction_WithSelected \
+                    (build_candidates,
+                     "one of monster's special abilities " \
+                         + "other than Magical Immunity",
+                     build_action_ctor \
+                         (m, lambda candidate:
+                              arkham.GameplayAction_DropSpecialAbility \
+                                (monster, candidate)),
+                     arkham.MonsterSpecialAbility ("selected"))
+                r2 = Reaction \
+                    ("reintroduce once dropped special ability",
+                     lambda selected:
+                       arkham.GameplayAction_CancelSpecialAbilityCustomization \
+                         (monster, selected))
+
+            if a1 == None and a2 == None:
+                return []
+
+            return [
+                arkham.GameplayAction_Multiple \
+                    ([arkham.GameplayAction_Exhaust (item),
+                      arkham.GameplayAction_CauseHarm \
+                          (combat.game, owner, item, arkham.HarmSanity (1)),
+                      arkham.GameplayAction_Conditional \
+                          (combat.game, owner, item,
+                           arkham.SkillCheck (arkham.checkbase_lore, -1),
+                           arkham.GameplayAction_ForCombat \
+                               (combat,
+                                arkham.GameplayAction_Multiple ([a1, a2]),
+                                arkham.GameplayAction_Multiple ([r1, r2])))])]
+
     for count, item_proto in [
             (1, BindMonster ()),
             (1, DreadCurseOfAzathoth ()),
@@ -921,5 +1015,6 @@ def build (game, module):
             (1, FleshWard ()),
             (1, Heal ()),
             (1, MistsOfReleh ()),
+            (1, RedSignOfShuddeMell ()),
         ]:
         module.m_spell_deck.register (item_proto, count)

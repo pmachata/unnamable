@@ -160,6 +160,12 @@ class Subject (ObjectWithPrototype):
     def special_ability_param (self, ability):
         return self.special_abilities ()[ability]
 
+    def cancel_special_ability_customization (self, ability):
+        if ability in self.m_removed_abilities:
+            self.m_removed_abilities.remove (ability)
+        if ability in self.m_added_abilities:
+            del self.m_added_abilities[ability]
+
 class NamedObject:
     def __init__ (self, name):
         self.m_name = name
