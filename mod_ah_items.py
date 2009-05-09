@@ -247,62 +247,62 @@ def build (game, module):
 
 
     for count, item_proto in [
-            (1, Derringer18 ()),
-            (1, plain_item (".38 Revolver", 4, 1,
+            (2, Derringer18 ()),
+            (2, plain_item (".38 Revolver", 4, 1,
                             {arkham.checkbase_combat:
                                  arkham.Bonus (3, arkham.family_physical)},
                             extra_classes = [arkham.Weapon])),
-            (1, plain_item (".45 Automatic", 5, 1,
+            (2, plain_item (".45 Automatic", 5, 1,
                             {arkham.checkbase_combat:
                                  arkham.Bonus (4, arkham.family_physical)},
                             extra_classes = [arkham.Weapon])),
-            (1, complex (Tome, "Ancient Tome", 4, 2, None,
+            (2, complex (Tome, "Ancient Tome", 4, 2, None,
                          arkham.SkillCheck (arkham.checkbase_lore, -1),
                          lambda game, owner, item: \
                              arkham.GameplayAction_DrawItem \
                                 (module.m_spell_deck))),
-            (1, Axe ()),
-            (1, Bullwhip ()),
-            (1, plain_item ("Cavalry Saber", 3, 1,
+            (2, Axe ()),
+            (2, Bullwhip ()),
+            (2, plain_item ("Cavalry Saber", 3, 1,
                             {arkham.checkbase_combat:
                                  arkham.Bonus (2, arkham.family_physical)},
                             extra_classes = [arkham.Weapon])),
-            (1, Cross ()),
-            (1, plain_item ("Dark Cloak", 2, 0,
+            (2, Cross ()),
+            (2, plain_item ("Dark Cloak", 2, 0,
                             {arkham.checkbase_evade:
                                  arkham.Bonus (1, arkham.family_indifferent)})),
-            (1, plain_item ("Dynamite", 4, 2,
+            (2, plain_item ("Dynamite", 4, 2,
                             {arkham.checkbase_combat:
                                  arkham.Bonus (8, arkham.family_physical)},
                             after_use = lambda game, owner, item: \
                                 arkham.GameplayAction_Discard (item),
                             extra_classes = [arkham.Weapon])),
-            (1, Food ()),
-            (1, plain_item ("Knife", 2, 1,
+            (2, Food ()),
+            (2, plain_item ("Knife", 2, 1,
                             {arkham.checkbase_combat:
                                  arkham.Bonus (1, arkham.family_physical)},
                             extra_classes = [arkham.Weapon])),
-            (1, plain_item ("Lantern", 3, 0,
+            (2, plain_item ("Lantern", 3, 0,
                             {arkham.checkbase_luck:
                                  arkham.Bonus (1, arkham.family_indifferent)})),
-            (1, LuckyCigaretteCase ()),
-            (1, MapOfArkham ()),
-            (1, Motorcycle ()),
-            (1, complex (Tome, "Old Journal", 1, 1, None,
+            (2, LuckyCigaretteCase ()),
+            (2, MapOfArkham ()),
+            (2, Motorcycle ()),
+            (2, complex (Tome, "Old Journal", 1, 1, None,
                          arkham.SkillCheck (arkham.checkbase_lore, -1),
                          lambda game, owner, item: \
                              arkham.GameplayAction_GainClues (3))),
-            (1, ResearchMaterials ()),
-            (1, plain_item ("Rifle", 6, 2,
+            (2, ResearchMaterials ()),
+            (2, plain_item ("Rifle", 6, 2,
                             {arkham.checkbase_combat:
                                  arkham.Bonus (5, arkham.family_physical)},
                             extra_classes = [arkham.Weapon])),
-            (1, Shotgun ()),
-            (1, plain_item ("Tommy Gun", 7, 2,
+            (2, Shotgun ()),
+            (2, plain_item ("Tommy Gun", 7, 2,
                             {arkham.checkbase_combat:
                                  arkham.Bonus (6, arkham.family_physical)},
                             extra_classes = [arkham.Weapon])),
-            (1, Whiskey ())
+            (2, Whiskey ())
         ]:
         module.m_common_deck.register (item_proto, count)
 
@@ -409,7 +409,8 @@ def build (game, module):
 
     class xxxDragonsEye (arkham.InvestigatorItem):
         """Any phase: Exhaust and lose 1 Sanity after drawing a gate
-        or location card to draw a new card in its place"""
+        or location card to draw a new card in its place
+        count: 1"""
         pass
 
 
@@ -418,7 +419,9 @@ def build (game, module):
         and return this card to the box. You do not need to make a
         skill check or spend any Clue tokens to seal the gate. In
         addition, remove one doom token from the Ancient One's doom
-        track."""
+        track.
+        count: 4
+        """
         pass
 
 
@@ -480,6 +483,7 @@ def build (game, module):
         """Any Phase: When you return to Arkham from an Other World,
         you can return to any location with an open gate, not just
         those leading to the Other World you were in."""
+        """count:1"""
         pass
 
 
@@ -516,7 +520,7 @@ def build (game, module):
         (fun.any, fun.any, fun.any, arkham.match_proto (HolyWater),
          fun.val == arkham.checkbase_combat)
     def do (game, investigator, subject, item, skill_name):
-        return 6
+        return arkham.Bonus (6, arkham.family_magical)
 
     @game.item_after_use_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (HolyWater),
@@ -555,6 +559,7 @@ def build (game, module):
             arkham.InvestigatorItem.__init__ (self, "Ruby of R'lyeh", 8, 0)
 
         def movement_points_bonus (self, game, owner, item):
+            # xxx why is it not done the same was as for Map and Motorcycle?
             return 3
 
 
@@ -613,14 +618,14 @@ def build (game, module):
             (1, AncientTablet ()),
             (1, BlueWatcherOfThePyramid ()),
             (1, BookOfDzyan ()),
-            (1, complex (arkham.InvestigatorItem, "Cabala of Saboth", 5,
+            (2, complex (arkham.InvestigatorItem, "Cabala of Saboth", 5,
                          2, None,
                          arkham.SkillCheck (arkham.checkbase_lore, -2),
                          # xxx should be SKILL deck
                          lambda game, owner, item: \
                              arkham.GameplayAction_DrawItem \
                                 (module.m_common_deck))),
-            (1, complex (arkham.InvestigatorItem, "Cultes des Goules", 3,
+            (2, complex (arkham.InvestigatorItem, "Cultes des Goules", 3,
                          2, None,
                          arkham.SkillCheck (arkham.checkbase_lore, -2),
                          lambda game, owner, item: \
@@ -631,23 +636,23 @@ def build (game, module):
                                 arkham.GameplayAction_CauseHarm \
                                     (game, owner, item,
                                      arkham.HarmSanity (2))]))),
-            (1, plain_item ("Enchanted Blade", 6, 1,
+            (2, plain_item ("Enchanted Blade", 6, 1,
                             {arkham.checkbase_combat:
                                  arkham.Bonus (4, arkham.family_magical)},
                             extra_classes = [arkham.Weapon])),
             (1, EnchantedJewelry ()),
-            (1, plain_item ("Enchanted Knife", 5, 1,
+            (2, plain_item ("Enchanted Knife", 5, 1,
                             {arkham.checkbase_combat:
                                  arkham.Bonus (3, arkham.family_magical)},
                             extra_classes = [arkham.Weapon])),
             (1, FluteOfTheOuterGods ()),
             (1, HealingStone ()),
-            (1, HolyWater ()),
+            (4, HolyWater ()),
             (1, plain_item ("Lamp of Alhazred", 7, 2,
                             {arkham.checkbase_combat:
                                  arkham.Bonus (5, arkham.family_magical)},
                             extra_classes = [arkham.Weapon])),
-            (1, complex (arkham.InvestigatorItem, "Nameless Cults", 3,
+            (2, complex (arkham.InvestigatorItem, "Nameless Cults", 3,
                          1, None,
                          arkham.SkillCheck (arkham.checkbase_lore, -1),
                          lambda game, owner, item: \
@@ -671,7 +676,7 @@ def build (game, module):
             (1, plain_item ("Pallid Mask", 4, 0,
                             {arkham.checkbase_evade:
                                  arkham.Bonus (2, arkham.family_indifferent)})),
-            (1, plain_item ("Powder of Ibn-Ghazi", 6, 2,
+            (2, plain_item ("Powder of Ibn-Ghazi", 6, 2,
                             {arkham.checkbase_combat:
                                  arkham.Bonus (9, arkham.family_magical)},
                             after_use = lambda game, owner, item: \
@@ -687,7 +692,7 @@ def build (game, module):
                             {arkham.checkbase_combat:
                                  arkham.Bonus (6, arkham.family_magical)},
                             extra_classes = [arkham.Weapon])),
-            (1, complex (arkham.InvestigatorItem, "The King in Yellow", 2,
+            (2, complex (arkham.InvestigatorItem, "The King in Yellow", 2,
                          2, None,
                          arkham.SkillCheck (arkham.checkbase_lore, -2),
                          lambda game, owner, item: \
@@ -824,7 +829,7 @@ def build (game, module):
 
     class xxxFindGate (module.mod_spell.SpellItem):
         """Movement Phase: Cast and exhaust to immediately return to
-        Arkham from an Other World. """
+        Arkham from an Other World.  count:4"""
         pass
 
 
@@ -856,6 +861,8 @@ def build (game, module):
                             arkham.GameplayAction_CancelDamage \
                                 (damage, arkham.health_stamina))])]
 
+    # xxxx Spells in general do "exhaust, cast" instead of "cast,
+    # exhaust".  The program is buggy.
 
     class Heal (module.mod_spell.SpellItem):
         """Upkeep Phase: You may cast and exhaust. You or another
@@ -934,6 +941,11 @@ def build (game, module):
             a1 = r1 = a2 = r2 = None
 
             cc = monster.combat_check ()
+            # xxx better solution: difficulty modifiers.  Make them
+            # decorators.  Make everything that can be altered like
+            # this the same way, based on some sort of decorator
+            # object.  Action will be installation of a new decorator,
+            # reaction will be removal of that same decorator.
             if fun.matchclass (arkham.SkillCheck) (cc) \
                     and cc.difficulty () > 1:
                 a1 = arkham.GameplayAction_ReduceMonsterToughness \
@@ -949,6 +961,9 @@ def build (game, module):
                      if ability != arkham.monster_magical
                      or parameter != arkham.reslev_immunity)
 
+            # xxx I believe this could be done the same way as above.
+            # The decorator would filter out or include any abilities
+            # that it wishes to.
             if len (build_candidates ()) > 0:
                 class mem:
                     def set (self, content):
@@ -1056,21 +1071,52 @@ def build (game, module):
         return arkham.Bonus (1, arkham.family_magical)
 
     for count, item_proto in [
-            (1, BindMonster ()),
-            (1, simple_bonus_spell ("Dread Curse of Azathoth", -2, 2, 2,
+            (2, BindMonster ()),
+            (4, simple_bonus_spell ("Dread Curse of Azathoth", -2, 2, 2,
                                     {arkham.checkbase_combat:
                                          arkham.Bonus (9, arkham.family_magical)})),
-            (1, EnchantWeapon ()),
-            (1, FleshWard ()),
-            (1, Heal ()),
-            (1, MistsOfReleh ()),
-            (1, RedSignOfShuddeMell ()),
-            (1, simple_bonus_spell ("Shrivelling", -1, 1, 1,
+            (3, EnchantWeapon ()),
+            (4, FleshWard ()),
+            (3, Heal ()),
+            (4, MistsOfReleh ()),
+            (2, RedSignOfShuddeMell ()),
+            (5, simple_bonus_spell ("Shrivelling", -1, 1, 1,
                                     {arkham.checkbase_combat:
                                          arkham.Bonus (6, arkham.family_magical)})),
-            (1, VoiceOfRa ()),
-            (1, simple_bonus_spell ("Wither", +0, 0, 1,
+            (3, VoiceOfRa ()),
+            (6, simple_bonus_spell ("Wither", +0, 0, 1,
                                     {arkham.checkbase_combat:
                                          arkham.Bonus (3, arkham.family_magical)})),
         ]:
         module.m_spell_deck.register (item_proto, count)
+
+    # -------------------------------------------------------------------------
+
+    def skill_reroll (name, *what_to_reroll):
+        class SkillReroll (module.mod_skill.SkillItem):
+            def __init__ (self):
+                module.mod_skill.SkillItem.__init__ (self, name, 0, 0)
+
+        for checkbase in what_to_reroll:
+            @game.check_correction_actions_hook.match \
+                (fun.any, fun.any, fun.any,
+                 arkham.match_proto (SkillReroll),
+                 fun.val == checkbase, fun.any)
+            def do (game, investigator, subject, item, skill_name, roll):
+                return [arkham.GameplayAction_Multiple \
+                            ([arkham.GameplayAction_Exhaust (item),
+                              arkham.GameplayAction_Reroll \
+                                  (subject, skill_name, roll)])]
+
+        return SkillReroll ()
+
+    def skill_correction (name, *what_to_correct):
+        class SkillCorrection (module.mod_skill.SkillItem):
+            def __init__ (self):
+                module.mod_skill.SkillItem.__init__ (self, name, 0, 0)
+
+    for count, item_proto in [
+            (1, skill_reroll ("Bravery", arkham.checkbase_horror)),
+            (1, skill_reroll ("Expert Occultist", arkham.checkbase_spell)),
+        ]:
+        module.m_skill_deck.register (item_proto, count)
