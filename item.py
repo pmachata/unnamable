@@ -34,3 +34,7 @@ class ItemProto (ObjectWithAttributes, NamedObject, SubjectProto):
 # Items that inherit from this class are considered Weapons.
 class Weapon:
     pass
+
+# Items that inherit from this class are considered Tomes.
+class Tome:
+    pass

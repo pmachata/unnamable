@@ -12,7 +12,10 @@ def test_weapons (actions, names, special_abilities = [], **attrib):
     class ModuleProto1 (ModuleProto):
         def setup_investigator (self, game, inv):
             for name, deck in names:
-                item = game.deck (deck).draw (lambda arg: arg.name () == name)
+                def match (arg):
+                    print arg.name (), "looking for", name
+                    return arg.name () == name
+                item = game.deck (deck).draw (match)
                 inv.take_item (game, item)
                 assert inv.wield_item (game, item)
 
@@ -249,6 +252,38 @@ def test14 (test):
     yield fun.matchclass (arkham.GameplayAction_Stay)
     raise tester.EndTest (True)
 
+def test15 (test):
+    for y in fight_and_horror_check (5, 5): yield y
+    yield fun.matchclass (arkham.GameplayAction_Fight)
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
+    for y in 1,1,1,1,1,1: yield y
+    yield lambda action: "reroll" in action.name ()
+    for y in 1,1,1,1,1,1: yield y
+    # now only "spend clue token" matches this, meaning that "exhaust
+    # & reroll" option is gone.
+    yield fun.matchclass (arkham.GameplayAction_Multiple)
+    yield 5
+    yield fun.matchclass (arkham.GameplayAction_Stay)
+    raise tester.EndTest (True)
+
+def test16 (undead):
+    def t (test):
+        for y in fight_and_horror_check (5, 5, 5): yield y # +1 horror
+        yield fun.matchclass (arkham.GameplayAction_Fight)
+        yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
+        for y in [5] * (5 + (3 if undead else 0)): yield y
+        yield fun.matchclass (arkham.GameplayAction_Stay)
+        raise tester.EndTest (True)
+    return t
+
+def test17 (test):
+    for y in fight_and_horror_check (5, 5): yield y
+    yield fun.matchclass (arkham.GameplayAction_Fight)
+    yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
+    for y in 1,1,1,1,1,1,1,1,6: yield y
+    yield fun.matchclass (arkham.GameplayAction_Stay)
+    raise tester.EndTest (True)
+
 if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_weapon ("Dynamite", test1))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Powder of Ibn-Ghazi", test2, mod_unique.UniqueDeck))))
@@ -297,3 +332,10 @@ if __name__ == "__main__":
     tester.run_test (test_ah.Game (Test (test_weapon ("Shrivelling", test5 (-1, 6), mod_spell.SpellDeck))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Wither", test5 (0, 3, False), mod_spell.SpellDeck))))
     tester.run_test (test_ah.Game (Test (test_weapon ("Voice of Ra", test14, mod_spell.SpellDeck))))
+    tester.run_test (test_ah.Game (Test (test_weapon ("Bullwhip", test15))))
+
+    tester.run_test (test_ah.Game (Test (test_weapon ("Cross", test16 (True), undead = True))))
+    tester.run_test (test_ah.Game (Test (test_weapon ("Cross", test16 (False), undead = False))))
+    tester.run_test (test_ah.Game (Test (test_weapon ("Cross", test16 (False)))))
+
+    tester.run_test (test_ah.Game (Test (test_weapon ("Shotgun", test17, mod_common.CommonDeck, toughness=2))))

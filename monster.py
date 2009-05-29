@@ -15,7 +15,11 @@ reslev_resistance = ResistanceLevel ("resistance", lambda val: (val + 1) / 2)
 reslev_immunity = ResistanceLevel ("immunity", lambda val: 0)
 
 class Family (NamedObject):
-    pass
+    def __str__ (self):
+        return self.name ()
+
+    def __repr__ (self):
+        return "<Family %s>" % repr (self.name ())
 
 family_indifferent = Family ("indifferent")
 family_physical = Family ("physical")

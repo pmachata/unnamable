@@ -44,7 +44,6 @@ class GameplayAction_Many (GameplayAction):
     """Base class for actions involving several sub-actions."""
     def __init__ (self, actions, name_ctor):
         actions = list (action for action in actions if action != None)
-        assert len (actions) > 0
         GameplayAction.__init__ (self, name_ctor (actions))
         self.m_actions = actions
 
@@ -306,23 +305,23 @@ class GameplayAction_Heal (GameplayAction):
 
 class GameplayAction_NormalCheckHook (GameplayAction):
     def __init__ (self, game, investigator, subject,
-                  check_base, modifier, difficulty):
-        GameplayAction.__init__ (self, "perform %s check" % check_base.name ())
+                  checkbase, modifier, difficulty):
+        GameplayAction.__init__ (self, "perform %s check" % checkbase.name ())
         self.m_subject = subject
-        self.m_check_base = check_base
+        self.m_checkbase = checkbase
         self.m_modifier = modifier
         self.m_difficulty = difficulty
 
     def perform (self, game, investigator):
         successes = game.normal_perform_check_hook \
             (game, investigator, self.m_subject,
-             self.m_check_base, self.m_modifier,
+             self.m_checkbase, self.m_modifier,
              self.m_difficulty)
         raise arkham.EndCheck (successes >= self.m_difficulty, successes)
 
 class GameplayAction_PassCheck (GameplayAction):
-    def __init__ (self, check_base):
-        GameplayAction.__init__ (self, "pass %s check" % check_base.name ())
+    def __init__ (self, checkbase):
+        GameplayAction.__init__ (self, "pass %s check" % checkbase.name ())
 
     def perform (self, game, investigator):
         raise arkham.EndCheck (True, 1)

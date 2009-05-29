@@ -20,13 +20,14 @@ class Amount:
         self.reduce (self.m_amount)
 
     def __repr__ (self):
-        return "<Amount %d>" % self.m_amount
+        return "<Amount %s>" % self.m_amount
 
 class ImpactHealth:
     def __init__ (self, aspects):
         self.m_aspects = dict ((aspect, Amount (self, amount))
                                for aspect, amount in aspects.iteritems ()
                                if amount > 0)
+        print self.m_aspects
 
     def amount (self, aspect):
         return self.m_aspects[aspect]

@@ -90,6 +90,12 @@ class Game (fight_hooks.FightHooks, check_hooks.CheckHooks,
     def deck (self, deck_class):
         return self.m_decks[deck_class]
 
+    def deck_matching (self, matcher):
+        matching = [deck for mod, deck in self.m_decks.iteritems ()
+                    if matcher (deck)]
+        assert len (matching) == 1, "%d matching, 1 expected" % len (matching)
+        return matching[0]
+
     def investigators (self):
         # Return a copy of internal list of used investigator.
         return list (self.m_investigators)

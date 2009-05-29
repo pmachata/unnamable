@@ -1,15 +1,16 @@
 import arkham
 import item
 
-class SpellDeck (arkham.Deck):
-    def __init__ (self):
-        arkham.Deck.__init__ (self, "Spell Deck", arkham.Item)
-
 class SpellItem (arkham.InvestigatorItem):
     pass
 
 class SpellInst (arkham.InvestigatorItem):
     pass
+
+class SpellDeck (arkham.Deck):
+    def __init__ (self):
+        arkham.Deck.__init__ (self, "Spell Deck", arkham.Item)
+        self.Item = SpellItem
 
 class ModuleProto (arkham.ModuleProto):
     def __init__ (self):

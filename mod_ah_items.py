@@ -1,6 +1,7 @@
 import arkham
 import checks
 import fun
+from itsup import *
 
 def build (game, module):
     def plain_item (name, price, hands, bonuses, **attributes):
@@ -77,19 +78,6 @@ def build (game, module):
 
     # ---
 
-    # xxx .18 Derringer cannot be lost or stolen unless you choose to
-    # allow it.
-    class Derringer18 (arkham.InvestigatorItem, arkham.Weapon):
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ (self, ".18 Derringer", 3, 1)
-
-    @game.bonus_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (Derringer18),
-         fun.val == arkham.checkbase_combat)
-    def do (game, investigator, subject, item, skill_name):
-        return arkham.Bonus (2, arkham.family_physical)
-
-
     class Axe (arkham.InvestigatorItem, arkham.Weapon):
         def __init__ (self):
             arkham.InvestigatorItem.__init__ (self, "Axe", 3, 1)
@@ -97,82 +85,12 @@ def build (game, module):
     @game.bonus_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (Axe),
          fun.val == arkham.checkbase_combat)
-    def do (game, investigator, subject, item, skill_name):
+    def do (game, investigator, subject, item, checkbase):
         # Do we have one extra hand capable of holding this axe?
         if investigator.find_wield (game, item, 1):
             return arkham.Bonus (3, arkham.family_physical)
         else:
             return arkham.Bonus (2, arkham.family_physical)
-
-
-    class Bullwhip (arkham.InvestigatorItem, arkham.Weapon):
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ (self, "Bullwhip", 2, 1)
-
-    @game.bonus_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (Bullwhip),
-         fun.val == arkham.checkbase_combat)
-    def do (game, investigator, subject, item, skill_name):
-        return arkham.Bonus (1, arkham.family_physical)
-
-    @game.check_correction_actions_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (Bullwhip),
-         fun.val == arkham.checkbase_combat, fun.any)
-    def do (game, investigator, subject, item, skill_name, roll):
-        if not item.exhausted ():
-            return [arkham.GameplayAction_Multiple \
-                        ([arkham.GameplayAction_Exhaust (item),
-                          arkham.GameplayAction_Reroll \
-                              (subject, skill_name, roll)])]
-        else:
-            return []
-
-
-    class Cross (arkham.InvestigatorItem, arkham.Weapon):
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ (self, "Cross", 3, 1)
-
-    @game.bonus_hook.match \
-        (fun.any, fun.any, arkham.match_flag ("undead"),
-         arkham.match_proto (Cross),
-         fun.val == arkham.checkbase_combat)
-    def do (game, investigator, subject, item, skill_name):
-        return arkham.Bonus (3, arkham.family_magical)
-
-    @game.bonus_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (Cross),
-         fun.val == arkham.checkbase_horror)
-    def do (game, investigator, subject, item, skill_name):
-        return arkham.Bonus (1, arkham.family_magical)
-
-
-    class Food (arkham.InvestigatorItem):
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ (self, "Food", 1, 0)
-
-    @game.damage_correction_actions_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (Food),
-         lambda damage: arkham.health_stamina in damage.aspects ())
-    def do (game, investigator, subject, item, damage):
-        return [arkham.GameplayAction_Multiple \
-                    ([arkham.GameplayAction_Discard (item),
-                      arkham.GameplayAction_ReduceDamage \
-                          (damage, arkham.health_stamina, 1)])]
-
-
-    class LuckyCigaretteCase (arkham.InvestigatorItem):
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ \
-                (self, "Lucky Cigarette Case", 1, 0)
-
-    @game.check_correction_actions_hook.match \
-        (fun.any, fun.any, fun.any,
-         arkham.match_proto (LuckyCigaretteCase), fun.any, fun.any)
-    def do (game, investigator, subject, item, skill_name, roll):
-        return [arkham.GameplayAction_Multiple \
-                    ([arkham.GameplayAction_Discard (item),
-                      arkham.GameplayAction_Reroll \
-                          (subject, skill_name, roll)])]
 
 
     class MapOfArkham (arkham.InvestigatorItem):
@@ -210,101 +128,105 @@ def build (game, module):
     @game.spend_clue_token_actions_hook.match \
         (fun.any, fun.any, fun.any,
          arkham.match_proto (ResearchMaterials), fun.any)
-    def do (game, investigator, subject, item, skill_name):
+    def do (game, investigator, subject, item, checkbase):
         return [arkham.GameplayAction_Discard (item)]
 
-
-    class Shotgun (arkham.InvestigatorItem, arkham.Weapon):
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ (self, "Shotgun", 6, 2)
-
-    @game.bonus_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (Shotgun),
-         fun.val == arkham.checkbase_combat)
-    def do (game, investigator, subject, item, skill_name):
-        return arkham.Bonus (4, arkham.family_physical)
-
-    @game.dice_roll_successes_bonus_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (Shotgun),
-         fun.val == arkham.checkbase_combat,
-         fun.val == 6)
-    def do (game, investigator, subject, item, skill_name, dice):
-        return 1
-
-
-    class Whiskey (arkham.InvestigatorItem):
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ (self, "Whiskey", 1, 0)
-
-    @game.damage_correction_actions_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (Whiskey),
-         lambda damage: arkham.health_sanity in damage.aspects ())
-    def do (game, investigator, subject, item, damage):
-        return [arkham.GameplayAction_Multiple \
-                    ([arkham.GameplayAction_Discard (item),
-                      arkham.GameplayAction_ReduceDamage \
-                          (damage, arkham.health_sanity, 1)])]
-
-
     for count, item_proto in [
-            (2, Derringer18 ()),
-            (2, plain_item (".38 Revolver", 4, 1,
-                            {arkham.checkbase_combat:
-                                 arkham.Bonus (3, arkham.family_physical)},
-                            extra_classes = [arkham.Weapon])),
-            (2, plain_item (".45 Automatic", 5, 1,
-                            {arkham.checkbase_combat:
-                                 arkham.Bonus (4, arkham.family_physical)},
-                            extra_classes = [arkham.Weapon])),
-            (2, complex (Tome, "Ancient Tome", 4, 2, None,
-                         arkham.SkillCheck (arkham.checkbase_lore, -1),
-                         lambda game, owner, item: \
-                             arkham.GameplayAction_DrawItem \
-                                (module.m_spell_deck))),
             (2, Axe ()),
-            (2, Bullwhip ()),
-            (2, plain_item ("Cavalry Saber", 3, 1,
-                            {arkham.checkbase_combat:
-                                 arkham.Bonus (2, arkham.family_physical)},
-                            extra_classes = [arkham.Weapon])),
-            (2, Cross ()),
-            (2, plain_item ("Dark Cloak", 2, 0,
-                            {arkham.checkbase_evade:
-                                 arkham.Bonus (1, arkham.family_indifferent)})),
-            (2, plain_item ("Dynamite", 4, 2,
-                            {arkham.checkbase_combat:
-                                 arkham.Bonus (8, arkham.family_physical)},
-                            after_use = lambda game, owner, item: \
-                                arkham.GameplayAction_Discard (item),
-                            extra_classes = [arkham.Weapon])),
-            (2, Food ()),
-            (2, plain_item ("Knife", 2, 1,
-                            {arkham.checkbase_combat:
-                                 arkham.Bonus (1, arkham.family_physical)},
-                            extra_classes = [arkham.Weapon])),
-            (2, plain_item ("Lantern", 3, 0,
-                            {arkham.checkbase_luck:
-                                 arkham.Bonus (1, arkham.family_indifferent)})),
-            (2, LuckyCigaretteCase ()),
             (2, MapOfArkham ()),
             (2, Motorcycle ()),
-            (2, complex (Tome, "Old Journal", 1, 1, None,
-                         arkham.SkillCheck (arkham.checkbase_lore, -1),
-                         lambda game, owner, item: \
-                             arkham.GameplayAction_GainClues (3))),
             (2, ResearchMaterials ()),
-            (2, plain_item ("Rifle", 6, 2,
-                            {arkham.checkbase_combat:
-                                 arkham.Bonus (5, arkham.family_physical)},
-                            extra_classes = [arkham.Weapon])),
-            (2, Shotgun ()),
-            (2, plain_item ("Tommy Gun", 7, 2,
-                            {arkham.checkbase_combat:
-                                 arkham.Bonus (6, arkham.family_physical)},
-                            extra_classes = [arkham.Weapon])),
-            (2, Whiskey ())
         ]:
         module.m_common_deck.register (item_proto, count)
+
+    (itsup_init(game)
+     .deck("Common Items")
+
+     # xxx .18 Derringer cannot be lost or stolen unless you choose to
+     # allow it.
+     .item(".18 Derringer", 2, weapon)
+     .hand(1) .usd(3)
+     .bonus(combat, physical(2))
+
+     .item(".38 Revolver", 2, weapon)
+     .hand(1) .usd(4)
+     .bonus(combat, physical(3))
+
+     .item(2, ".45 Automatic", weapon)
+     .usd(5) .hand(1)
+     .bonus(combat, physical(4))
+
+     .item("Ancient Tome", 2, tome)
+     .usd(4)
+     .movement(exhaust,
+               lose(movement_points(2)),
+               check(lore(-1),
+                     [discard, draw("Spell Deck")]))
+
+     .item("Bullwhip", 2, weapon)
+     .hand(1) .usd(2)
+     .bonus(combat, physical(1))
+     .check_correction(combat, exhaust, reroll)
+
+     .item("Cavalry Saber", 2, weapon)
+     .hand(1) .usd(3)
+     .bonus(combat, magical(2))
+
+     .item("Cross", 2, weapon) # xxx is it a weapon?
+     .hand(1) .usd(3)
+     .bonus(combat, undead, magical(3))
+     .bonus(horror, magical(1))
+
+     .item("Dark Cloak", 2)
+     .usd(2)
+     .bonus(evade, indifferent(1))
+
+     .item("Dynamite", 2, weapon)
+     .hands(2) .usd(4)
+     .bonus(combat, physical(8), discard)
+
+     .item("Food", 2)
+     .usd(1)
+     .damage_correction(discard, reduce(stamina(1)))
+
+     .item("Knife", 2, weapon)
+     .hand(1) .usd(2)
+     .bonus(combat, physical(1))
+
+     .item("Lantern", 2)
+     .usd(3)
+     .bonus(luck, indifferent(1))
+
+     .item("Lucky Cigarette Case", 2, weapon)
+     .usd(1)
+     .check_correction(discard, reroll)
+
+     .item("Old Journal", 2, tome)
+     .usd(1)
+     .movement(exhaust,
+               lose(movement_points(1)),
+               check(lore(-1),
+                     [discard, gain(clues(3))]))
+
+     .item("Rifle", 2, weapon)
+     .hands(2) .usd(6)
+     .bonus(combat, physical(5))
+
+     .item("Shotgun", 2, weapon)
+     .hands(2) .usd(6)
+     .bonus(combat, physical(4))
+     .dice_roll_successes_bonus(r6, 1)
+
+     .item("Tommy Gun", 2, weapon)
+     .hands(2) .usd(7)
+     .bonus(combat, physical(6))
+
+     .item("Whiskey", 2)
+     .usd(1)
+     .damage_correction(discard, reduce(sanity(1)))
+
+     .commit())
+
 
     # -------------------------------------------------------------------------
 
@@ -365,7 +287,7 @@ def build (game, module):
         (fun.any, fun.any, fun.any,
          arkham.match_proto (BlueWatcherOfThePyramid),
          fun.val == arkham.checkbase_combat, fun.any)
-    def do (game, investigator, subject, item, skill_name, roll):
+    def do (game, investigator, subject, item, checkbase, roll):
         return BlueWatcherOfThePyramid.bonus_action \
             (game, investigator, subject, item)
 
@@ -519,13 +441,13 @@ def build (game, module):
     @game.bonus_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (HolyWater),
          fun.val == arkham.checkbase_combat)
-    def do (game, investigator, subject, item, skill_name):
+    def do (game, investigator, subject, item, checkbase):
         return arkham.Bonus (6, arkham.family_magical)
 
     @game.item_after_use_hook.match \
         (fun.any, fun.any, fun.any, arkham.match_proto (HolyWater),
          fun.val == arkham.checkbase_combat)
-    def do (game, investigator, subject, item, skill_name):
+    def do (game, investigator, subject, item, checkbase):
         investigator.discard_item (item)
 
 
@@ -1102,11 +1024,11 @@ def build (game, module):
                 (fun.any, fun.any, fun.any,
                  arkham.match_proto (SkillReroll),
                  fun.val == checkbase, fun.any)
-            def do (game, investigator, subject, item, skill_name, roll):
+            def do (game, investigator, subject, item, checkbase, roll):
                 return [arkham.GameplayAction_Multiple \
                             ([arkham.GameplayAction_Exhaust (item),
                               arkham.GameplayAction_Reroll \
-                                  (subject, skill_name, roll)])]
+                                  (subject, checkbase, roll)])]
 
         return SkillReroll ()
 

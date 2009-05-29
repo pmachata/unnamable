@@ -1,9 +1,13 @@
 import arkham
 import item
 
+class CommonItem (arkham.InvestigatorItem):
+    pass
+
 class CommonDeck (arkham.Deck):
     def __init__ (self):
         arkham.Deck.__init__ (self, "Common Items", arkham.Item)
+        self.Item = CommonItem
 
 class ModuleProto (arkham.ModuleProto):
     def __init__ (self):

@@ -85,6 +85,9 @@ class Bonus:
     def set_family (self, family):
         self.m_family = family
 
+    def __repr__ (self):
+        return "<Bonus %d %s>" % (self.m_value, repr (self.m_family))
+
     @classmethod
     def match_family (cls, family):
         def match (bonus):
