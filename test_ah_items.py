@@ -95,13 +95,14 @@ def test3 (test, name):
     yield fun.and_ (action_bound_item_named (name),
                     fun.matchclass (arkham.GameplayAction_Multiple))
     sanity = test.inv.health (arkham.health_sanity).cur ()
+    stamina = test.inv.health (arkham.health_stamina).cur ()
     yield fun.matchclass (arkham.GameplayAction_IncurDamage)
     assert test.inv.health (arkham.health_sanity).cur () == sanity - 1
     yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
     yield 1 # failure
     sanity = test.inv.health (arkham.health_sanity).cur ()
     yield fun.matchclass (arkham.GameplayAction_IncurDamage)
-    assert test.inv.health (arkham.health_sanity).cur () == sanity - 2
+    assert test.inv.health (arkham.health_stamina).cur () == stamina - 2
     test.inv.health (arkham.health_sanity).add (4)
     yield fun.matchclass (arkham.GameplayAction_Stay)
 

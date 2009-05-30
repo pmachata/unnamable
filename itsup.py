@@ -63,13 +63,6 @@ class Slot_Obtainer (SlotSingle):
     def __init__ (self):
         SlotSingle.__init__ (self, obtainer_t, int_t)
 
-    def construct (self, **kwargs):
-        if self.type () == int_t:
-            return self.value ()
-        else:
-            assert self.type () == obtainer_t
-            return self.value ().construct (**kwargs)
-
 class SlotMulti (Slot):
     def __init__ (self, *types, **kwargs):
         Slot.__init__ (self, *types, **kwargs)
@@ -149,6 +142,13 @@ class Clause:
         else:
             return fun.or_ (*(fun.val == roll.construct ()
                               for roll in slot.value ()))
+
+    def _obtainer_construct (self, slot, **kwargs):
+        if slot.type () == int_t:
+            return slot.value ()
+        else:
+            assert slot.type () == obtainer_t
+            return slot.value ().construct (**kwargs)
 
 
 class BaseClass_C:
@@ -334,10 +334,19 @@ class HealthAmount (InvestigatorParamModifier_C):
               self._aspect_slot])
         self.inbound (decls)
 
+    def _aspects (self, **kwargs):
+        return {self._aspect_slot.value ():
+                    self._obtainer_construct (self._value_slot, **kwargs)}
+
     def construct (self, **kwargs):
-        return arkham.ImpactHealth \
-            ({self._aspect_slot.value ():
-                  self._value_slot.construct (**kwargs)})
+        return arkham.ImpactHealth (self._aspects (**kwargs))
+
+    def lose_action (self, **kwargs):
+        game = kwargs["game"]
+        investigator = kwargs["investigator"]
+        item = kwargs["item"]
+        harm = arkham.HarmDamage (arkham.Damage (self._aspects (**kwargs)))
+        return arkham.GameplayAction_CauseHarm (game, investigator, item, harm)
 
 aspect_t = Type ("aspect_t", fun.matchclass (arkham.HealthAspect))
 health_t = Type ("health_t", fun.matchclass (HealthAmount))
@@ -358,7 +367,7 @@ class movement_points (InvestigatorParamModifier_C):
 
     def construct (self, **kwargs):
         assert self._value_slot.assigned ()
-        return self._value_slot.construct (**kwargs)
+        return self._obtainer_construct (self._value_slot, **kwargs)
 
     def lose_action (self, **kwargs):
         return arkham.GameplayAction_SpendMovementPoints \
@@ -374,7 +383,7 @@ class clues (InvestigatorParamModifier_C):
 
     def construct (self, **kwargs):
         assert self._value_slot.assigned ()
-        return self._value_slot.construct (**kwargs)
+        return self._obtainer_construct (self._value_slot, **kwargs)
 
     def gain_action (self, **kwargs):
         return arkham.GameplayAction_GainClues \
@@ -566,7 +575,7 @@ class DiceRollSuccessesBonusHook_C (Clause):
             # xxx need to register after_use actions here... this
             # isn't solved yet.  Bonus hook currently takes after use
             # hook for itself.
-            return self._value_slot.construct (**args)
+            return self._obtainer_construct (self._value_slot, **args)
 
 
 class flag (Clause):
@@ -592,7 +601,7 @@ class _dieside (Clause):
 
     def construct (self, **kwargs):
         assert self._value_slot.assigned ()
-        return self._value_slot.construct (**kwargs)
+        return self._obtainer_construct (self._value_slot, **kwargs)
 
 dieside_t = Type ("dieside_t", fun.matchclass (_dieside))
 
@@ -610,8 +619,7 @@ class CheckbaseWrapper:
         self._checkbase = checkbase
 
     def __call__ (self, *decls):
-        #return arkham.SkillCheck (self._checkbase, base_modifier, difficulty)
-        return CheckGen_C (self, *decls)
+        return CheckGen_Skill (self, *decls)
 
     def __str__ (self):
         return self._checkbase.name ()
@@ -647,6 +655,11 @@ checkbase_t = Type ("checkbase_t", fun.matchclass ((CheckbaseWrapper,
 # Checks.
 
 class CheckGen_C (Clause):
+    pass
+
+check_gen_t = Type ("check_gen_t", fun.matchclass (CheckGen_C))
+
+class CheckGen_Skill (CheckGen_C):
     def __init__ (self, *decls):
         self._checkbase_slot = SlotSingle (checkbase_t)
         self._value_slot = Slot_Obtainer () # modifier
@@ -654,22 +667,43 @@ class CheckGen_C (Clause):
         self._diff_value_slot = SlotSingle (list_t (obtainer_t), list_t (int_t),
                                             default = [1])
 
-        Clause.__init__ (self, "check_gen",
-                         [self._checkbase_slot,
-                          self._value_slot,
-                          self._diff_value_slot])
-
+        CheckGen_C.__init__ (self, "check_gen",
+                             [self._checkbase_slot,
+                              self._value_slot,
+                              self._diff_value_slot])
         self.inbound (decls)
 
     def construct (self, **kwargs):
+        slot = Slot_Obtainer ()
+        assert slot.assign (*self._diff_value_slot.value ())
+
         return arkham.SkillCheck \
             (self._checkbase_slot.value ().construct (**kwargs),
-             self._value_slot.construct (**kwargs))
+             self._obtainer_construct (self._value_slot, **kwargs),
+             self._obtainer_construct (slot, **kwargs))
 
-check_gen_t = Type ("check_gen_t", fun.matchclass (CheckGen_C))
+class CheckGen_Fixed (CheckGen_C):
+    def __init__ (self, *decls):
+        self._value_slot = Slot_Obtainer ()
+        # number of successes needed
+        self._diff_value_slot = SlotSingle (list_t (obtainer_t), list_t (int_t),
+                                            default = [1])
+        CheckGen_C.__init__ (self, "fixed",
+                             [self._value_slot,
+                              self._diff_value_slot])
+        self.inbound (decls)
 
-def dice (i):
-    assert isinstance (i, int)
+    def construct (self, **kwargs):
+        slot = Slot_Obtainer ()
+        assert slot.assign (*self._diff_value_slot.value ())
+
+        return arkham.SkillCheck \
+            (arkham.CheckBase_Fixed (self._obtainer_construct \
+                                         (self._value_slot, **kwargs)),
+             0, self._obtainer_construct (slot, **kwargs))
+
+def fixed (*decls):
+    return CheckGen_Fixed (*decls)
 
 # Action wrappers.
 
@@ -718,7 +752,7 @@ class RerollAction_C (RollAction_C):
 
 class lose (InvestigatorAction_C):
     def __init__ (self, *decls):
-        self._inv_param_mod_slot = SlotSingle (inv_param_mod_t)
+        self._inv_param_mod_slot = SlotMulti (inv_param_mod_t)
         InvestigatorAction_C.__init__ (self, "lose",
                                        [self._inv_param_mod_slot])
         self.inbound (decls)
@@ -734,27 +768,28 @@ class lose (InvestigatorAction_C):
         # reduces caused damage by 1.  Checking accurately for that is
         # not worth the trouble.  We do however check for movement
         # points or clues.
-        to_lose = self._inv_param_mod_slot.value ()
+        for to_lose in self._inv_param_mod_slot.value ():
+            if isinstance (to_lose, movement_points):
+                investigator = kwargs["investigator"]
+                item = kwargs["item"]
+                mp = investigator.movement_points ()
+                if mp == None or mp < to_lose.construct (**kwargs):
+                    return False
 
-        if isinstance (to_lose, movement_points):
-            investigator = kwargs["investigator"]
-            item = kwargs["item"]
-            mp = investigator.movement_points ()
-            if mp == None or mp < to_lose.construct (**kwargs):
-                return False
-
-        if isinstance (to_lose, clues):
-            investigator = kwargs["investigator"]
-            item = kwargs["item"]
-            c = investigator.clues ()
-            if c < to_lose.construct (**kwargs):
-                return False
+            if isinstance (to_lose, clues):
+                investigator = kwargs["investigator"]
+                item = kwargs["item"]
+                c = investigator.clues ()
+                if c < to_lose.construct (**kwargs):
+                    return False
 
         return True
 
     def action (self, **kwargs):
         assert self._inv_param_mod_slot.assigned ()
-        return self._inv_param_mod_slot.value ().lose_action (**kwargs)
+        return arkham.GameplayAction_Multiple \
+            (list (to_lose.lose_action (**kwargs)
+                   for to_lose in self._inv_param_mod_slot.value ()))
 
 class gain (InvestigatorAction_C):
     def __init__ (self, *decls):
@@ -792,6 +827,21 @@ class reduce (InvestigatorAction_C):
             ([arkham.GameplayAction_ReduceDamage \
                   (damage, aspect, to_reduce.amount (aspect).amount ())
               for aspect in to_reduce.aspects ()])
+
+class select (Action_C):
+    def __init__ (self, *decls):
+        self._actions_slot = SlotMulti (action_t)
+        Action_C.__init__ (self, "select", [self._actions_slot])
+        self.inbound (decls)
+
+    def can_enter (self, **kwargs):
+        return all (action.can_enter (**kwargs)
+                    for action in self._actions_slot.value ())
+
+    def action (self, **kwargs):
+        return arkham.GameplayAction_Select \
+            (list (action.action (**kwargs)
+                   for action in self._actions_slot.value ()))
 
 class NoAction_C (CardAction_C, RollAction_C, InvestigatorAction_C):
     def __init__ (self):
@@ -885,7 +935,8 @@ class C_Modifier (Clause):
     def construct (self, **kwargs):
         # xxx proper checking & error message
         assert self._value_slot.assigned () and self._family_slot.assigned ()
-        return arkham.Bonus (self._value_slot.construct (**kwargs),
+        return arkham.Bonus (self._obtainer_construct (self._value_slot,
+                                                       **kwargs),
                              self._family_slot.value ())
 
 modifier_t = Type ("modifier_t", fun.matchclass (C_Modifier))

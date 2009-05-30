@@ -140,6 +140,8 @@ def build (game, module):
         module.m_common_deck.register (item_proto, count)
 
     (itsup_init(game)
+
+     # -------------------------------------------------------------------------
      .deck("Common Items")
 
      # xxx .18 Derringer cannot be lost or stolen unless you choose to
@@ -225,8 +227,18 @@ def build (game, module):
      .usd(1)
      .damage_correction(discard, reduce(sanity(1)))
 
-     .commit())
+     # -------------------------------------------------------------------------
+     .deck("Unique Items")
 
+     .item("Alien Statue", 1)
+     .usd(5)
+     .movement(exhaust,
+               lose(movement_points(2), sanity(1)),
+               check(fixed(1),
+                     [discard, select(gain(clues(3)),
+                                      draw("Spell Deck"))],
+                     [lose(stamina(2))]))
+     .commit())
 
     # -------------------------------------------------------------------------
 
@@ -526,17 +538,6 @@ def build (game, module):
                       arkham.GameplayAction_Discard (item)])]
 
     for count, item_proto in [
-            (1, complex (arkham.InvestigatorItem, "Alien Statue", 5,
-                         2, arkham.HarmSanity (1),
-                         arkham.SkillCheck (arkham.CheckBase_Fixed (1), 0),
-                         lambda game, owner, item: \
-                             (arkham.GameplayAction_Select
-                                  ([arkham.GameplayAction_GainClues (3),
-                                    arkham.GameplayAction_DrawItem \
-                                        (module.m_spell_deck)])),
-                         lambda game, owner, item: \
-                             arkham.GameplayAction_CauseHarm \
-                                 (game, owner, item, arkham.HarmSanity (2)))),
             (1, AncientTablet ()),
             (1, BlueWatcherOfThePyramid ()),
             (1, BookOfDzyan ()),
