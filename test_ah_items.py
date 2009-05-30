@@ -126,7 +126,7 @@ def test4 (test, name):
     clues = test.inv.clues ()
     yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
     yield 1 # failure
-    assert test.inv.clues () == clues + 3
+    assert test.inv.clues () == clues + 2
     yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
     yield 5 # pass
     items2 = set (item.proto () for item in test.inv.m_items)

@@ -238,38 +238,17 @@ def build (game, module):
                      [discard, select(gain(clues(3)),
                                       draw("Spell Deck"))],
                      [lose(stamina(2))]))
+
+     .item("Ancient Tablet", 1)
+     .usd(8)
+     .movement(lose(movement_points(3)), discard,
+               repeat(2, check(fixed(1),
+                               [draw("Spell Deck")],
+                               [gain(clues(2))])))
+
      .commit())
 
     # -------------------------------------------------------------------------
-
-    class AncientTablet (arkham.InvestigatorItem):
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ (self, "Ancient Tablet", 8, 0)
-
-        def movement (self, game, owner, item):
-            movement_points = 3
-            mp = owner.movement_points ()
-            if mp != None and mp >= movement_points and not item.exhausted ():
-                """Spend 3 movement points and discard Ancient Tablet
-                to roll 2 dice.  For every success rolled, draw 1
-                Spell.  For every failure rolled, gain 2 Clue tokens."""
-                return [
-                    arkham.GameplayAction_Multiple \
-                        ([arkham.GameplayAction_SpendMovementPoints \
-                              (movement_points),
-                          arkham.GameplayAction_Discard (item),
-                          arkham.GameplayAction_Repeat \
-                              (2, arkham.GameplayAction_Conditional \
-                                   (game, owner, item,
-                                    arkham.SkillCheck \
-                                        (arkham.CheckBase_Fixed (1), 0),
-                                    arkham.GameplayAction_DrawItem \
-                                        (module.m_spell_deck),
-                                    arkham.GameplayAction_GainClues (3)))])
-                    ]
-            else:
-                return []
-
 
     # xxx implement Gate-closing checks
     # xxx this cannot be used against ancient one
@@ -538,7 +517,6 @@ def build (game, module):
                       arkham.GameplayAction_Discard (item)])]
 
     for count, item_proto in [
-            (1, AncientTablet ()),
             (1, BlueWatcherOfThePyramid ()),
             (1, BookOfDzyan ()),
             (2, complex (arkham.InvestigatorItem, "Cabala of Saboth", 5,

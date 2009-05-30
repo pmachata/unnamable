@@ -843,6 +843,26 @@ class select (Action_C):
             (list (action.action (**kwargs)
                    for action in self._actions_slot.value ()))
 
+class repeat (Action_C):
+    def __init__ (self, *decls):
+        self._actions_slot = SlotMulti (action_t)
+        self._value_slot = Slot_Obtainer () # how many times
+        Action_C.__init__ (self, "repeat",
+                           [self._actions_slot,
+                            self._value_slot])
+        self.inbound (decls)
+
+    def can_enter (self, **kwargs):
+        return all (action.can_enter (**kwargs)
+                    for action in self._actions_slot.value ())
+
+    def action (self, **kwargs):
+        return arkham.GameplayAction_Repeat \
+            (self._obtainer_construct (self._value_slot, **kwargs),
+             arkham.GameplayAction_Multiple \
+                 (list (action.action (**kwargs)
+                        for action in self._actions_slot.value ())))
+
 class NoAction_C (CardAction_C, RollAction_C, InvestigatorAction_C):
     def __init__ (self):
         CardAction_C.__init__ (self, None, [])
