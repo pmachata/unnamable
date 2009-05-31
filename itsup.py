@@ -926,6 +926,27 @@ class repeat (Action_C):
                  (list (action.action (**kwargs)
                         for action in self._actions_slot.value ())))
 
+class mark (Action_C):
+    def __init__ (self, *decls):
+        self._actions_slot = SlotMulti (action_t)
+        self._value_slot = Slot_Obtainer () # maximum
+        Action_C.__init__ (self, "mark",
+                           [self._actions_slot,
+                            self._value_slot])
+        self.inbound (decls)
+
+    def can_enter (self, **kwargs):
+        return all (action.can_enter (**kwargs)
+                    for action in self._actions_slot.value ())
+
+    def action (self, **kwargs):
+        return arkham.GameplayAction_MarkItem \
+            (kwargs["item"],
+             self._obtainer_construct (self._value_slot, **kwargs),
+             arkham.GameplayAction_Multiple \
+                 (list (action.action (**kwargs)
+                        for action in self._actions_slot.value ())))
+
 class NoAction_C (CardAction_C, RollAction_C, InvestigatorAction_C):
     def __init__ (self):
         CardAction_C.__init__ (self, None, [])
@@ -1004,9 +1025,6 @@ pass_check = PassCheck_C ()
 defeat = None # has implicit argument of MonsterSet
 
 def cancel (*health_aspect):
-    pass
-
-def mark (amount, *actions):
     pass
 
 # Bonuses

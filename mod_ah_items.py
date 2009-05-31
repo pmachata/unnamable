@@ -251,46 +251,16 @@ def build (game, module):
      .check_correction(lose(sanity(2)), discard, pass_check)
      .combat_turn(likewise)
 
+     .item("Book of Dzyan", 1)
+     .usd(3)
+     .movement(exhaust, lose(movement_points(2)),
+               check(lore(-1),
+                     [draw("Spell Deck"), lose(sanity(1)),
+                      mark(2, discard)]))
+
      .commit())
 
     # -------------------------------------------------------------------------
-
-    class BookOfDzyan (arkham.InvestigatorItem):
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ \
-                (self, "Book of Dzyan", 3, 0)
-
-        def movement (self, game, owner, item):
-            """Movement: Exhaust and spend 2 movement points to make a
-            Lore (-1) check. If you pass, draw 1 Spell, lose 1 Sanity,
-            and put 1 Stamina token from the bank on Book of Dzyan. If
-            there are 2 Stamina tokens on it, discard Book of
-            Dzyan. If you fail, nothing happens. """
-            movement_points = 3
-            mp = owner.movement_points ()
-            if mp != None and mp >= movement_points and not item.exhausted ():
-                return [
-                    arkham.GameplayAction_Multiple \
-                        ([arkham.GameplayAction_Exhaust (item),
-                          arkham.GameplayAction_SpendMovementPoints \
-                              (movement_points),
-                          arkham.GameplayAction_Conditional \
-                              (game, owner, item,
-                               arkham.SkillCheck (arkham.checkbase_lore, -1),
-                               arkham.GameplayAction_Multiple \
-                                   ([arkham.GameplayAction_DrawItem \
-                                         (module.m_spell_deck),
-                                     arkham.GameplayAction_CauseHarm \
-                                         (game, owner, item,
-                                          arkham.HarmSanity (1)),
-                                     arkham.GameplayAction_MarkItem \
-                                         (item, 2,
-                                          arkham.GameplayAction_Discard \
-                                              (item))]))])
-                    ]
-            else:
-                return []
-
 
     class xxxDragonsEye (arkham.InvestigatorItem):
         """Any phase: Exhaust and lose 1 Sanity after drawing a gate
@@ -489,7 +459,6 @@ def build (game, module):
                       arkham.GameplayAction_Discard (item)])]
 
     for count, item_proto in [
-            (1, BookOfDzyan ()),
             (2, complex (arkham.InvestigatorItem, "Cabala of Saboth", 5,
                          2, None,
                          arkham.SkillCheck (arkham.checkbase_lore, -2),
