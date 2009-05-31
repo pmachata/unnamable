@@ -258,6 +258,9 @@ def build (game, module):
                      [draw("Spell Deck"), lose(sanity(1)),
                       mark(2, discard)]))
 
+     .item("Enchanted Jewelry", 1)
+     .damage_correction(reduce(stamina(1)), mark(3, discard))
+
      .commit())
 
     # -------------------------------------------------------------------------
@@ -278,24 +281,6 @@ def build (game, module):
         count: 4
         """
         pass
-
-
-    class EnchantedJewelry (arkham.InvestigatorItem):
-        """ Any Phase: Put 1 Stamina token from the bank on Enchanted
-        Jewelry to avoid losing 1 Stamina. If there are 3 Stamina
-        tokens on it, discard Enchanted Jewelry.  Price: $3"""
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ (self, "Enchanted Jewelry", 3, 0)
-
-    @game.damage_correction_actions_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (EnchantedJewelry),
-         lambda damage: arkham.health_stamina in damage.aspects ())
-    def do (game, investigator, subject, item, damage):
-        return [arkham.GameplayAction_Multiple \
-                    ([arkham.GameplayAction_ReduceDamage \
-                          (damage, arkham.health_stamina, 1),
-                      arkham.GameplayAction_MarkItem \
-                          (item, 3, arkham.GameplayAction_Discard (item))])]
 
 
     # xxx this cannot be used against ancient one
@@ -481,7 +466,6 @@ def build (game, module):
                             {arkham.checkbase_combat:
                                  arkham.Bonus (4, arkham.family_magical)},
                             extra_classes = [arkham.Weapon])),
-            (1, EnchantedJewelry ()),
             (2, plain_item ("Enchanted Knife", 5, 1,
                             {arkham.checkbase_combat:
                                  arkham.Bonus (3, arkham.family_magical)},
