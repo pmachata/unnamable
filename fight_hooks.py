@@ -14,9 +14,6 @@ class EndCombat (Exception):
 class ContinueCombat (Exception):
     pass
 
-class SucceedCombat (Exception):
-    pass
-
 class EndCauseHarm (Exception):
     pass
 
@@ -199,9 +196,9 @@ class FightHooks:
                         combat.game.combat_check_hook \
                             (combat, investigator, monster)
 
-                except SucceedCombat:
-                    # We want to catch also SucceedCombat raised within
-                    # combat_check_hook, hence this composed try block.
+                # We want to catch also EndCheck raised within
+                # combat_check_hook, hence this composed try block.
+                except arkham.EndCheck:
                     combat.game.combat_check_pass_hook \
                         (combat, investigator, monster)
 

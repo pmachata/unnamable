@@ -267,7 +267,7 @@ def build (game, module):
                     ([arkham.GameplayAction_CauseHarm \
                           (game, owner, item, arkham.HarmSanity (2)),
                       arkham.GameplayAction_Discard (item),
-                      arkham.GameplayAction_PassCombatCheck ()])
+                      arkham.GameplayAction_PassCheck ()])
                 ]
 
         def combat_turn (self, combat, owner, monster, item):
@@ -491,7 +491,7 @@ def build (game, module):
         Stamina tokens on it. """
 
         return [arkham.GameplayAction_Multiple \
-                ([arkham.GameplayAction_PassCheck (check_base),
+                ([arkham.GameplayAction_PassCheck (),
                   arkham.GameplayAction_MarkItem \
                       (item, 3, arkham.GameplayAction_Discard (item))])]
 
@@ -630,7 +630,7 @@ def build (game, module):
                                arkham.SkillCheck (arkham.checkbase_lore, +4, d),
                                arkham.GameplayAction_Multiple \
                                    ([arkham.GameplayAction_Discard (item),
-                                     arkham.GameplayAction_PassCombatCheck ()]))
+                                     arkham.GameplayAction_PassCheck ()]))
                           ])]
 
 
@@ -823,7 +823,7 @@ def build (game, module):
                       arkham.GameplayAction_Conditional \
                           (game, investigator, item,
                            arkham.SkillCheck (arkham.checkbase_lore, modifier),
-                           arkham.GameplayAction_PassCheck (check_base))])]
+                           arkham.GameplayAction_PassCheck ())])]
 
     class RedSignOfShuddeMell (module.mod_spell.SpellItem):
         def __init__ (self):

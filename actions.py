@@ -320,8 +320,8 @@ class GameplayAction_NormalCheckHook (GameplayAction):
         raise arkham.EndCheck (successes >= self.m_difficulty, successes)
 
 class GameplayAction_PassCheck (GameplayAction):
-    def __init__ (self, checkbase):
-        GameplayAction.__init__ (self, "pass %s check" % checkbase.name ())
+    def __init__ (self):
+        GameplayAction.__init__ (self, "pass check")
 
     def perform (self, game, investigator):
         raise arkham.EndCheck (True, 1)
@@ -535,16 +535,6 @@ class GameplayAction_FailRoll (GameplayAction):
 
     def perform (self, game, investigator):
         raise arkham.EndPhase ()
-
-class GameplayAction_PassCombatCheck (GameplayAction):
-    """Special action tightly bound into combat loop causes immediate
-    success in enclosing combat check."""
-    # xxx perhaps can be replaced with simple GameplayAction_PassCheck
-    def __init__ (self):
-        GameplayAction.__init__ (self, "automatically succeed")
-
-    def perform (self, game, investigator):
-        raise arkham.SucceedCombat ()
 
 # Damage correction actions
 
