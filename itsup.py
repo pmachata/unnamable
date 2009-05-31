@@ -257,6 +257,21 @@ class _item_ctor:
         _item (self._ctx, *args)
         return self._ctx
 
+class _Likewise:
+    def __init__ (self):
+        self._likewise = None
+    def expand (self):
+        return list (self._likewise)
+    def update (self, decls):
+        self._likewise = decls
+
+likewise = _Likewise ()
+def expand_likewise (decls):
+    if len (decls) == 1 and decls[0] is likewise:
+        return likewise.expand ()
+    else:
+        return decls
+
 class itsup_init:
     def __init__ (self, game):
         self._game = game
@@ -265,7 +280,12 @@ class itsup_init:
         self._item_ctor = _item_ctor (self)
         self._current_item = None
 
+    def pr(self, *args):
+        print args
+        return self
+
     def deck (self, *args):
+        likewise.update (None)
         self._deck_ctor (*args)
         return self
 
@@ -273,6 +293,7 @@ class itsup_init:
         return self._deck_ctor.current ()
 
     def item (self, *args):
+        likewise.update (None)
         self._item_ctor (*args)
         return self
 
@@ -289,24 +310,41 @@ class itsup_init:
         self._current_item.set_price (i)
         return self
 
+
     def bonus (self, *decls):
+        decls = expand_likewise (decls)
+        likewise.update (decls)
         self._current_item.override_hook (BonusHook_C (*decls))
         return self
 
     def check_correction (self, *decls):
+        decls = expand_likewise (decls)
+        likewise.update (decls)
         self._current_item.override_hook (CheckCorrectionHook_C (*decls))
         return self
 
     def movement (self, *decls):
+        decls = expand_likewise (decls)
+        likewise.update (decls)
         self._current_item.override_hook (MovementHook_C (*decls))
         return self
 
     def damage_correction (self, *decls):
+        decls = expand_likewise (decls)
+        likewise.update (decls)
         self._current_item.override_hook (DamageCorrectionHook_C (*decls))
         return self
 
     def dice_roll_successes_bonus (self, *decls):
+        decls = expand_likewise (decls)
+        likewise.update (decls)
         self._current_item.override_hook (DiceRollSuccessesBonusHook_C (*decls))
+        return self
+
+    def combat_turn (self, *decls):
+        decls = expand_likewise (decls)
+        likewise.update (decls)
+        self._current_item.override_hook (CombatTurnHook_C (*decls))
         return self
 
 # Obtainers.
@@ -538,6 +576,31 @@ class MovementHook_C (Clause):
                                for action in actions))]
 
         item_cls.movement = movement
+
+class CombatTurnHook_C (Clause):
+    def __init__ (self, *decls):
+        self._actions_slot = SlotMulti (action_t)
+        Clause.__init__ (self, "combat_turn",
+                         [self._actions_slot])
+        self.inbound (decls)
+
+    def deploy (self, ctx, item_proto, item_cls):
+        actions = self._actions_slot.value ()
+        assert len (actions) > 0
+
+        def combat_turn (proto, combat, owner, monster, item):
+            args = dict (combat=combat, game=combat.game,
+                         investigator=owner, monster=monster, item=item)
+
+            for action in actions:
+                if not action.can_enter (**args):
+                    return []
+
+            return [arkham.GameplayAction_Multiple \
+                        (list (action.action (**args)
+                               for action in actions))]
+
+        item_cls.combat_turn = combat_turn
 
 class DiceRollSuccessesBonusHook_C (Clause):
     def __init__ (self, *decls):
@@ -922,13 +985,21 @@ class draw (InvestigatorAction_C):
         return arkham.GameplayAction_DrawItem \
             (game.deck_matching (lambda deck: deck.name () == name))
 
+class PassCheck_C (Action_C):
+    def __init__ (self):
+        Clause.__init__ (self, "pass_check", [])
+
+    def can_enter (self, **kwargs):
+        return True
+
+    def action (self, **kwargs):
+        return arkham.GameplayAction_PassCheck ()
+
 exhaust = ExhaustAction_C ()
 discard = DiscardAction_C ()
 reroll = RerollAction_C ()
 _no_action = NoAction_C ()
-pass_check = None
-likewise = None # special action that is updated each time new uplevel
-                # action is evaluated, and refers to that action.
+pass_check = PassCheck_C ()
 
 defeat = None # has implicit argument of MonsterSet
 

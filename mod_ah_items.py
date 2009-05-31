@@ -246,42 +246,14 @@ def build (game, module):
                                [draw("Spell Deck")],
                                [gain(clues(2))])))
 
+     .item("Blue Watcher of the Pyramid", 1)
+     .usd(4)
+     .check_correction(lose(sanity(2)), discard, pass_check)
+     .combat_turn(likewise)
+
      .commit())
 
     # -------------------------------------------------------------------------
-
-    # xxx implement Gate-closing checks
-    # xxx this cannot be used against ancient one
-    class BlueWatcherOfThePyramid (arkham.InvestigatorItem):
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ \
-                (self, "Blue Watcher of the Pyramid", 4, 0)
-
-        @classmethod
-        def bonus_action (cls, game, owner, monster, item):
-            """Lose 2 Stamina and discard Blue Watcher of the Pyramid
-            to automatically succeed at a Combat check or a Fight
-            check or Lore check made to close a gate."""
-            return [
-                arkham.GameplayAction_Multiple \
-                    ([arkham.GameplayAction_CauseHarm \
-                          (game, owner, item, arkham.HarmSanity (2)),
-                      arkham.GameplayAction_Discard (item),
-                      arkham.GameplayAction_PassCheck ()])
-                ]
-
-        def combat_turn (self, combat, owner, monster, item):
-            return BlueWatcherOfThePyramid.bonus_action \
-                (combat.game, owner, monster, item)
-
-    @game.check_correction_actions_hook.match \
-        (fun.any, fun.any, fun.any,
-         arkham.match_proto (BlueWatcherOfThePyramid),
-         fun.val == arkham.checkbase_combat, fun.any)
-    def do (game, investigator, subject, item, checkbase, roll):
-        return BlueWatcherOfThePyramid.bonus_action \
-            (game, investigator, subject, item)
-
 
     class BookOfDzyan (arkham.InvestigatorItem):
         def __init__ (self):
@@ -517,7 +489,6 @@ def build (game, module):
                       arkham.GameplayAction_Discard (item)])]
 
     for count, item_proto in [
-            (1, BlueWatcherOfThePyramid ()),
             (1, BookOfDzyan ()),
             (2, complex (arkham.InvestigatorItem, "Cabala of Saboth", 5,
                          2, None,
