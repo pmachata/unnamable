@@ -115,7 +115,7 @@ def test3 (test, name):
     yield fun.matchclass (arkham.GameplayAction_NormalCheckHook)
     yield 5 # success
     clues = test.inv.clues ()
-    yield fun.matchclass (arkham.GameplayAction_GainClues)
+    yield lambda arg: "gain" in arg.name () and "clues" in arg.name ()
     assert test.inv.clues () == clues + 3
     raise tester.EndTest (True)
 

@@ -347,6 +347,12 @@ class itsup_init:
         self._current_item.override_hook (CombatTurnHook_C (*decls))
         return self
 
+    def upkeep (self, *decls):
+        decls = expand_likewise (decls)
+        likewise.update (decls)
+        self._current_item.override_hook (UpkeepHook_C (*decls))
+        return self
+
 # Obtainers.
 
 successes = None
@@ -379,6 +385,18 @@ class HealthAmount (InvestigatorParamModifier_C):
     def construct (self, **kwargs):
         return arkham.ImpactHealth (self._aspects (**kwargs))
 
+    def lose_can_enter (self, **kwargs):
+        # We don't check whether the investigator can sustain the harm
+        # before offering the action, because the player may wish to
+        # perform that action nonetheless.  Besides the investigator
+        # can have a couple aces up his sleeve, such as a card that
+        # reduces caused damage by 1.  Checking accurately for that is
+        # not worth the trouble.
+        return True
+
+    def gain_can_enter (self, **kwargs):
+        return True
+
     def lose_action (self, **kwargs):
         game = kwargs["game"]
         investigator = kwargs["investigator"]
@@ -386,14 +404,26 @@ class HealthAmount (InvestigatorParamModifier_C):
         harm = arkham.HarmDamage (arkham.Damage (self._aspects (**kwargs)))
         return arkham.GameplayAction_CauseHarm (game, investigator, item, harm)
 
+    def gain_action (self, **kwargs):
+        heal = arkham.Heal (self._aspects (**kwargs))
+        return arkham.GameplayAction_Heal (heal)
+
 aspect_t = Type ("aspect_t", fun.matchclass (arkham.HealthAspect))
 health_t = Type ("health_t", fun.matchclass (HealthAmount))
 
-def sanity (amount_or_obtainer):
-    return HealthAmount (amount_or_obtainer, arkham.health_sanity)
+class _aspect_ctor:
+    def __init__ (self, aspect):
+        self._aspect = aspect
 
-def stamina (amount_or_obtainer):
-    return HealthAmount (amount_or_obtainer, arkham.health_stamina)
+    def __call__ (self, amount_or_obtainer):
+        return HealthAmount (amount_or_obtainer, self._aspect)
+
+    def construct (self, **kwargs):
+        return self._aspect
+
+aspect_c_t = Type ("aspect_c_t", fun.matchclass (_aspect_ctor))
+sanity = _aspect_ctor (arkham.health_sanity)
+stamina = _aspect_ctor (arkham.health_stamina)
 
 class movement_points (InvestigatorParamModifier_C):
     def __init__ (self, amount_or_obtainer):
@@ -406,6 +436,13 @@ class movement_points (InvestigatorParamModifier_C):
     def construct (self, **kwargs):
         assert self._value_slot.assigned ()
         return self._obtainer_construct (self._value_slot, **kwargs)
+
+    def lose_can_enter (self, **kwargs):
+        mp = kwargs["investigator"].movement_points ()
+        return mp != None and mp >= self.construct (**kwargs)
+
+    def gain_can_enter (self, **kwargs):
+        return True
 
     def lose_action (self, **kwargs):
         return arkham.GameplayAction_SpendMovementPoints \
@@ -422,6 +459,13 @@ class clues (InvestigatorParamModifier_C):
     def construct (self, **kwargs):
         assert self._value_slot.assigned ()
         return self._obtainer_construct (self._value_slot, **kwargs)
+
+    def lose_can_enter (self, **kwargs):
+        clues = kwargs["investigator"].clues ()
+        return clues >= self.construct (**kwargs)
+
+    def gain_can_enter (self, **kwargs):
+        return True
 
     def gain_action (self, **kwargs):
         return arkham.GameplayAction_GainClues \
@@ -576,6 +620,37 @@ class MovementHook_C (Clause):
                                for action in actions))]
 
         item_cls.movement = movement
+
+class UpkeepHook_C (Clause):
+    def __init__ (self, *decls):
+        self._actions_slot = SlotMulti (action_t)
+        Clause.__init__ (self, "upkeep",
+                         [self._actions_slot])
+        self.inbound (decls)
+
+    def deploy (self, ctx, item_proto, item_cls):
+        actions = self._actions_slot.value ()
+        assert len (actions) > 0
+
+        # XXX this chaining needs to be done in all hooks
+        def dummy_upkeep_2 (proto, game, owner, item):
+            return []
+        orig = getattr (item_cls, "upkeep_2", dummy_upkeep_2)
+
+        def upkeep_2 (proto, game, owner, item):
+            a = orig (proto, game, owner, item)
+
+            args = dict (game=game, investigator=owner, item=item)
+
+            for action in actions:
+                if not action.can_enter (**args):
+                    return a
+
+            return a + [arkham.GameplayAction_Multiple \
+                            (list (action.action (**args)
+                                   for action in actions))]
+
+        item_cls.upkeep_2 = upkeep_2
 
 class CombatTurnHook_C (Clause):
     def __init__ (self, *decls):
@@ -823,30 +898,8 @@ class lose (InvestigatorAction_C):
     def can_enter (self, **kwargs):
         if kwargs["item"].exhausted ():
             return False
-
-        # We don't check whether the investigator can sustain the harm
-        # before offering the action, because the player may wish to
-        # perform that action nonetheless.  Besides the investigator
-        # can have a couple aces up his sleeve, such as a card that
-        # reduces caused damage by 1.  Checking accurately for that is
-        # not worth the trouble.  We do however check for movement
-        # points or clues.
-        for to_lose in self._inv_param_mod_slot.value ():
-            if isinstance (to_lose, movement_points):
-                investigator = kwargs["investigator"]
-                item = kwargs["item"]
-                mp = investigator.movement_points ()
-                if mp == None or mp < to_lose.construct (**kwargs):
-                    return False
-
-            if isinstance (to_lose, clues):
-                investigator = kwargs["investigator"]
-                item = kwargs["item"]
-                c = investigator.clues ()
-                if c < to_lose.construct (**kwargs):
-                    return False
-
-        return True
+        return all (to_lose.lose_can_enter (**kwargs)
+                    for to_lose in self._inv_param_mod_slot.value ())
 
     def action (self, **kwargs):
         assert self._inv_param_mod_slot.assigned ()
@@ -856,17 +909,23 @@ class lose (InvestigatorAction_C):
 
 class gain (InvestigatorAction_C):
     def __init__ (self, *decls):
-        self._inv_param_mod_slot = SlotSingle (inv_param_mod_t)
+        self._inv_param_mod_slot = SlotMulti (inv_param_mod_t)
         InvestigatorAction_C.__init__ (self, "gain",
                                        [self._inv_param_mod_slot])
         self.inbound (decls)
 
     def can_enter (self, **kwargs):
-        return not kwargs["item"].exhausted ()
+        if kwargs["item"].exhausted ():
+            return False
+
+        return all (to_gain.gain_can_enter (**kwargs)
+                    for to_gain in self._inv_param_mod_slot.value ())
 
     def action (self, **kwargs):
         assert self._inv_param_mod_slot.assigned ()
-        return self._inv_param_mod_slot.value ().gain_action (**kwargs)
+        return arkham.GameplayAction_Multiple \
+            (list (to_lose.gain_action (**kwargs)
+                   for to_lose in self._inv_param_mod_slot.value ()))
 
 class reduce (InvestigatorAction_C):
     def __init__ (self, *decls):
@@ -1015,6 +1074,23 @@ class PassCheck_C (Action_C):
 
     def action (self, **kwargs):
         return arkham.GameplayAction_PassCheck ()
+
+class if_hurt (Action_C):
+    def __init__ (self, *decls):
+        self._aspect_slot = SlotSingle (aspect_c_t)
+        Clause.__init__ (self, "if_hurt", [self._aspect_slot])
+        self.inbound (decls)
+
+    def can_enter (self, **kwargs):
+        investigator = kwargs["investigator"]
+        aspect = self._aspect_slot.value ().construct (**kwargs)
+        print aspect.name ()
+        health = investigator.health (aspect)
+        print health.aspect ().name (), health.cur (), health.max ()
+        return health.cur () < health.max ()
+
+    def action (self, **kwargs):
+        return None
 
 exhaust = ExhaustAction_C ()
 discard = DiscardAction_C ()

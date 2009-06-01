@@ -41,6 +41,9 @@ class Health:
             self.m_cur = self.m_max
         print "to", self.m_cur
 
+    def aspect (self):
+        return self.m_aspect
+
 class Investigator (ObjectWithLocation, GameplayObject, NamedObject):
     def __init__ (self, name, initial_health,
                   initial_money, initial_clues, skills, home):

@@ -261,6 +261,10 @@ def build (game, module):
      .item("Enchanted Jewelry", 1)
      .damage_correction(reduce(stamina(1)), mark(3, discard))
 
+     .item("Healing Stone", 1)
+     .upkeep(exhaust, if_hurt(stamina), gain(stamina(1)))
+     .upkeep(exhaust, if_hurt(sanity), gain(sanity(1)))
+
      .commit())
 
     # -------------------------------------------------------------------------
@@ -325,30 +329,6 @@ def build (game, module):
         those leading to the Other World you were in."""
         """count:1"""
         pass
-
-
-    class HealingStone (arkham.InvestigatorItem):
-        """Upkeep: You may gain 1 Stamina or 1 Sanity.
-        xxx: Discard Healing Stone if the Ancient One awakens."""
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ \
-                (self, "Healing Stone", 8, 0)
-
-        def upkeep_2 (self, game, owner, item):
-            if item.exhausted ():
-                return []
-
-            ret = []
-            for aspect in (arkham.health_sanity, arkham.health_stamina):
-                if aspect in owner.health_aspects ():
-                    health = owner.health (aspect)
-                    if health.cur () < health.max ():
-                        ret.append \
-                            (arkham.GameplayAction_Multiple \
-                                 ([arkham.GameplayAction_Exhaust (item),
-                                   arkham.GameplayAction_Heal \
-                                       (arkham.Heal ({aspect: 1}))]))
-            return ret
 
 
     class HolyWater (arkham.InvestigatorItem, arkham.Weapon):
@@ -471,7 +451,6 @@ def build (game, module):
                                  arkham.Bonus (3, arkham.family_magical)},
                             extra_classes = [arkham.Weapon])),
             (1, FluteOfTheOuterGods ()),
-            (1, HealingStone ()),
             (4, HolyWater ()),
             (1, plain_item ("Lamp of Alhazred", 7, 2,
                             {arkham.checkbase_combat:
