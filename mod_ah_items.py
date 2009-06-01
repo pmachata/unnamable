@@ -265,6 +265,10 @@ def build (game, module):
      .upkeep(exhaust, if_hurt(stamina), gain(stamina(1)))
      .upkeep(exhaust, if_hurt(sanity), gain(sanity(1)))
 
+     .item("Holy Water", 4, weapon)
+     .hands(2) .usd(4)
+     .bonus(combat, magical(6), discard)
+
      .commit())
 
     # -------------------------------------------------------------------------
@@ -329,24 +333,6 @@ def build (game, module):
         those leading to the Other World you were in."""
         """count:1"""
         pass
-
-
-    class HolyWater (arkham.InvestigatorItem, arkham.Weapon):
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ (self, "Holy Water", 4, 2)
-            """Bonus: +6 Combat check (Discard after use)"""
-
-    @game.bonus_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (HolyWater),
-         fun.val == arkham.checkbase_combat)
-    def do (game, investigator, subject, item, checkbase):
-        return arkham.Bonus (6, arkham.family_magical)
-
-    @game.item_after_use_hook.match \
-        (fun.any, fun.any, fun.any, arkham.match_proto (HolyWater),
-         fun.val == arkham.checkbase_combat)
-    def do (game, investigator, subject, item, checkbase):
-        investigator.discard_item (item)
 
 
     class ObsidianStatue (arkham.InvestigatorItem):
@@ -451,7 +437,6 @@ def build (game, module):
                                  arkham.Bonus (3, arkham.family_magical)},
                             extra_classes = [arkham.Weapon])),
             (1, FluteOfTheOuterGods ()),
-            (4, HolyWater ()),
             (1, plain_item ("Lamp of Alhazred", 7, 2,
                             {arkham.checkbase_combat:
                                  arkham.Bonus (5, arkham.family_magical)},
