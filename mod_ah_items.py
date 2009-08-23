@@ -269,6 +269,11 @@ def build (game, module):
      .hands(2) .usd(4)
      .bonus(combat, magical(6), discard)
 
+     .item("Obsidian Statue", 1)
+     .usd(4)
+     .damage_correction(cancel(stamina), discard)
+     .damage_correction(cancel(sanity), discard)
+
      .commit())
 
     # -------------------------------------------------------------------------
@@ -333,32 +338,6 @@ def build (game, module):
         those leading to the Other World you were in."""
         """count:1"""
         pass
-
-
-    class ObsidianStatue (arkham.InvestigatorItem):
-        """Any Phase: Discard Obsidian Statue to cancel all Stamina or
-        Sanity loss being dealt to you from one source. """
-        def __init__ (self):
-            arkham.InvestigatorItem.__init__ (self, "Obsidian Statue", 4, 0)
-
-    @game.damage_correction_actions_hook.match \
-        (fun.any, fun.any, fun.any,
-         arkham.match_proto (ObsidianStatue), fun.any)
-    def do (game, investigator, subject, item, damage):
-        has_stamina = arkham.health_stamina in damage.aspects ()
-        has_sanity = arkham.health_sanity in damage.aspects ()
-        if has_stamina or has_sanity:
-            mul = [arkham.GameplayAction_Discard (item)]
-            if has_stamina:
-                mul.append (arkham.GameplayAction_CancelDamage \
-                              (damage, arkham.health_stamina))
-            if has_sanity:
-                mul.append (arkham.GameplayAction_CancelDamage \
-                              (damage, arkham.health_stamina))
-            return [arkham.GameplayAction_Multiple (mul)]
-        else:
-            return []
-
 
     class RubyOfRlyeh (arkham.InvestigatorItem):
         def __init__ (self):
@@ -461,7 +440,6 @@ def build (game, module):
                                 arkham.GameplayAction_CauseHarm \
                                     (game, owner, item,
                                      arkham.HarmSanity (2))]))),
-            (1, ObsidianStatue ()),
             (1, plain_item ("Pallid Mask", 4, 0,
                             {arkham.checkbase_evade:
                                  arkham.Bonus (2, arkham.family_indifferent)})),

@@ -197,6 +197,56 @@ class _commit:
             item.dump ()
             item.deploy (self._ctx)
 
+# xxx see if can be merged with the other hook hierarchy
+class Hook:
+    def build_actions (self, args, actions):
+        ret = []
+        for action in actions:
+            print action
+            try:
+                for sub_action in action:
+                    print " +", sub_action
+                    if not sub_action.can_enter (**args):
+                        print "   can't enter"
+                        raise StopIteration
+                ret.append (arkham.GameplayAction_Multiple \
+                                (list (sub_action.action (**args)
+                                       for sub_action in action)))
+            except StopIteration:
+                pass
+        return ret
+
+    def match (self, ctx, *args):
+        hook = getattr (ctx._game, self.name ())
+        return hook.match (*args)
+
+class after_use_hook (Hook):
+    def name (self):
+        return "item_after_use_hook"
+    def implement (self, ctx, item_cls, actions):
+        pass
+after_use_hook = after_use_hook ()
+
+class bonus_hook (Hook):
+    def name (self):
+        return "bonus_hook"
+    def implement (self, ctx, item_cls, actions):
+        pass
+bonus_hook = bonus_hook ()
+
+class damage_correction_actions_hook (Hook):
+    def name (self):
+        return "damage_correction_actions_hook"
+    def implement (self, ctx, item_cls, actions):
+        #xxx self._monster_flag_matcher (self._monster_flags_slot)
+        @self.match (ctx, fun.any, fun.any, fun.any,
+                     arkham.match_proto (item_cls), fun.any)
+        def do (game, investigator, subject, item, damage):
+            args = dict (game=game, investigator=investigator,
+                         subject=subject, item=item, damage=damage)
+            return self.build_actions (args, actions)
+damage_correction_actions_hook = damage_correction_actions_hook ()
+
 class _item (Clause):
     def __init__ (self, ctx, *args):
         self._name_slot = SlotSingle (str_t)
@@ -247,8 +297,19 @@ class _item (Clause):
         item_proto = ItemProto ()
         self._deck.register (item_proto, self._count_slot.value ())
 
+        hooks = {}
+        for hook in (after_use_hook,
+                     bonus_hook,
+                     damage_correction_actions_hook):
+            hooks[hook] = []
+
         for override in self._overrides:
-            override.deploy (ctx, item_proto, ItemProto)
+            override.deploy (ctx, item_proto, ItemProto, hooks)
+
+        for hook, actions in hooks.iteritems ():
+            if len (actions) > 0:
+                hook.implement (ctx, ItemProto, actions)
+
 
 class _item_ctor:
     def __init__ (self, ctx):
@@ -501,7 +562,7 @@ class BonusHook_C (Clause):
                           self._actions_slot])
         self.inbound (decls)
 
-    def deploy (self, ctx, item_proto, item_cls):
+    def deploy (self, ctx, item_proto, item_cls, hooks):
         if not self._bonus_slot.assigned ():
             assert not "Bonus value needs to be specified."
 
@@ -546,7 +607,7 @@ class CheckCorrectionHook_C (Clause):
                           self._monster_flags_slot])
         self.inbound (decls)
 
-    def deploy (self, ctx, item_proto, item_cls):
+    def deploy (self, ctx, item_proto, item_cls, hooks):
         actions = self._actions_slot.value ()
 
         @ctx._game.check_correction_actions_hook.match \
@@ -577,25 +638,9 @@ class DamageCorrectionHook_C (Clause):
                           self._monster_flags_slot])
         self.inbound (decls)
 
-    def deploy (self, ctx, item_proto, item_cls):
+    def deploy (self, ctx, item_proto, item_cls, hooks):
         actions = self._actions_slot.value ()
-
-        @ctx._game.damage_correction_actions_hook.match \
-            (fun.any, fun.any,
-             self._monster_flag_matcher (self._monster_flags_slot),
-             arkham.match_proto (item_cls),
-             fun.any)
-        def do (game, investigator, subject, item, damage):
-            args = dict (game=game, investigator=investigator,
-                         subject=subject, item=item, damage=damage)
-
-            for action in actions:
-                if not action.can_enter (**args):
-                    return []
-
-            return [arkham.GameplayAction_Multiple \
-                        (list (action.action (**args)
-                               for action in actions))]
+        hooks[damage_correction_actions_hook].append (actions)
 
 class MovementHook_C (Clause):
     def __init__ (self, *decls):
@@ -604,7 +649,7 @@ class MovementHook_C (Clause):
                          [self._actions_slot])
         self.inbound (decls)
 
-    def deploy (self, ctx, item_proto, item_cls):
+    def deploy (self, ctx, item_proto, item_cls, hooks):
         actions = self._actions_slot.value ()
         assert len (actions) > 0
 
@@ -628,7 +673,7 @@ class UpkeepHook_C (Clause):
                          [self._actions_slot])
         self.inbound (decls)
 
-    def deploy (self, ctx, item_proto, item_cls):
+    def deploy (self, ctx, item_proto, item_cls, hooks):
         actions = self._actions_slot.value ()
         assert len (actions) > 0
 
@@ -659,7 +704,7 @@ class CombatTurnHook_C (Clause):
                          [self._actions_slot])
         self.inbound (decls)
 
-    def deploy (self, ctx, item_proto, item_cls):
+    def deploy (self, ctx, item_proto, item_cls, hooks):
         actions = self._actions_slot.value ()
         assert len (actions) > 0
 
@@ -692,7 +737,7 @@ class DiceRollSuccessesBonusHook_C (Clause):
                           self._checkbase_slot])
         self.inbound (decls)
 
-    def deploy (self, ctx, item_proto, item_cls):
+    def deploy (self, ctx, item_proto, item_cls, hooks):
         assert self._value_slot.assigned ()
 
         @ctx._game.dice_roll_successes_bonus_hook.match \
@@ -950,6 +995,28 @@ class reduce (InvestigatorAction_C):
                   (damage, aspect, to_reduce.amount (aspect).amount ())
               for aspect in to_reduce.aspects ()])
 
+class cancel (InvestigatorAction_C):
+    def __init__ (self, *decls):
+        self._aspect_slot = SlotSingle (aspect_c_t)
+        InvestigatorAction_C.__init__ (self, "cancel", [self._aspect_slot])
+        self.inbound (decls)
+
+    # XXX we reject the action if given aspect is not part of damage.
+    # However that means it's not possible to implement "cancel all
+    # sanity and stamina damage from one source".
+    def can_enter (self, **kwargs):
+        damage = kwargs["damage"]
+        to_cancel = self._aspect_slot.value ().construct (**kwargs)
+        if to_cancel not in damage.aspects ():
+            return False
+
+        return not kwargs["item"].exhausted ()
+
+    def action (self, **kwargs):
+        damage = kwargs["damage"]
+        to_cancel = self._aspect_slot.value ().construct (**kwargs)
+        return arkham.GameplayAction_CancelDamage (damage, to_cancel)
+
 class select (Action_C):
     def __init__ (self, *decls):
         self._actions_slot = SlotMulti (action_t)
@@ -1086,6 +1153,8 @@ class if_hurt (Action_C):
         aspect = self._aspect_slot.value ().construct (**kwargs)
         print aspect.name ()
         health = investigator.health (aspect)
+        for a in investigator.health_aspects ():
+            print investigator.health (a).cur (), investigator.health (a).max ()
         print health.aspect ().name (), health.cur (), health.max ()
         return health.cur () < health.max ()
 
@@ -1099,9 +1168,6 @@ _no_action = NoAction_C ()
 pass_check = PassCheck_C ()
 
 defeat = None # has implicit argument of MonsterSet
-
-def cancel (*health_aspect):
-    pass
 
 # Bonuses
 
